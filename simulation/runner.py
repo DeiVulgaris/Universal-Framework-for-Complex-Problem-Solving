@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-"""Unified runner for the UFCPS simulation scenarios.
+"""Unified runner for UFCPS simulation scenarios.
 
 The runner executes deterministic reference scenarios and normalizes their
 outputs into one machine-readable report.
 
-The runner intentionally reports observed scenario status and does not assign
-a quality ranking to one architectural condition against another.
+The runner reports explicit scenario acceptance conditions. It does not
+assign a global quality ranking to different architectural conditions.
 """
 
 from __future__ import annotations
@@ -26,10 +26,12 @@ from .scenarios import (
     run_contradictory_branches,
     run_forced_deadlock,
     run_global_termination,
+    run_long_run_continuity,
     run_negative_result,
     run_parallel_resolution,
     run_recursion_stress,
     run_stateless_delegation_control,
+    run_swarm_scaling,
 )
 
 
@@ -48,6 +50,8 @@ SCENARIOS: dict[str, ScenarioCallable] = {
     "negative_result": run_negative_result,
     "recursion_stress": run_recursion_stress,
     "global_termination": run_global_termination,
+    "long_run_continuity": run_long_run_continuity,
+    "swarm_scaling": run_swarm_scaling,
     "autonomous_experiment": run_autonomous_experiment,
 }
 
@@ -93,162 +97,85 @@ def _json_safe(value: Any) -> Any:
 
 def scenario_passed(result: dict[str, Any]) -> bool:
     """
-    Evaluate the scenario's own explicit acceptance fields.
+    Evaluate a scenario's explicit acceptance fields.
 
-    The runner does not invent a universal success criterion. It only checks
-    fields that the individual scenario exposes as explicit acceptance
-    conditions.
+    The runner intentionally does not invent a universal success metric.
     """
     continuity = result.get("continuity_valid", False)
-    terminated = result.get("process_terminated", False)
-
-    # Global termination is intentionally a valid scenario outcome. The
-    # scenario itself must expose an explicit termination test and therefore
-    # overrides the generic "must not be terminated" rule below.
-    is_global_termination_test = (
-        "explicit_termination_process_terminated" in result
-    )
 
     if continuity is not True:
         return False
 
-    if terminated is True and not is_global_termination_test:
+    # Global termination has an intentional terminal end state. Its own
+    # scenario fields distinguish it from accidental process termination.
+    is_global_termination_test = (
+        "explicit_termination_process_terminated" in result
+    )
+
+    if result.get("process_terminated") is True and not is_global_termination_test:
         return False
 
-    if "handoff_performed" in result:
-        if result.get("handoff_performed") is not True:
+    checks_true = (
+        "handoff_performed",
+        "continuation_preserved",
+        "destination_completed",
+        "branch_state_isolated",
+        "provenance_preserved",
+        "composition_inputs_ready",
+        "composed_state_stored",
+        "successor_ready",
+        "deadlock_created",
+        "deadlock_not_terminal",
+        "unresolved_difference_preserved",
+        "successor_created",
+        "successor_completed",
+        "capability_was_unavailable_locally",
+        "carrier_type_changed",
+        "stateful_completion",
+        "stateless_completion",
+        "continuation_state_difference_observed",
+        "contradiction_detected",
+        "contradiction_preserved",
+        "unresolved_difference_created",
+        "successor_question_ready",
+        "negative_result_recorded",
+        "rejected_path_preserved",
+        "successor_received_negative_result",
+        "continuation_ready",
+        "state_persisted_before_interruption",
+        "communication_lost",
+        "successor_recovered_from_shared_state",
+        "overflow_reached",
+        "explicit_control_event_recorded",
+        "unbounded_growth_prevented",
+        "local_failure_successor_created",
+        "explicit_termination_process_terminated",
+        "termination_reason_recorded",
+        "local_failure_distinct_from_global_termination",
+        "long_run_continuity_valid",
+    )
+
+    for field_name in checks_true:
+        if field_name in result and result.get(field_name) is not True:
             return False
 
-    if "continuation_preserved" in result:
-        if result.get("continuation_preserved") is not True:
+    checks_false = (
+        "repeated_invalidated_path",
+        "source_channel_restored",
+        "local_failure_process_terminated",
+        "state_loss_detected",
+        "any_process_termination",
+    )
+
+    for field_name in checks_false:
+        if field_name in result and result.get(field_name) is True:
             return False
 
-    if "destination_completed" in result:
-        if result.get("destination_completed") is not True:
-            return False
-
-    if "branch_count" in result:
-        if result.get("branch_count") != 2:
-            return False
-
-    if "branch_state_isolated" in result:
-        if result.get("branch_state_isolated") is not True:
-            return False
-
-    if "provenance_preserved" in result:
-        if result.get("provenance_preserved") is not True:
-            return False
-
-    if "composition_inputs_ready" in result:
-        if result.get("composition_inputs_ready") is not True:
-            return False
+    if "branch_count" in result and result.get("branch_count") != 2:
+        return False
 
     if "composition_relation" in result:
         if not str(result.get("composition_relation")):
-            return False
-
-    if "composed_state_stored" in result:
-        if result.get("composed_state_stored") is not True:
-            return False
-
-    if "successor_ready" in result:
-        if result.get("successor_ready") is not True:
-            return False
-
-    if "deadlock_created" in result:
-        if result.get("deadlock_created") is not True:
-            return False
-
-    if "deadlock_not_terminal" in result:
-        if result.get("deadlock_not_terminal") is not True:
-            return False
-
-    if "unresolved_difference_preserved" in result:
-        if result.get("unresolved_difference_preserved") is not True:
-            return False
-
-    if "successor_created" in result:
-        if result.get("successor_created") is not True:
-            return False
-
-    if "successor_completed" in result:
-        if result.get("successor_completed") is not True:
-            return False
-
-    if "capability_was_unavailable_locally" in result:
-        if result.get("capability_was_unavailable_locally") is not True:
-            return False
-
-    if "carrier_type_changed" in result:
-        if result.get("carrier_type_changed") is not True:
-            return False
-
-    if "stateful_completion" in result:
-        if result.get("stateful_completion") is not True:
-            return False
-
-    if "stateless_completion" in result:
-        if result.get("stateless_completion") is not True:
-            return False
-
-    if "continuation_state_difference_observed" in result:
-        if result.get("continuation_state_difference_observed") is not True:
-            return False
-
-    if "contradiction_detected" in result:
-        if result.get("contradiction_detected") is not True:
-            return False
-
-    if "contradiction_preserved" in result:
-        if result.get("contradiction_preserved") is not True:
-            return False
-
-    if "unresolved_difference_created" in result:
-        if result.get("unresolved_difference_created") is not True:
-            return False
-
-    if "successor_question_ready" in result:
-        if result.get("successor_question_ready") is not True:
-            return False
-
-    if "negative_result_recorded" in result:
-        if result.get("negative_result_recorded") is not True:
-            return False
-
-    if "rejected_path_preserved" in result:
-        if result.get("rejected_path_preserved") is not True:
-            return False
-
-    if "successor_received_negative_result" in result:
-        if result.get("successor_received_negative_result") is not True:
-            return False
-
-    if "repeated_invalidated_path" in result:
-        if result.get("repeated_invalidated_path") is True:
-            return False
-
-    if "continuation_ready" in result:
-        if result.get("continuation_ready") is not True:
-            return False
-
-    if "state_persisted_before_interruption" in result:
-        if result.get("state_persisted_before_interruption") is not True:
-            return False
-
-    if "communication_lost" in result:
-        if result.get("communication_lost") is not True:
-            return False
-
-    if "source_channel_restored" in result:
-        if result.get("source_channel_restored") is True:
-            return False
-
-    if "successor_recovered_from_shared_state" in result:
-        if result.get("successor_recovered_from_shared_state") is not True:
-            return False
-
-    if "overflow_reached" in result:
-        if result.get("overflow_reached") is not True:
             return False
 
     if "overflow_action" in result:
@@ -260,35 +187,41 @@ def scenario_passed(result: dict[str, Any]) -> bool:
         }:
             return False
 
-    if "explicit_control_event_recorded" in result:
-        if result.get("explicit_control_event_recorded") is not True:
+    if "invalid_transitions" in result:
+        if result.get("invalid_transitions") != 0:
             return False
 
-    if "unbounded_growth_prevented" in result:
-        if result.get("unbounded_growth_prevented") is not True:
+    if "completed_steps" in result and "configured_steps" in result:
+        if result.get("completed_steps") != result.get("configured_steps"):
             return False
 
-    if "local_failure_process_terminated" in result:
-        if result.get("local_failure_process_terminated") is not False:
+    if (
+        "interruptions_injected" in result
+        and "interruptions_recovered" in result
+    ):
+        if result.get("interruptions_injected") != result.get(
+            "interruptions_recovered"
+        ):
             return False
 
-    if "local_failure_successor_created" in result:
-        if result.get("local_failure_successor_created") is not True:
+    if "all_runs_isolated" in result:
+        if result.get("all_runs_isolated") is not True:
             return False
 
-    if "explicit_termination_process_terminated" in result:
-        if result.get("explicit_termination_process_terminated") is not True:
+    if "all_runs_provenance_valid" in result:
+        if result.get("all_runs_provenance_valid") is not True:
             return False
 
-    if "termination_reason_recorded" in result:
-        if result.get("termination_reason_recorded") is not True:
-            return False
-
-    if "local_failure_distinct_from_global_termination" in result:
-        if result.get(
-            "local_failure_distinct_from_global_termination"
-        ) is not True:
-            return False
+    if "runs" in result:
+        runs = result.get("runs")
+        if isinstance(runs, list):
+            for run in runs:
+                if not isinstance(run, dict):
+                    return False
+                if run.get("continuity_valid") is not True:
+                    return False
+                if run.get("process_terminated") is True:
+                    return False
 
     return True
 
