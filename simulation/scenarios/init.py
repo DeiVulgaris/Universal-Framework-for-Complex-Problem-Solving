@@ -27,6 +27,11 @@ from .contradictory_branches import (
     ContradictionResult,
     run_contradictory_branches,
 )
+from .continuity_vs_centralization import (
+    ConditionMetrics,
+    ContinuityVsCentralizationResult,
+    run_continuity_vs_centralization,
+)
 from .forced_deadlock import (
     DeadlockScenarioResult,
     run_forced_deadlock,
@@ -34,6 +39,10 @@ from .forced_deadlock import (
 from .global_termination import (
     GlobalTerminationResult,
     run_global_termination,
+)
+from .long_run_continuity import (
+    LongRunContinuityResult,
+    run_long_run_continuity,
 )
 from .negative_result import (
     NegativeResultScenario,
@@ -52,10 +61,6 @@ from .stateless_delegation_control import (
     StatelessDelegationResult,
     run_stateless_delegation_control,
 )
-from .long_run_continuity import (
-    LongRunContinuityResult,
-    run_long_run_continuity,
-)
 from .swarm_scaling import (
     ScalingRun,
     SwarmScalingResult,
@@ -68,7 +73,9 @@ __all__ = [
     "CarrierSubstitutionResult",
     "CommunicationInterruptionResult",
     "CompositionResult",
+    "ConditionMetrics",
     "ContradictionResult",
+    "ContinuityVsCentralizationResult",
     "DeadlockScenarioResult",
     "DelegationConditionResult",
     "GlobalTerminationResult",
@@ -88,6 +95,7 @@ __all__ = [
     "run_communication_interruption",
     "run_composition",
     "run_contradictory_branches",
+    "run_continuity_vs_centralization",
     "run_forced_deadlock",
     "run_global_termination",
     "run_long_run_continuity",
