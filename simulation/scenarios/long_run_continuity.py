@@ -1,4 +1,4 @@
-"""Deterministic long-run continuity scenario for UFCPS.
+
 
 The scenario executes a longer procedural chain and injects several local
 interruptions at controlled points. Each interruption requires continuation
@@ -89,37 +89,40 @@ def _make_carrier(
 
 
 def _step_executor(
-    state: ProceduralState,
-    carrier: Carrier,
+    *,
+    complete: bool,
 ):
-    """Create a deterministic executor for one step."""
+    """Create a deterministic executor for one procedural step.
+
+    Intermediate steps that are about to be handed off remain
+    continuation-capable. A terminal step may complete normally.
+    """
 
     def execute(
         local_state: ProceduralState,
         local_carrier: Carrier,
     ):
-        del state
-        del carrier
-        del local_carrier
+        from ..core import ExecutionResult
 
         next_difference = (
             f"Continue procedural chain after step "
             f"{local_state.step_index}."
         )
 
-        from ..core import ExecutionResult
-
         return ExecutionResult(
-            completed=True,
+            completed=complete,
             current_state=(
-                f"Completed deterministic long-run step "
-                f"{local_state.step_index}."
+                f"Processed deterministic long-run step "
+                f"{local_state.step_index} by "
+                f"{local_carrier.carrier_id}."
             ),
             local_result=(
-                f"Step {local_state.step_index} completed successfully."
+                f"Step {local_state.step_index} processed successfully."
             ),
             difference=next_difference,
-            next_operation=Operation.DISS,
+            next_operation=(
+                Operation.DISS if not complete else Operation.UNFOLD
+            ),
         )
 
     return execute
@@ -210,13 +213,23 @@ def run_long_run_continuity(
                 f"{current_unit!r}."
             )
 
+        handoff_this_step = (
+            step in interruption_points
+            and step < configured_steps - 1
+        )
+
         result = runtime.execute(
             current_unit,
             current_carrier,
-            _step_executor(state, carrier),
+            _step_executor(complete=not handoff_this_step),
         )
 
-        if not result.completed:
+        if handoff_this_step:
+            if result.completed:
+                raise RuntimeError(
+                    f"Step {step} must remain continuation-capable before handoff."
+                )
+        elif not result.completed:
             raise RuntimeError(
                 f"Unexpected failure at step {step}."
             )
