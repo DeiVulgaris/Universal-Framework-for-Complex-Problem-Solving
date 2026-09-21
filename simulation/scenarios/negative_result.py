@@ -1,4 +1,4 @@
-"""Deterministic negative-result scenario for UFCPS.
+
 
 The source carrier executes a deliberately unsuccessful research strategy.
 The negative result is preserved as continuation-relevant information and a
@@ -97,7 +97,9 @@ def _negative_result_executor(
     )
 
     return ExecutionResult(
-        completed=True,
+        # A negative experimental result completes this research attempt,
+        # but the process itself remains open for continuation.
+        completed=False,
         current_state=(
             "The tested strategy produced a negative result and is "
             "invalidated under the tested conditions."
@@ -109,7 +111,23 @@ def _negative_result_executor(
             "Determine whether strategy_B can address the same unresolved "
             "difference without repeating strategy_A."
         ),
-        next_operation=Operation.UNFOLD,
+        next_operation=Operation.DISS,
+        deadlock_state={
+            "state": (
+                "Research strategy_A reached a valid disconfirming result."
+            ),
+            "constraint": (
+                "The invalidated strategy must not be repeated under the "
+                "same tested conditions."
+            ),
+            "boundary": (
+                "Research-path boundary after strategy_A."
+            ),
+            "unresolved": (
+                "Determine whether strategy_B can address the same "
+                "unresolved difference."
+            ),
+        },
         metadata={
             "result_class": "disconfirming",
             "rejected_path": invalidated_path,
@@ -288,9 +306,9 @@ def run_negative_result(
         _negative_result_executor,
     )
 
-    if not source_result.completed:
+    if source_result.completed:
         raise RuntimeError(
-            "Negative-result source executor unexpectedly failed."
+            "Negative-result source executor must remain continuation-capable."
         )
 
     source = runtime.get_state("P0")
