@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ufcps.org/swarm/compute_unit_v1.json",
+  "title": "UFCPS Compute Unit v1",
+  "description": "Machine-readable specification for measuring and accounting for computational resources in UFCPS Level 2. The schema deliberately allows both raw resource units and normalized units; equivalence between heterogeneous hardware must be established by benchmark and verification rather than assumed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "spec_version",
+    "unit_id",
+    "unit_type",
+    "measurement_basis"
+  ],
+  "properties": {
+    "spec_version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "unit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "unit_type": {
+      "type": "string",
+      "enum": [
+        "cpu_second",
+        "cpu_hour",
+        "gpu_second",
+        "gpu_hour",
+        "accelerator_second",
+        "accelerator_hour",
+        "normalized_compute_unit",
+        "benchmark_unit",
+        "workload_unit"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "symbol": {
+      "type": "string",
+      "minLength": 1
+    },
+    "measurement_basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quantity",
+        "time_basis"
+      ],
+      "properties": {
+        "quantity": {
+          "type": "string",
+          "enum": [
+            "wall_clock_time",
+            "active_compute_time",
+            "completed_work",
+            "benchmark_throughput",
+            "verified_operations"
+          ]
+        },
+        "time_basis": {
+          "type": "string",
+          "enum": [
+            "none",
+            "second",
+            "minute",
+            "hour",
+            "day"
+          ]
+        },
+        "workload_definition": {
+          "type": "string"
+        },
+        "operation_definition": {
+          "type": "string"
+        }
+      }
+    },
+    "normalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "reference_unit_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conversion_factor": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "conversion_method": {
+          "type": "string",
+          "enum": [
+            "fixed",
+            "benchmark",
+            "workload_specific",
+            "dynamic_market",
+            "not_defined"
+          ]
+        },
+        "benchmark_id": {
+          "type": "string"
+        },
+        "valid_from": {
+          "type": "string"
+        },
+        "valid_until": {
+          "type": "string"
+        }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "method": {
+          "type": "string"
+        },
+        "interval": {
+          "type": "string"
+        },
+        "last_calibrated_at": {
+          "type": "string"
+        },
+        "calibration_evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "verification_required": {
+          "type": "boolean"
+        },
+        "verification_methods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "attestation",
+              "replication",
+              "spot_check",
+              "challenge_task",
+              "verifiable_computation",
+              "benchmark",
+              "trusted_hardware",
+              "other"
+            ]
+          }
+        },
+        "minimum_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "priceable": {
+          "type": "boolean"
+        },
+        "reference_currency": {
+          "type": "string"
+        },
+        "reference_price": {
+          "type": "number",
+          "minimum": 0
+        },
+        "price_basis": {
+          "type": "string",
+          "enum": [
+            "fixed",
+            "market",
+            "auction",
+            "negotiated",
+            "not_defined"
+          ]
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reliability_factor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "latency_class": {
+          "type": "string"
+        },
+        "availability_factor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "error_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
