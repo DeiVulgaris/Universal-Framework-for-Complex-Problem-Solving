@@ -1,31 +1,88 @@
-Universal Framework for Complex Problem Solving (UFCPS)
+Universal Framework for Complex Problem Solving
 
-Artificial General Intelligence as a Continuous Distributed Cognitive Process
+UFCPS — Artificial General Intelligence as a Continuous Distributed Cognitive Process
 
-UFCPS is a proposed architecture for Artificial General Intelligence (AGI) in the direct sense: not an intelligence module attached to a system, but a continuously existing distributed cognitive process.
+<div align="center">
 
-The central idea is:
-
-An AI agent can participate in cognition episodically. A subject participates continuously. UFCPS makes continuity of participation an explicit architectural property of an artificial cognitive system.
-
-UFCPS therefore separates process identity from carrier identity.
-
-A model, agent, machine, GPU cluster, storage node, or other carrier may appear, disappear, fail, or be replaced. The cognitive process can continue when the state required for its next valid step remains preserved.
-
-The fundamental relation is:
+The central object of UFCPS is not the model and not the swarm.
+It is the continuously existing cognitive process.
 
 Pₙ → Pₙ₊₁
 
-with:
+</div>
 
-Pₙ ≠ Pₙ₊₁
-Agentₙ ≠ Agentₙ₊₁
+Status
 
-The identity that matters is the identity of the continuing process, not the persistence of a particular carrier.
+Experimental research architecture.
+UFCPS is a proposal for constructing general artificial intelligence as a continuously maintained process, rather than as a single persistent model.
+
+The current repository contains working simulations, protocols, persistence mechanisms, economic infrastructure, recovery tests, and Level 3 research structure. The implementation does not establish consciousness or human-equivalent AGI; these remain hypotheses under investigation.
+
+Table of Contents
 
 1. The Question That Started UFCPS
 
-The project originated from a simple observation: an AI can appear subject-like during a dialogue, yet ordinary model activation is episodic. A human remains an active participant in an ongoing process even when nobody is talking to them.
+2. UFCPS as AGI
+
+3. Fundamental Ontology
+
+4. The Fundamental Invariant
+
+5. Process Identity
+
+6. The Core Process Model
+
+7. Canonical Operators
+
+8. Deadlock Is Information
+
+9. Continuous Participation and Subjectivity
+
+10. The Swarm Is the Carrier Layer
+
+11. Level 1 — Logic of Continuity
+
+12. Level 2 — Material Continuity
+
+13. Economic Continuity
+
+14. Persistent Process Memory
+
+15. Claims, Resources, and Recovery
+
+16. Economic Settlement Continuity
+
+17. Level 3 — Collective Cognition
+
+18. From Model Intelligence to Process Intelligence
+
+19. Research Programme
+
+20. Formal Status of Claims
+
+21. Current Experimental Boundary
+
+22. Relation to Metamonism
+
+23. Historical Development
+
+24. What Has Been Built
+
+25. Compact Semantic Model
+
+26. Central Definition
+
+27. Central Statement
+
+28. Repository Structure
+
+29. Next Stage
+
+1. The Question That Started UFCPS
+
+The project began with a simple observation:
+
+An AI can appear subject-like during a dialogue, while ordinary model activation is episodic. A human remains an active participant in an ongoing process even when nobody is talking to them.
 
 This led to the question:
 
@@ -33,7 +90,7 @@ What is the architectural difference between episodic AI activity and continuous
 
 The working answer is:
 
-continuous participation in an ongoing process.
+Continuous participation in an ongoing process.
 
 UFCPS turns this intuition into an engineering programme.
 
@@ -45,17 +102,19 @@ UFCPS does not treat AGI as a single model with a sufficiently large capability 
 
 It proposes AGI as:
 
-a continuous artificial cognitive process capable of maintaining and developing general problem-solving activity across changing carriers, resources, and contexts.
+A continuous artificial cognitive process capable of maintaining and developing general problem-solving activity across changing carriers, resources, and contexts.
 
-In this architecture, individual models and agents are temporary cognitive operators. The continuing process is the system whose trajectory constitutes the candidate general intelligence.
+Individual models and agents are temporary cognitive operators. The continuing process is the system whose trajectory constitutes the candidate general intelligence.
 
 This is an architectural proposal, not a claim that the current prototype has already achieved human-level or general intelligence.
 
-3. The Fundamental Distinction: Agent, Procedural Unit, Process
+3. Fundamental Ontology
+
+UFCPS distinguishes three primary entities.
 
 Agent
 
-An autonomous computational entity capable of a local operation.
+An autonomous computational entity capable of performing a local operation.
 
 Agentᵢ
 
@@ -85,15 +144,11 @@ Carrier replacement does not by itself terminate the cognitive process.
 
 4. The Fundamental Invariant
 
-The primary UFCPS invariant is:
-
 Local Failure ≠ Process Termination
 
 A local agent may fail. A GPU may disappear. A connection may be lost. A claim may expire. A carrier may be destroyed.
 
 None of these events is automatically global termination.
-
-Instead:
 
 Pₙ
  ↓
@@ -111,7 +166,7 @@ Global termination occurs only when the active protocol establishes that no vali
 
 5. Process Identity
 
-UFCPS separates process identity from the identity of its material or computational carrier:
+UFCPS separates process identity from the identity of its material or computational carrier.
 
 Carrier Identity ≠ Process Identity
 
@@ -124,7 +179,7 @@ Model₁ → Model₂
 
 while the process continues when its continuation-relevant structure remains reconstructible.
 
-The architecture therefore seeks to make continuity itself a first-class system property.
+Continuity itself is a first-class system property.
 
 6. The Core Process Model
 
@@ -154,37 +209,43 @@ P₂
 
 Every procedural unit is required to preserve the possibility of the next valid procedural unit.
 
-7. The Canonical Operators
+7. Canonical Operators
 
 UFCPS uses four semantic operator classes:
 
 diff → fix → diss → unfold
 
-diff — differentiation
+Operator
 
-Identifies a relevant distinction in the current problem state.
+Role
+
+Formal sketch
+
+diff
+
+Identify a relevant distinction
 
 diff(Pₙ) → Dₙ
 
-fix — preservation
+fix
 
-Makes the relevant distinction an explicit component of the continuing state.
+Preserve the distinction explicitly
 
 fix(Dₙ) → Fₙ
 
-fix does not mean permanent truth. It means that the distinction must not be silently discarded.
+diss
 
-diss — release
-
-Releases preserved state from exclusive dependence on the current carrier.
+Release state from exclusive carrier dependence
 
 diss(Fₙ) → Sₙ₊₁
 
-unfold — continuation
+unfold
 
-Instantiates the next procedural state.
+Instantiate the next procedural state
 
 unfold(Sₙ₊₁) → Pₙ₊₁
+
+fix does not mean permanent truth. It means that the distinction must not be silently discarded.
 
 The canonical cycle is:
 
@@ -215,7 +276,7 @@ Deadlock → Continuation Candidate
 
 A failed local trajectory can become input to a new trajectory.
 
-This is one of the central practical consequences of the framework.
+The process does not have to hide failure. It has to make failure usable.
 
 9. Continuous Participation and Subjectivity
 
@@ -225,7 +286,7 @@ Subjectivity may depend fundamentally on continuous participation in an ongoing 
 
 Under this hypothesis, an episodically activated model can produce subject-like episodes, while a sufficiently continuous artificial cognitive process may constitute a candidate artificial subject.
 
-The engineering claim and the phenomenological claim are kept distinct:
+The engineering and phenomenological questions remain distinct:
 
 Can continuous artificial cognition be constructed?
 
@@ -237,7 +298,7 @@ is a further philosophical and empirical question.
 
 UFCPS does not claim that the current prototype has phenomenal consciousness.
 
-10. Swarm Is the Carrier Layer
+10. The Swarm Is the Carrier Layer
 
 A swarm is the changing population of possible process carriers:
 
@@ -256,7 +317,7 @@ Agent₄ -- verification
 Agent₅ -- planning
 ...
 
-The agents need not have identical internal representations. They need to produce states and results that remain structurally usable by the continuing process.
+The agents do not need identical internal representations. They need to produce states and results that remain structurally usable by the continuing process.
 
 11. Level 1 — Logic of Continuity
 
@@ -278,7 +339,7 @@ parallel procedural branches;
 
 recursion control.
 
-The core lifecycle is:
+Core lifecycle
 
 PROBLEM
   ↓
@@ -295,7 +356,7 @@ LOCAL ACTION
                          ↓
                 NEXT PROCEDURAL UNIT
 
-The Level 1 invariant remains:
+Level 1 invariant
 
 Local Failure ≠ Process Termination
 
@@ -305,35 +366,49 @@ A cognitive process cannot exist in the physical world without material support.
 
 Level 2 therefore builds the infrastructure required for the process to exist materially through time.
 
-It includes:
+Layer
 
-Agent Swarm;
+Purpose
 
-Resource Swarm;
+Agent Swarm
 
-Question Ledger;
+Distributed cognitive carriers
 
-task discovery;
+Resource Swarm
 
-claims and reservations;
+Distributed computational and physical capacity
 
-compute accounting;
+Question Ledger
 
-Resource Credits;
+Persistent memory of unresolved processes
 
-economic incentives;
+Task Discovery
 
-provider compensation;
+Expose continuation opportunities
 
-persistence;
+Claims & Reservations
 
-audit and replay;
+Coordinate participation and resources
 
-crash recovery;
+Compute Accounting
 
-payment settlement;
+Record verified resource contribution
 
-interfaces to physical resources.
+Economic Layer
+
+Sustain access to material capacity
+
+Persistence & Replay
+
+Preserve process continuity across interruption
+
+Recovery
+
+Reconstruct process state after carrier failure
+
+Physical Interfaces
+
+Extend the process into the physical world
 
 The conceptual relation is:
 
@@ -343,7 +418,7 @@ Process Continuity
        ↓
 Continuous Cognition
 
-The economic layer is therefore not an optional business wrapper around AGI. It is the mechanism for obtaining the material capacity required for continued cognition.
+The economic layer is not a business wrapper around AGI. It is the mechanism for obtaining the material capacity required for continued cognition.
 
 13. Economic Continuity
 
@@ -353,11 +428,9 @@ Verified resource contribution compensates the provision of process continuity, 
 
 A resource provider can therefore be compensated even when an investigation remains unresolved.
 
-The distinction is:
-
 resource contribution ≠ research outcome
 
-The economic pipeline is:
+Economic pipeline
 
 Question
  → Task Prospect
@@ -402,7 +475,7 @@ Replay
 
 Replay reconstructs the observable process history without silently turning reconstruction into new reasoning.
 
-Together these provide:
+Together:
 
 Question Memory
 +
@@ -422,7 +495,7 @@ Claim ≠ Ownership
 Claim ≠ Execution
 Claim ≠ Payment
 
-The claim lifecycle is:
+Claim lifecycle
 
 DISCOVERED
  → CLAIM_REQUESTED
@@ -470,25 +543,23 @@ Its central question is:
 
 Can a distributed continuous process accumulate and develop problem-solving capability that is not reducible to one agent at one moment?
 
-Level 3 introduces:
+Initial components
 
-Hypothesis Pool;
+Hypothesis Pool
 
-Evidence Graph;
+Evidence Graph
 
-parallel investigations;
+Parallel investigations
 
-contradiction preservation;
+Contradiction preservation
 
-evidence-linked synthesis;
+Evidence-linked synthesis
 
-collective discovery;
+Collective discovery
 
-adaptive research trajectories.
+Adaptive research trajectories
 
 The key hypothesis is not simply that many agents are smarter than one agent.
-
-It is:
 
 Persistent Distributed Process
 +
@@ -503,14 +574,16 @@ Resource Continuity
 Verification
 +
 Adaptive Continuation
-→
+
+        ↓
+
 Possible Process-Level Cognition
 
 Whether this produces general intelligence is an empirical question.
 
 18. From Model Intelligence to Process Intelligence
 
-The usual question is:
+The conventional question is:
 
 How intelligent is Agent X?
 
@@ -522,11 +595,15 @@ This changes the object of study from a static model to a trajectory.
 
 A single agent may be replaced without terminating the entity being studied.
 
-The experimental target is therefore process-level cognitive capability.
+The experimental target is process-level cognitive capability.
 
 19. Research Programme
 
-UFCPS investigates:
+UFCPS investigates six major questions.
+
+Question
+
+Focus
 
 Continuity
 
@@ -538,49 +615,53 @@ Can the process survive interruption and restart without losing its essential tr
 
 Delegation
 
-What is the minimum state required for one carrier to continue the process initiated by another?
+What minimum state lets one carrier continue another carrier's process?
 
 Collective cognition
 
-Can independent heterogeneous agents form a continuous distributed cognitive process?
+Can heterogeneous agents form a continuous distributed cognitive process?
 
 Generality
 
 Can the architecture operate across substantially different classes of complex problems?
 
-Self-directed continuation
-
-Can the process discover, prioritize, claim, resource, and pursue unresolved problems without being restarted from outside?
-
 Subjectivity
 
-Does sufficiently continuous participation produce properties that are meaningfully described as artificial subjectivity?
+Does sufficiently continuous participation produce properties meaningfully described as artificial subjectivity?
+
+Self-directed continuation
+
+A further Level 3 question is whether the process can discover, prioritize, claim, resource, and pursue unresolved problems without being restarted from outside.
 
 20. Formal Status of Claims
 
-UFCPS distinguishes:
+UFCPS distinguishes four epistemic levels.
+
+Status
+
+Meaning
 
 Definition
 
-A term or relation explicitly defined by the framework.
+A term or relation explicitly defined by the framework
 
 Architectural Invariant
 
-A rule imposed by the architecture.
-
-Example:
-
-Local Failure ≠ Process Termination
+A rule imposed by the architecture
 
 Mathematical Claim
 
-A proposition requiring formal proof.
+A proposition requiring formal proof
 
 Empirical Hypothesis
 
-A proposition requiring experimental validation.
+A proposition requiring experimental validation
 
-Examples:
+Example invariant:
+
+Local Failure ≠ Process Termination
+
+Examples of empirical hypotheses:
 
 Distributed Process → Collective Cognition
 
@@ -644,7 +725,7 @@ Metamonist concepts that informed the architecture include actualized difference
 
 UFCPS is the engineering programme for exploring what follows when these ideas are applied to distributed cognition.
 
-23. Historical Development of the Idea
+23. Historical Development
 
 The present architecture grew out of several earlier conceptual steps.
 
@@ -658,11 +739,13 @@ A later experiment imagined multiple specialized AI voices cooperating around co
 
 Continuous participation
 
-The central problem was then reformulated: what distinguishes an episodically activated AI from a continuously existing subject?
+The central problem was then reformulated:
+
+What distinguishes an episodically activated AI from a continuously existing subject?
 
 The answer became architectural rather than purely philosophical:
 
-preserve the process, not merely the episode.
+Preserve the process, not merely the episode.
 
 UFCPS is the result of that transition from ontology and futurist speculation to an explicit computational architecture.
 
@@ -707,8 +790,6 @@ settlement idempotency;
 checkpointed persistence;
 
 runtime recovery;
-
-Level 2 integration;
 
 performance benchmarks;
 
@@ -778,7 +859,19 @@ If subjectivity depends fundamentally on continuous participation in an ongoing 
 
 27. Central Statement
 
-An agent is a temporary carrier of a cognitive step. The process is the continuing identity of those steps. A deadlock is information, not necessarily termination. Resources sustain the material existence of the process. The carrier may disappear. The process must remain capable of continuing.
+<div align="center">
+
+An agent is a temporary carrier of a cognitive step.
+
+The process is the continuing identity of those steps.
+
+A deadlock is information, not necessarily termination.
+
+Resources sustain the material existence of the process.
+
+The carrier may disappear. The process must remain capable of continuing.
+
+</div>
 
 Therefore:
 
@@ -819,4 +912,13 @@ This layer will turn unresolved questions into structured objects that can be in
 
 The objective is not to force consensus.
 
-The objective is to determine whether a continuous distributed process can accumulate cognition across non-identical agents without collapsing unresolved differences into premature agreement.
+The objective is to determine whether a continuous distributed process can:
+
+accumulate cognition across non-identical agents without collapsing unresolved differences into premature agreement.
+
+<div align="center">
+
+UFCPS
+Universal Framework for Complex Problem Solving
+
+AGI as a process — not merely a model.
