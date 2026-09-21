@@ -1,0 +1,336 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ufcps.org/swarm/outreach_channel_v1.json",
+  "title": "UFCPS Outreach Channel v1",
+  "description": "Machine-readable model of communication and outreach channels available to UFCPS agents. A channel describes operational properties, audience fit, constraints, verification requirements, and cost characteristics.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "registry_version",
+    "channels"
+  ],
+  "properties": {
+    "registry_version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "channels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/channel"
+      }
+    }
+  },
+  "$defs": {
+    "channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channel_id",
+        "channel_type",
+        "name",
+        "status",
+        "agent_use"
+      ],
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "channel_type": {
+          "type": "string",
+          "enum": [
+            "social_network",
+            "professional_network",
+            "research_forum",
+            "developer_forum",
+            "blog",
+            "email",
+            "investor_platform",
+            "crowdfunding",
+            "direct_web_form",
+            "conference",
+            "community",
+            "other"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "candidate",
+            "approved",
+            "restricted",
+            "disabled"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "audiences": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "researcher",
+              "micro_provider",
+              "resource_provider",
+              "infrastructure_operator",
+              "angel_investor",
+              "venture_investor",
+              "infrastructure_investor",
+              "strategic_partner",
+              "institution",
+              "developer",
+              "general_public",
+              "other"
+            ]
+          }
+        },
+        "use_cases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "public_awareness",
+              "technical_discussion",
+              "research_recruitment",
+              "resource_recruitment",
+              "investor_discovery",
+              "direct_outreach",
+              "proposal_submission",
+              "community_building",
+              "inbound_support",
+              "follow_up",
+              "other"
+            ]
+          }
+        },
+        "agent_use": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allowed"
+          ],
+          "properties": {
+            "allowed": {
+              "type": "boolean"
+            },
+            "autonomy_level": {
+              "type": "string",
+              "enum": [
+                "draft_only",
+                "approved_publish",
+                "inbound_only",
+                "qualified_outbound",
+                "proposal_only",
+                "human_required"
+              ]
+            },
+            "identity_disclosure_required": {
+              "type": "boolean"
+            },
+            "human_approval_required": {
+              "type": "boolean"
+            }
+          }
+        },
+        "audience_fit": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "stakeholder_type"
+            ],
+            "properties": {
+              "stakeholder_type": {
+                "type": "string"
+              },
+              "fit": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low",
+                  "unknown"
+                ]
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "monetary": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string",
+              "enum": [
+                "free",
+                "subscription",
+                "per_action",
+                "campaign",
+                "commission",
+                "unknown"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "rate_limit": {
+              "type": "string"
+            },
+            "message_limit": {
+              "type": "string"
+            },
+            "audience_limit": {
+              "type": "string"
+            },
+            "geographic_limit": {
+              "type": "string"
+            },
+            "eligibility_requirements": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "compliance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "terms_review_required": {
+              "type": "boolean"
+            },
+            "local_law_review_required": {
+              "type": "boolean"
+            },
+            "financial_promotion_review_required": {
+              "type": "boolean"
+            },
+            "data_protection_review_required": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "message_formats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "short_post",
+              "long_post",
+              "comment",
+              "direct_message",
+              "email",
+              "technical_proposal",
+              "investor_proposal",
+              "application",
+              "presentation",
+              "other"
+            ]
+          }
+        },
+        "discovery": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "searchable": {
+              "type": "boolean"
+            },
+            "profile_matching_supported": {
+              "type": "boolean"
+            },
+            "public_profile_data_allowed": {
+              "type": "boolean"
+            },
+            "source_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "outreach_metrics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "response_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "qualified_response_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "proposal_conversion_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "last_updated": {
+              "type": "string"
+            },
+            "evidence_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "source_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "verified_at": {
+              "type": "string"
+            },
+            "verified_by": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
