@@ -1,4 +1,4 @@
-"""Deterministic forced-deadlock scenario for UFCPS.
+
 
 The scenario injects a blocking constraint into an active procedural unit,
 records the resulting deadlock, preserves the unresolved difference, and
@@ -241,17 +241,9 @@ def run_forced_deadlock(
         and runtime.get_state("P0").deadlock is not None
     )
 
-    source_result = runtime.execute(
-        "P0",
-        "carrier_A",
-        _blocked_executor,
-    )
-
-    if source_result.completed:
-        raise RuntimeError(
-            "The forced-deadlock source executor unexpectedly completed."
-        )
-
+    # The failure injector creates the deadlock and marks the source carrier
+    # as STUCK. A stuck carrier must not be executed again; recovery proceeds
+    # by preserving and delegating the unresolved state.
     source_state = runtime.get_state("P0")
 
     unresolved_difference_preserved = bool(
