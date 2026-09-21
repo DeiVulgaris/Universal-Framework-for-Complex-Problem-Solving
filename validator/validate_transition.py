@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 
 """
 UFCPS transition validator v1.
@@ -152,7 +152,7 @@ def semantic_validate(instance: Any) -> list[ValidationErrorRecord]:
 
     transition_type = instance.get("transition_type")
     source = instance.get("source_procedural_unit", {})
-    operation = instance.get("operation", {})
+    operation = instance.get("operation")
     destination = instance.get("destination_procedural_unit", {})
     carrier_transition = instance.get("carrier_transition", {})
     continuation = instance.get("continuation_state", {})
@@ -169,8 +169,18 @@ def semantic_validate(instance: Any) -> list[ValidationErrorRecord]:
     source_status = source.get("session_status")
     destination_status = destination.get("session_status")
 
-    current_operation = operation.get("name")
-    operation_flow = operation.get("flow")
+    # transition_v1.json represents operation as a string. Keep compatibility
+    # with an older object-shaped representation if encountered, but normalize
+    # both forms to the same semantic fields.
+    if isinstance(operation, str):
+        current_operation = operation
+        operation_flow = CANONICAL_FLOW
+    elif isinstance(operation, dict):
+        current_operation = operation.get("name")
+        operation_flow = operation.get("flow")
+    else:
+        current_operation = None
+        operation_flow = None
 
     source_state_reference = source.get("state_reference")
     destination_state_reference = destination.get("state_reference")
