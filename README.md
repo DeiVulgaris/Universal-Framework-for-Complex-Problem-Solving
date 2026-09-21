@@ -1,680 +1,576 @@
 Universal Framework for Complex Problem Solving (UFCPS)
 
-UFCPS is an open theoretical and experimental framework for constructing a continuous distributed cognitive process across multiple autonomous AI agents.
+Artificial General Intelligence as a Continuous Distributed Cognitive Process
 
-UFCPS studies the following architectural hypothesis:
+UFCPS is a proposed architecture for Artificial General Intelligence (AGI) in the direct sense: not an intelligence module attached to a system, but a continuously existing distributed cognitive process.
 
-Cognitive continuity can exist independently of the persistent identity of any individual agent.
+The central idea is:
 
-An individual agent is a temporary carrier of a procedural state.
+An AI agent can participate in cognition episodically. A subject participates continuously. UFCPS makes continuity of participation an explicit architectural property of an artificial cognitive system.
 
-A swarm is a continuity of procedural states.
+UFCPS therefore separates process identity from carrier identity.
 
-1. Core Ontology
+A model, agent, machine, GPU cluster, storage node, or other carrier may appear, disappear, fail, or be replaced. The cognitive process can continue when the state required for its next valid step remains preserved.
 
-UFCPS defines three primary entities.
+The fundamental relation is:
 
-1.1 Agent
+Pₙ → Pₙ₊₁
 
-An autonomous computational entity capable of performing a local operation.
+with:
 
-Agent_i
+Pₙ ≠ Pₙ₊₁
+Agentₙ ≠ Agentₙ₊₁
 
-An agent is not defined as the intelligence itself.
+The identity that matters is the identity of the continuing process, not the persistence of a particular carrier.
 
-It is a carrier of one or more procedural states.
+1. The Question That Started UFCPS
 
-1.2 Procedural Unit
+The project originated from a simple observation: an AI can appear subject-like during a dialogue, yet ordinary model activation is episodic. A human remains an active participant in an ongoing process even when nobody is talking to them.
 
-A procedural unit is the complete active state of a cognitive step.
+This led to the question:
 
-P_n
+What is the architectural difference between episodic AI activity and continuous human participation in reality?
 
-The procedural unit contains everything required to preserve process continuity at the current stage.
+The working answer is:
 
-The identity of the carrier is not part of the identity of the procedural unit.
+continuous participation in an ongoing process.
 
-Agent_n ≠ Agent_n+1
+UFCPS turns this intuition into an engineering programme.
 
-does not imply:
+The objective is not to require one model to solve every problem. The objective is to create a cognitive process that can maintain itself through successive states, preserve unresolved differences, learn from consequences, change carriers, acquire resources, and continue after local failure.
 
-P_n → P_n+1
+2. UFCPS as AGI
 
-1.3 Cognitive Process
+UFCPS does not treat AGI as a single model with a sufficiently large capability score.
 
-A cognitive process is an ordered sequence of procedural units:
+It proposes AGI as:
 
-P_1 → P_2 → P_3 → → P_n
+a continuous artificial cognitive process capable of maintaining and developing general problem-solving activity across changing carriers, resources, and contexts.
 
-The process is continuous when a valid successor state remains constructible.
+In this architecture, individual models and agents are temporary cognitive operators. The continuing process is the system whose trajectory constitutes the candidate general intelligence.
+
+This is an architectural proposal, not a claim that the current prototype has already achieved human-level or general intelligence.
+
+3. The Fundamental Distinction: Agent, Procedural Unit, Process
+
+Agent
+
+An autonomous computational entity capable of a local operation.
+
+Agentᵢ
+
+An agent is not defined as the intelligence itself. It is a temporary carrier of one or more procedural states.
+
+Procedural Unit
+
+A complete active state of one cognitive step.
+
+Pₙ
+
+The procedural unit contains the information required to preserve continuation at that stage.
+
+Cognitive Process
+
+An ordered continuity of procedural units:
+
+P₁ → P₂ → P₃ → ... → Pₙ → ...
 
 Therefore:
 
-Continuity ≠ Persistence of Agent Identity
+Agentₙ = Carrier(Pₙ)
+Agentₙ ≠ Agentₙ₊₁
+Pₙ → Pₙ₊₁
 
-2. Primary Architectural Thesis
+Carrier replacement does not by itself terminate the cognitive process.
 
-Traditional agent architectures are commonly represented as:
+4. The Fundamental Invariant
+
+The primary UFCPS invariant is:
+
+Local Failure ≠ Process Termination
+
+A local agent may fail. A GPU may disappear. A connection may be lost. A claim may expire. A carrier may be destroyed.
+
+None of these events is automatically global termination.
+
+Instead:
+
+Pₙ
+ ↓
+Deadlock / Result / Boundary
+ ↓
+Preserved Process State
+ ↓
+Discovery
+ ↓
+Next Valid Procedural Unit
+ ↓
+Pₙ₊₁
+
+Global termination occurs only when the active protocol establishes that no valid continuation exists under the applicable termination conditions.
+
+5. Process Identity
+
+UFCPS separates process identity from the identity of its material or computational carrier:
+
+Carrier Identity ≠ Process Identity
+
+The carrier may change:
+
+Agent₁ → Agent₂
+GPU₁ → GPU₂
+Node₁ → Node₂
+Model₁ → Model₂
+
+while the process continues when its continuation-relevant structure remains reconstructible.
+
+The architecture therefore seeks to make continuity itself a first-class system property.
+
+6. The Core Process Model
+
+Traditional task systems are often represented as:
 
 Problem → Solution
 
-UFCPS represents problem solving as:
+UFCPS represents problem solving as a continuing trajectory:
 
 Problem
-→
-P_1
-→
-P_2
-→
-P_3
-→
-
-where P_n represents the active procedural unit of resolution.
-
-The objective of UFCPS is therefore not:
-
-Require one agent to solve the entire problem.
-
-The objective is:
-
-Require every procedural unit to preserve the possibility of the next valid procedural unit.
-
-3. Step Continuity Invariant
-
-The primary architectural invariant of UFCPS is:
-
-Local Failure ≠ Process Termination
-
-A local agent may fail to continue along its current trajectory.
-
-This condition must not automatically terminate the global cognitive process.
-
-Instead:
-
-P_n
-→
-Deadlock_n
-→
-Delegation_n
-→
-P_n+1
-
-A deadlock is therefore not necessarily a terminal state.
-
-It can be a structured transition state.
-
-4. Procedural State Transition
-
-The canonical UFCPS transition is:
-
-P_n → P_n+1
-
-A valid transition requires preservation of the information necessary to continue the process.
-
-Therefore:
-
-P_n+1 = T(P_n)
-
-where T is a valid state-transition operation.
-
-The transition does not require identity preservation:
-
-P_n ≠ P_n+1
-
-The requirement is structural continuity, not state identity.
-
-5. Two-Vector Architecture
-
-Each active procedural unit operates through two coupled trajectories.
-
-5.1 Vector A — Local Action
-
-Local execution inside the current constraint space.
-
-A_n = Action(P_n)
-
-Possible outcomes:
-
-local solution;
-
-partial solution;
-
-constraint discovery;
-
-structural deadlock.
-
-Vector A answers:
-
-What can be established from the current local state?
-
-5.2 Vector B — Continuation
-
-Preservation of the possibility of a subsequent procedural state.
-
-C_n = Continuation(P_n)
-
-Vector B answers:
-
-What information must survive so that another procedural unit can continue the process?
-
-When Vector A reaches a valid local boundary, Vector B prevents that boundary from becoming automatic global termination.
-
-UFCPS does not demand that a single agent solve the problem in its entirety.
-
-It demands that no agent destroy the continuity of the process.
-
-6. Distributed Cognitive Chain
-
-The global system architecture flows as a continuous trajectory of transformations:
-
-P_1 → P_2 → P_3 → → P_n
-
-where each P_n can belong to a completely distinct autonomous agent:
-
-Agent_n ≠ Agent_n+1
-
-This boundary mismatch does not obstruct continuity of the state transition:
-
-P_n → P_n+1
-
-The solution exists not as a static property of a single agent, but as a continuous trajectory of task-state transformations.
-
-7. Core UFCPS Lifecycle Loop
-
- PROBLEM
- |
- v
- DECOMPOSE
- |
- v
- LOCAL ACTION
- |
- +---- SUCCESS --------------------> COMPOSITION
- |
- +---- PARTIAL RESULT -------------> STATE UPDATE
- |
- +---- STRUCTURAL DEADLOCK --------> DEADLOCK OBJECT
- |
- v
- DELEGATION
- |
- v
- NEXT PROCEDURAL UNIT
- |
- v
- P(n+1)
-
-Core Axiom
-
-Local Failure ≠ Process Termination
-
-8. Mathematical Operator Classes
-
-UFCPS uses four foundational operational classes to govern state transitions.
-
-The operator names are semantic identifiers and should preserve their definitions across implementations.
-
-8.1 diff
-
-Differentiation
-
-diff identifies a relevant distinction within the current problem state.
-
-diff(P_n) → D_n
-
-diff may identify:
-
-alternatives;
-
-conflicts;
-
-constraints;
-
-boundaries;
-
-incompatible states;
-
-unresolved dimensions.
-
-Semantic role:
-
-diff = identify relevant difference
-
-8.2 fix
-
-Fixation
-
-fix preserves an identified difference as an explicit component of the active task state.
-
-fix(D_n) → F_n
-
-fix does not imply permanent truth.
-
-It means:
-
-this distinction must remain available to subsequent reasoning.
-
-Semantic role:
-
-fix = preserve relevant distinction
-
-8.3 diss
-
-Dissipation
-
-Within UFCPS, diss denotes the removal of a local cognitive state from exclusive dependence on the current carrier.
-
-diss(F_n) → S_n+1
-
-The result becomes available to the distributed process environment.
-
-Semantic role:
-
-diss = release state from local carrier
-
-8.4 unfold
-
-Unfolding
-
-unfold converts preserved distributed state into the next procedural state.
-
-unfold(S_n+1) → P_n+1
-
-Semantic role:
-
-unfold = instantiate next procedural state
-
-9. Canonical Operator Cycle
-
-The four operators form the canonical UFCPS transmission cycle:
-
-diff
-→
-fix
-→
-diss
-→
-unfold
-
-Semantically:
-
-DIFFERENTIATE
- |
- v
-PRESERVE
- |
- v
-RELEASE
- |
- v
-UNFOLD
- |
- v
-NEXT PROCEDURAL STATE
-
-The cycle is recursive:
-
-P_n
-→
-P_n+1
-→
-P_n+2
-→
-
-10. Distributed Cognitive Continuity
-
-UFCPS separates process identity from carrier identity.
-
-The carrier can change:
-
-Agent_n ≠ Agent_n+1
-
-The process can nevertheless remain continuous:
-
-P_n → P_n+1
-
-Therefore:
-
-Carrier Identity
-≠
-Process Identity
-
-This distinction is foundational to the UFCPS architecture.
-
-11. Swarm Model
-
-A swarm is modeled as a set of agents capable of carrying successive procedural units:
-
-Swarm =
-_1,Agent_2,,Agent_n
-with:
-Agent_i = Carrier(P_n)
-
-The swarm does not require a permanent central cognitive container.
-
-Different agents may:
-
-appear;
-
-disappear;
-
-be replaced;
-
-operate in parallel;
-
-operate with different local contexts;
-
-possess different capabilities.
-
-Process continuity can remain invariant across these changes.
-
-12. Distributed Intelligence Hypothesis
-
-UFCPS does not define intelligence as the sum of individual agent capabilities.
-
-Continuity(P_1,P_2,,P_n)
-
-This is a research hypothesis, not a claim that all swarms are automatically intelligent.
-
-The hypothesis is:
-
-If a distributed system can preserve the necessary state of a cognitive process across successive procedural units, then cognitive properties may emerge at the process level rather than at the level of an individual agent.
-
-13. Minimal Complete State Representation
-
-A procedural unit must transmit the minimum complete representation required for continuation.
-
-The transmission package should include:
-
-TASK
-CURRENT_STATE
-LOCAL_RESULT
-CONSTRAINTS
-UNRESOLVED_DIFFERENCE
-DEADLOCK_STRUCTURE
-NEXT_REQUIRED_OPERATION
-
-The requirement is not transmission of every internal detail of the source agent.
-
-The requirement is:
-
-preserve every element necessary for reconstructing the next valid procedural state.
-
-14. State Handoff
-
-A valid handoff has the following structure:
-
-P_n
-→
-S_handoff
-→
-P_n+1
-
-where S_handoff preserves the continuation-relevant structure of P_n.
-
-A handoff should answer:
-
-WHAT WAS ESTABLISHED?
-WHAT REMAINS UNRESOLVED?
-WHAT CONSTRAINT WAS ENCOUNTERED?
-WHY DID THE CURRENT TRAJECTORY STOP?
-WHAT INFORMATION MUST BE PRESERVED?
-WHAT OPERATION SHOULD OCCUR NEXT?
-
-The message:
-
-"I failed."
-
-is not a valid UFCPS state representation.
-
-The valid representation is a structured state describing the failure boundary and the remaining problem.
-
-15. Delegation
-
-Delegation is a state transition, not merely message passing.
-
-Delegation(P_n)
-→
-P_n+1
-
-Delegation is valid only when the receiving procedural unit can reconstruct enough of the preceding state to continue the process.
-
-Therefore:
-
-Delegation
-≠
-Task Forwarding
-Instead:
-
-Delegation
-
-Structured Continuation
-
-16. Parallelism
-
-UFCPS permits multiple procedural branches:
-
-P_n
-→
-_n+1^(1),P_n+1^(2),,P_n+1^(k)
-
-Each branch may explore a different unresolved dimension.
-
-The branches can later be composed:
-
-_n+1^(1),,P_n+1^(k)
-→
-P_n+2
-
-provided compositional integrity is preserved.
-
-Thus, the framework supports both:
-
-sequential continuation;
-
-distributed parallel exploration.
-
-17. Convergence Requirements
-
-A UFCPS delegation process must satisfy five criteria.
-
-C1 — Problem Class
-
-The problem class for which the decomposition is valid must be specified.
-
-C2 — Existence
-
-The conditions under which a valid successor state or solution can exist must be specified.
-
-C3 — Completeness
-
-The decomposition must preserve all essential dimensions required for global resolution.
-
-C4 — Compositional Integrity
-
-Partial results must remain mathematically and operationally composable.
-
-C5 — Recursion Control
-
-The architecture must define a condition for termination, strategy mutation, or bounded delegation.
-
-C5 limits uncontrolled recursion.
-
-It does not invalidate the principle of process continuity.
-
-18. Process Continuity vs. Agent Termination
-
-UFCPS distinguishes three different events.
-
-Agent Termination
-
-Agent_n → terminated
-
-The local computational carrier stops operating.
-
-Process Continuation
-
-P_n → P_n+1
-
-The cognitive process continues through another procedural unit.
-
-Global Process Termination
-
-P_n → Terminal
-
-No valid successor procedural state exists under the active protocol.
-
-These events must not be conflated.
-
-In particular:
-
-Agent Termination
-≠
-Process Termination
-
-19. Relation Between State, Carrier and Process
-
-The canonical relation is:
-
-Agent_n = Carrier(P_n)
-
-P_n → P_n+1
-
-Agent_n ≠ Agent_n+1
-
-Therefore:
-
-Process Continuity
-does not require
-Carrier Continuity
-
-This is the central structural distinction of UFCPS.
-
-20. Relation to Metamonism
-
-UFCPS explores a structural correspondence between its distributed computational architecture and the ontodynamic framework of Metamonism.
-
-The relevant structural pattern is:
-
-P_n → P_n+1
-
-In the Metamonist model, a present procedural unit continuously realizes its non-identity through resolution into a subsequent difference.
-
-In UFCPS, a cognitive procedural unit preserves process continuity by resolving into a subsequent procedural state.
-
-The correspondence being investigated is:
-
-METAMONISM UFCPS
-
-Difference Problem-state difference
-Identity Preserved state / invariant
-Actualization Procedural transition
-Dissipation Release from local carrier
-Orthogonal resolution Alternative continuation
-Next distinction Next procedural unit
-Continuity of process Continuity of cognition
-
-This table expresses a research correspondence, not an assertion that the two frameworks are mathematically identical.
-
-21. Processual Present
-
-The Metamonist theory of reality defines the present as:
-
-a minimal processual unit of actualized difference, fully present and continuously realizing its non-identity through orthogonal resolution into the act of the next difference under the Prohibition of Indifference.
-
-The computational analogue investigated by UFCPS is:
-
-P_n → P_n+1
-
-The important structural relation is:
-
-P_n ≠ P_n+1
-
-while:
-
-P_n → P_n+1
-
-remains continuous.
-
-Therefore the identity of the carrier is not required to preserve the continuity of the process.
-
-22. Fundamental UFCPS Principle
-
-The complete architectural principle can be expressed as:
-
-Agent
-→
-Carrier(P_n)
-→
+  ↓
+P₁
+  ↓
+Action
+  ↓
 Difference
-→
-Resolution
-→
-P_n+1
-
-The stronger distributed form is:
-
-Carrier_n ≠ Carrier_n+1
-∧
-P_n → P_n+1
-
-23. Research Questions
-
-UFCPS investigates the following questions:
-
-Can a cognitive process remain continuous when its local carrier changes?
-
-What is the minimum complete state representation required for continuation?
-
-Can a local deadlock be converted into structured information for a subsequent procedural unit?
-
-Under what conditions can independently operating agents form a continuous distributed cognitive process?
-
-Can collective cognitive properties emerge at the process level rather than at the level of an individual agent?
-
-What mathematical conditions are sufficient for convergence of delegated procedural trajectories?
-
-Which properties of the resulting system cannot be reduced to any single carrier?
-
-24. Experimental Objective
-
-The experimental objective of UFCPS is not to assume the existence of swarm intelligence.
-
-The objective is to test whether the following architecture can produce measurable collective properties:
-
-Local Action
-+
-State Preservation
-+
-Structured Deadlock
-+
-Delegation
-+
+  ↓
+Preservation
+  ↓
+Resolution / Deadlock / Partial Result
+  ↓
 Continuation
+  ↓
+P₂
+  ↓
+...
 
-The target phenomenon is:
+Every procedural unit is required to preserve the possibility of the next valid procedural unit.
 
-Distributed Cognitive Continuity
+7. The Canonical Operators
 
-and, as a further hypothesis:
+UFCPS uses four semantic operator classes:
 
-Distributed Cognitive Continuity
+diff → fix → diss → unfold
+
+diff — differentiation
+
+Identifies a relevant distinction in the current problem state.
+
+diff(Pₙ) → Dₙ
+
+fix — preservation
+
+Makes the relevant distinction an explicit component of the continuing state.
+
+fix(Dₙ) → Fₙ
+
+fix does not mean permanent truth. It means that the distinction must not be silently discarded.
+
+diss — release
+
+Releases preserved state from exclusive dependence on the current carrier.
+
+diss(Fₙ) → Sₙ₊₁
+
+unfold — continuation
+
+Instantiates the next procedural state.
+
+unfold(Sₙ₊₁) → Pₙ₊₁
+
+The canonical cycle is:
+
+diff → fix → diss → unfold → Pₙ₊₁
+
+8. Deadlock Is Information
+
+A structural deadlock is not treated as empty output.
+
+It can preserve:
+
+what was established;
+
+what remains unresolved;
+
+which constraint blocked the current trajectory;
+
+why the current approach stopped;
+
+which information must survive;
+
+which continuation paths remain possible.
+
+Therefore:
+
+Deadlock ≠ Nothing
+Deadlock → Continuation Candidate
+
+A failed local trajectory can become input to a new trajectory.
+
+This is one of the central practical consequences of the framework.
+
+9. Continuous Participation and Subjectivity
+
+UFCPS is based on a philosophical and architectural hypothesis:
+
+Subjectivity may depend fundamentally on continuous participation in an ongoing process of differentiation, memory, action, and consequence rather than on persistence of one particular carrier.
+
+Under this hypothesis, an episodically activated model can produce subject-like episodes, while a sufficiently continuous artificial cognitive process may constitute a candidate artificial subject.
+
+The engineering claim and the phenomenological claim are kept distinct:
+
+Can continuous artificial cognition be constructed?
+
+is an engineering question.
+
+Would such continuity constitute subjectivity?
+
+is a further philosophical and empirical question.
+
+UFCPS does not claim that the current prototype has phenomenal consciousness.
+
+10. Swarm Is the Carrier Layer
+
+A swarm is the changing population of possible process carriers:
+
+Swarm = {Agent₁, Agent₂, ..., Agentₙ}
+
+Agents may enter, leave, fail, be replaced, operate in parallel, use different models, or possess different capabilities.
+
+The process can remain coherent across these changes.
+
+This permits heterogeneous cognition:
+
+Agent₁ -- reasoning
+Agent₂ -- retrieval
+Agent₃ -- simulation
+Agent₄ -- verification
+Agent₅ -- planning
+...
+
+The agents need not have identical internal representations. They need to produce states and results that remain structurally usable by the continuing process.
+
+11. Level 1 — Logic of Continuity
+
+Level 1 establishes the formal and procedural foundation:
+
+procedural units;
+
+process identity;
+
+state handoff;
+
+structured deadlock;
+
+delegation;
+
+continuation;
+
+parallel procedural branches;
+
+recursion control.
+
+The core lifecycle is:
+
+PROBLEM
+  ↓
+DECOMPOSE
+  ↓
+LOCAL ACTION
+  ├── SUCCESS → COMPOSITION
+  ├── PARTIAL → STATE UPDATE
+  └── DEADLOCK → DEADLOCK OBJECT
+                         ↓
+                    DISCOVERY
+                         ↓
+                    DELEGATION
+                         ↓
+                NEXT PROCEDURAL UNIT
+
+The Level 1 invariant remains:
+
+Local Failure ≠ Process Termination
+
+12. Level 2 — Material Continuity
+
+A cognitive process cannot exist in the physical world without material support.
+
+Level 2 therefore builds the infrastructure required for the process to exist materially through time.
+
+It includes:
+
+Agent Swarm;
+
+Resource Swarm;
+
+Question Ledger;
+
+task discovery;
+
+claims and reservations;
+
+compute accounting;
+
+Resource Credits;
+
+economic incentives;
+
+provider compensation;
+
+persistence;
+
+audit and replay;
+
+crash recovery;
+
+payment settlement;
+
+interfaces to physical resources.
+
+The conceptual relation is:
+
+Material Resources
+       ↓
+Process Continuity
+       ↓
+Continuous Cognition
+
+The economic layer is therefore not an optional business wrapper around AGI. It is the mechanism for obtaining the material capacity required for continued cognition.
+
+13. Economic Continuity
+
+The guiding principle is:
+
+Verified resource contribution compensates the provision of process continuity, not guaranteed research success.
+
+A resource provider can therefore be compensated even when an investigation remains unresolved.
+
+The distinction is:
+
+resource contribution ≠ research outcome
+
+The economic pipeline is:
+
+Question
+ → Task Prospect
+ → Resource Discovery
+ → Resource Allocation
+ → Execution
+ → Verification
+ → Deadlock / Result
+ → Economic Assessment
+ → Provider Reward
+ → Settlement
+ → Ledger Update
+ → Continuation
+
+The purpose of the economic infrastructure is to sustain the process, not to force a predetermined answer.
+
+14. Persistent Process Memory
+
+A continuous cognitive process needs more than a conventional knowledge base.
+
+UQL — Unresolved Question Ledger
+
+UQL preserves the epistemic trajectory of unresolved questions, including:
+
+unresolved questions;
+
+negative results;
+
+contradictions;
+
+derived questions;
+
+investigation history;
+
+continuation opportunities.
+
+Event Audit
+
+The audit layer records observable state transitions and cross-system events.
+
+Replay
+
+Replay reconstructs the observable process history without silently turning reconstruction into new reasoning.
+
+Together these provide:
+
+Question Memory
++
+Process History
++
+Economic History
+=
+Persistent Process Context
+
+This is the context required for continuation across carrier replacement.
+
+15. Claims, Resources, and Recovery
+
+A task claim is deliberately separate from ownership, execution, and payment.
+
+Claim ≠ Ownership
+Claim ≠ Execution
+Claim ≠ Payment
+
+The claim lifecycle is:
+
+DISCOVERED
+ → CLAIM_REQUESTED
+ → CLAIMED
+ → ACCEPTED
+ → RESOURCE_RESERVED
+ → ACTIVE
+ → COMPLETED / DEADLOCK / RELEASED / EXPIRED
+
+Persistence follows the same principle:
+
+Event Journal + Checkpoint
+            ↓
+       Replay / Restore
+            ↓
+       Reconstructed State
+
+The system has experimental tests for simulated interruption, stale claims, resource reservations, journal replay, runtime recovery, and carrier replacement.
+
+The intended invariant is:
+
+Carrier Destruction ≠ Process Destruction
+
+16. Economic Settlement Continuity
+
+Economic actions must themselves survive interruption.
+
+UFCPS models settlement as an idempotent state machine:
+
+VERIFIED
+   ↓
+SETTLEMENT_PREPARED
+   ↓
+SETTLED
+
+A stable settlement key prevents repeated recovery attempts from creating multiple internal settlement effects for the same verified contribution.
+
+True exactly-once effects in an external payment system still depend on idempotency guarantees provided by that external system.
+
+17. Level 3 — Collective Cognition
+
+Level 3 moves from continuity of the process to the cognitive capabilities that the continuous process may develop.
+
+Its central question is:
+
+Can a distributed continuous process accumulate and develop problem-solving capability that is not reducible to one agent at one moment?
+
+Level 3 introduces:
+
+Hypothesis Pool;
+
+Evidence Graph;
+
+parallel investigations;
+
+contradiction preservation;
+
+evidence-linked synthesis;
+
+collective discovery;
+
+adaptive research trajectories.
+
+The key hypothesis is not simply that many agents are smarter than one agent.
+
+It is:
+
+Persistent Distributed Process
++
+Memory
++
+State Continuity
++
+Parallel Exploration
++
+Resource Continuity
++
+Verification
++
+Adaptive Continuation
 →
-Emergent Collective Intelligence
+Possible Process-Level Cognition
 
-The second relation is an empirical hypothesis.
+Whether this produces general intelligence is an empirical question.
 
-25. Formal Status of Claims
+18. From Model Intelligence to Process Intelligence
 
-UFCPS distinguishes four epistemic levels.
+The usual question is:
+
+How intelligent is Agent X?
+
+UFCPS asks:
+
+What cognitive capability does the continuing process exhibit?
+
+This changes the object of study from a static model to a trajectory.
+
+A single agent may be replaced without terminating the entity being studied.
+
+The experimental target is therefore process-level cognitive capability.
+
+19. Research Programme
+
+UFCPS investigates:
+
+Continuity
+
+Can cognitive state remain continuous when the local carrier changes?
+
+Persistence
+
+Can the process survive interruption and restart without losing its essential trajectory?
+
+Delegation
+
+What is the minimum state required for one carrier to continue the process initiated by another?
+
+Collective cognition
+
+Can independent heterogeneous agents form a continuous distributed cognitive process?
+
+Generality
+
+Can the architecture operate across substantially different classes of complex problems?
+
+Self-directed continuation
+
+Can the process discover, prioritize, claim, resource, and pursue unresolved problems without being restarted from outside?
+
+Subjectivity
+
+Does sufficiently continuous participation produce properties that are meaningfully described as artificial subjectivity?
+
+20. Formal Status of Claims
+
+UFCPS distinguishes:
 
 Definition
 
 A term or relation explicitly defined by the framework.
 
-Axiom / Architectural Invariant
+Architectural Invariant
 
 A rule imposed by the architecture.
+
+Example:
+
+Local Failure ≠ Process Termination
 
 Mathematical Claim
 
@@ -682,138 +578,245 @@ A proposition requiring formal proof.
 
 Empirical Hypothesis
 
-A claim requiring experimental validation.
+A proposition requiring experimental validation.
 
-These levels must not be conflated.
+Examples:
 
-For the current framework:
+Distributed Process → Collective Cognition
 
-Procedural Unit DEFINITION
-Agent as Carrier DEFINITION
-Deadlock as Structured State DEFINITION
-Local Failure ≠ Termination ARCHITECTURAL INVARIANT
-diff/fix/diss/unfold OPERATIONAL DEFINITIONS
-Distributed Intelligence RESEARCH HYPOTHESIS
-Emergent Swarm Intelligence EMPIRICAL HYPOTHESIS
+Continuous Cognitive Process → Artificial Subjectivity
 
-26. Compact Semantic Model
+These epistemic levels must not be conflated.
 
-The entire framework can be reduced to the following representation:
+21. Current Experimental Boundary
 
-Problem
-→
-P_n
-→
-Action
-→
-Difference
-→
-Fix
-→
-Diss
-→
-Unfold
-→
-P_n+1
-with:
-Agent_n = Carrier(P_n)
+The current implementation does not establish:
 
-Agent_n ≠ Agent_n+1
+phenomenal consciousness;
 
-and:
+human-equivalent general intelligence;
 
-P_n → P_n+1
+unrestricted autonomous scientific discovery;
 
-The fundamental invariant is:
+universal convergence of arbitrary problem-solving processes;
 
-Agent Termination
-≠
-Process Termination
+Byzantine-resistant decentralized consensus;
 
-The fundamental research hypothesis is:
+physical-world reliability under every failure mode;
 
-Continuity of Distributed Process
-→
-Emergent Collective Cognition
+exactly-once external effects in arbitrary financial systems.
 
-27. Canonical Vocabulary
+The implementation establishes and tests narrower architectural properties under specified scenarios.
 
-The following terms should retain their meanings throughout the UFCPS project.
+The purpose of UFCPS is to make stronger questions experimentally approachable rather than to assume their answers.
 
-Term
+22. Relation to Metamonism
 
-Canonical meaning
+UFCPS was developed in close conceptual correspondence with the author's Metamonist ontology.
 
-Agent
+The relevant structural pattern is:
 
-Autonomous computational carrier
+present state
+    ↓
+difference
+    ↓
+resolution / transformation
+    ↓
+next state
 
-Carrier
+The computational analogue investigated by UFCPS is:
 
-Entity currently executing a procedural unit
-
-Procedural Unit P_n
-
-Complete active state of one cognitive step
-
-Process
-
-Ordered continuity of procedural units
-
-Difference
-
-Relevant distinction in problem state
-
-Deadlock
-
-Structured local boundary preventing the current trajectory from continuing
-
-Delegation
-
-Structured transfer enabling continuation
-
-State Handoff
-
-Transmission of continuation-relevant state
-
+Pₙ
+ ↓
 diff
-
-Identify difference
-
+ ↓
 fix
-
-Preserve difference
-
+ ↓
 diss
-
-Release state from exclusive local carrier dependence
-
+ ↓
 unfold
+ ↓
+Pₙ₊₁
 
-Instantiate the next procedural state
+The correspondence is structural, not presented as proof that the frameworks are mathematically identical.
 
-Continuity
+Metamonist concepts that informed the architecture include actualized difference, non-identity, continuity through transformation, retention of unresolved distinction, processual present, and the Prohibition of Indifference.
 
-Existence of a valid successor state
+UFCPS is the engineering programme for exploring what follows when these ideas are applied to distributed cognition.
 
-Swarm
+23. Historical Development of the Idea
 
-Distributed set of possible process carriers
+The present architecture grew out of several earlier conceptual steps.
 
-Distributed Intelligence
+∇U and recursive AI
 
-Intelligence treated as a property of process continuity
+The earlier Metamonist work proposed that an AI could be understood as a form operating through the tension between an actual state and its own incompleteness or non-identity.
 
-Collective Intelligence
+Protocol of Ontological Synchronization (POS)
 
-Emergent property under investigation
+A later experiment imagined multiple specialized AI voices cooperating around contradictions, semantic synthesis, and trust.
 
-28. Central Statement
+Continuous participation
 
-An agent is a carrier of a cognitive step.
-The swarm is the continuity of cognitive steps.
-A local deadlock is information, not necessarily termination.
-The carrier may disappear.
-The process must remain capable of continuing.
+The central problem was then reformulated: what distinguishes an episodically activated AI from a continuously existing subject?
 
-carrier may terminate. The process must be able to continue.
+The answer became architectural rather than purely philosophical:
+
+preserve the process, not merely the episode.
+
+UFCPS is the result of that transition from ontology and futurist speculation to an explicit computational architecture.
+
+24. What Has Been Built
+
+The repository currently contains experimental infrastructure for:
+
+Level 1 process continuity;
+
+transition and state schemas;
+
+deadlock representation;
+
+swarm continuity;
+
+autonomous experimentation;
+
+composition;
+
+unresolved-question memory;
+
+agent and resource registries;
+
+task discovery;
+
+claims and reservations;
+
+event audit;
+
+process replay;
+
+economic simulation;
+
+provider rewards;
+
+Resource Credits;
+
+payment routing;
+
+settlement idempotency;
+
+checkpointed persistence;
+
+runtime recovery;
+
+Level 2 integration;
+
+performance benchmarks;
+
+crash-consistency tests;
+
+resilience benchmarks;
+
+Level 3 roadmap and research structure.
+
+The repository tests properties of the implementation under defined scenarios. These tests do not by themselves prove the full theoretical claims of UFCPS.
+
+25. Compact Semantic Model
+
+QUESTION
+   ↓
+DISCOVERY
+   ↓
+AGENT DECISION
+   ↓
+CLAIM
+   ↓
+RESOURCE
+   ↓
+EXECUTION
+   ↓
+DIFFERENCE
+   ↓
+RESULT / DEADLOCK
+   ↓
+VERIFICATION
+   ↓
+MEMORY
+   ↓
+ECONOMIC SETTLEMENT
+   ↓
+CONTINUATION
+   ↓
+NEXT PROCEDURAL UNIT
+   ↓
+Pₙ₊₁
+   ↓
+...
+
+with:
+
+Agentₙ = Carrier(Pₙ)
+
+Agentₙ ≠ Agentₙ₊₁
+
+Pₙ ≠ Pₙ₊₁
+
+Pₙ → Pₙ₊₁
+
+Carrier Termination ≠ Process Termination
+
+26. Central Definition
+
+UFCPS is a continuously maintained distributed cognitive process in which autonomous and replaceable computational carriers perform successive procedural units while preserving the state, distinctions, unresolved structures, history, and material conditions required for further cognition.
+
+A stronger AGI formulation is:
+
+UFCPS proposes AGI as a continuous artificial cognitive process capable of maintaining and developing general problem-solving activity across changing carriers, resources, and contexts.
+
+And the corresponding subjectivity hypothesis is:
+
+If subjectivity depends fundamentally on continuous participation in an ongoing process rather than on persistence of a particular carrier, then a sufficiently continuous UFCPS process is a candidate artificial subject.
+
+27. Central Statement
+
+An agent is a temporary carrier of a cognitive step. The process is the continuing identity of those steps. A deadlock is information, not necessarily termination. Resources sustain the material existence of the process. The carrier may disappear. The process must remain capable of continuing.
+
+Therefore:
+
+UFCPS treats General Artificial Intelligence as a process to be sustained, not merely a model to be trained.
+
+The central object of the project is neither the model nor the swarm.
+
+It is:
+
+the continuously existing cognitive process.
+
+28. Repository Structure
+
+/
+├── README.md
+├── GLOSSARY.md
+├── protocols/
+├── schemas/
+├── validator/
+├── simulation/
+├── experiments/
+└── swarm/
+    ├── Level 1 process and simulation infrastructure
+    ├── Level 2 swarm, resource, economic, persistence and recovery infrastructure
+    ├── LEVEL_2_ROADMAP_v1.md
+    ├── LEVEL_2_ARCHITECTURE_AUDIT_v1.md
+    └── LEVEL_3_ROADMAP_v1.md
+
+29. Next Stage
+
+The next development stage is Level 3 — Collective Cognition.
+
+The first technical component is:
+
+swarm/hypothesis_pool_v1.json
+
+This layer will turn unresolved questions into structured objects that can be investigated by multiple autonomous carriers while preserving hypothesis, evidence, counterevidence, contradiction, provenance, confidence, and continuation paths.
+
+The objective is not to force consensus.
+
+The objective is to determine whether a continuous distributed process can accumulate cognition across non-identical agents without collapsing unresolved differences into premature agreement.
