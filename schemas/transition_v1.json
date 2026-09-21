@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/DeiVulgaris/Universal-Framework-for-Complex-Problem-Solving/blob/main/schemas/transition_v1.json",
+  "title": "UFCPS Procedural State Transition Specification",
+  "description": "Machine-readable transition contract for the Step Continuity Protocol (SCP). Defines the structural representation of a transition from one procedural state to another within a continuous distributed cognitive process.",
+  "$comment": "This schema validates the structural representation of a transition. It does not by itself prove semantic correctness, mathematical validity, convergence, or successful execution. Cross-field transition rules such as destination_step = source_step + 1 and consistency between carrier_changed and carrier identifiers require runtime validation.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "transition_id": {
+      "description": "Unique identifier of the recorded transition event.",
+      "type": "string",
+      "minLength": 1
+    },
+    "transition_type": {
+      "description": "Classification of the transition represented by this record.",
+      "type": "string",
+      "enum": [
+        "local",
+        "continuation",
+        "delegation",
+        "branch"
+      ]
+    },
+    "source_procedural_unit": {
+      "description": "Reference data for the procedural unit before the transition.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "step_index": {
+          "description": "Sequential index of the source procedural unit.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "carrier_id": {
+          "description": "Identifier of the carrier executing the source procedural unit.",
+          "type": "string",
+          "minLength": 1
+        },
+        "carrier_type": {
+          "description": "Technology or architecture profile of the source carrier.",
+          "type": "string",
+          "minLength": 1
+        },
+        "session_status": {
+          "description": "SCP execution phase of the source procedural unit.",
+          "type": "string",
+          "enum": [
+            "active",
+            "stuck",
+            "dissipating",
+            "delegated",
+            "unfolded"
+          ]
+        },
+        "state_reference": {
+          "description": "Reference or serialized representation of the source procedural state.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "step_index",
+        "carrier_id",
+        "carrier_type",
+        "session_status",
+        "state_reference"
+      ]
+    },
+    "operation": {
+      "description": "Canonical operation responsible for the recorded transition.",
+      "type": "string",
+      "enum": [
+        "diff",
+        "fix",
+        "diss",
+        "unfold",
+        "delegate",
+        "compose",
+        "terminate"
+      ]
+    },
+    "destination_procedural_unit": {
+      "description": "Reference data for the procedural unit after the transition.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "step_index": {
+          "description": "Sequential index of the destination procedural unit. For a standard continuation transition, runtime validation should require this value to equal source step_index + 1.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "carrier_id": {
+          "description": "Identifier of the carrier executing the destination procedural unit.",
+          "type": "string",
+          "minLength": 1
+        },
+        "carrier_type": {
+          "description": "Technology or architecture profile of the destination carrier.",
+          "type": "string",
+          "minLength": 1
+        },
+        "session_status": {
+          "description": "SCP execution phase of the destination procedural unit.",
+          "type": "string",
+          "enum": [
+            "active",
+            "stuck",
+            "dissipating",
+            "delegated",
+            "unfolded"
+          ]
+        },
+        "state_reference": {
+          "description": "Reference or serialized representation of the destination procedural state.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "step_index",
+        "carrier_id",
+        "carrier_type",
+        "session_status",
+        "state_reference"
+      ]
+    },
+    "carrier_transition": {
+      "description": "Explicit description of whether the procedural carrier changed during the transition.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "changed": {
+          "description": "Indicates whether the source and destination procedural units have different carriers.",
+          "type": "boolean"
+        },
+        "source_carrier": {
+          "description": "Carrier identifier before the transition.",
+          "type": "string",
+          "minLength": 1
+        },
+        "destination_carrier": {
+          "description": "Carrier identifier after the transition.",
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "description": "Optional structural reason for carrier replacement or retention.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "changed",
+        "source_carrier",
+        "destination_carrier"
+      ]
+    },
+    "continuation_state": {
+      "description": "Continuation-relevant state required to reconstruct the destination procedural unit.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state_preserved": {
+          "description": "Indicates that the continuation-relevant state has been preserved in the transition record.",
+          "type": "boolean"
+        },
+        "state_reference": {
+          "description": "Reference to the preserved handoff state or serialized continuation state.",
+          "type": "string",
+          "minLength": 1
+        },
+        "unresolved_difference": {
+          "description": "Unresolved difference carried into the next procedural state.",
+          "type": "string",
+          "minLength": 1
+        },
+        "next_required_operation": {
+          "description": "Operation required to construct the next valid procedural state.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "state_preserved",
+        "state_reference",
+        "unresolved_difference",
+        "next_required_operation"
+      ]
+    },
+    "validation": {
+      "description": "Recorded validation results for the transition. These values report validation performed elsewhere; the schema does not establish their truth.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_valid": {
+          "description": "True when the transition record conforms to the applicable JSON Schema.",
+          "type": "boolean"
+        },
+        "process_rule_valid": {
+          "description": "True when an external SCP validator confirms that the source and destination states form an allowed protocol transition.",
+          "type": "boolean"
+        },
+        "continuation_valid": {
+          "description": "True when an external validator confirms that enough continuation-relevant information is preserved.",
+          "type": "boolean"
+        },
+        "runtime_validation_note": {
+          "description": "Optional description of runtime checks, exceptions, or unresolved validation conditions.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_valid",
+        "process_rule_valid",
+        "continuation_valid"
+      ]
+    },
+    "timestamp": {
+      "description": "Optional machine-readable timestamp for the transition event.",
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "transition_id",
+    "transition_type",
+    "source_procedural_unit",
+    "operation",
+    "destination_procedural_unit",
+    "carrier_transition",
+    "continuation_state",
+    "validation"
+  ]
+}
