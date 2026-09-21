@@ -15,6 +15,10 @@ from .carrier_substitution import (
     CarrierSubstitutionResult,
     run_carrier_substitution,
 )
+from .communication_interruption import (
+    CommunicationInterruptionResult,
+    run_communication_interruption,
+)
 from .composition import (
     CompositionResult,
     run_composition,
@@ -35,6 +39,10 @@ from .parallel_resolution import (
     ParallelScenarioResult,
     run_parallel_resolution,
 )
+from .recursion_stress import (
+    RecursionStressResult,
+    run_recursion_stress,
+)
 from .stateless_delegation_control import (
     DelegationConditionResult,
     StatelessDelegationResult,
@@ -45,12 +53,14 @@ __all__ = [
     "AutonomousExperimentPlan",
     "AutonomousExperimentResult",
     "CarrierSubstitutionResult",
+    "CommunicationInterruptionResult",
     "CompositionResult",
     "ContradictionResult",
     "DeadlockScenarioResult",
     "DelegationConditionResult",
     "NegativeResultScenario",
     "ParallelScenarioResult",
+    "RecursionStressResult",
     "ScenarioResult",
     "StatelessDelegationResult",
     "execute_autonomous_experiment",
@@ -58,10 +68,12 @@ __all__ = [
     "run_autonomous_experiment",
     "run_basic_handoff",
     "run_carrier_substitution",
+    "run_communication_interruption",
     "run_composition",
     "run_contradictory_branches",
     "run_forced_deadlock",
     "run_negative_result",
     "run_parallel_resolution",
+    "run_recursion_stress",
     "run_stateless_delegation_control",
 ]
