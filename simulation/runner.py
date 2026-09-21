@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 
 """Unified runner for UFCPS simulation scenarios.
 
@@ -35,6 +35,7 @@ from .scenarios import (
     run_repeated_carrier_replacement,
     run_stateless_delegation_control,
     run_swarm_scaling,
+    run_transition_validation,
 )
 
 
@@ -59,6 +60,7 @@ SCENARIOS: dict[str, ScenarioCallable] = {
     "repeated_carrier_replacement": run_repeated_carrier_replacement,
     "swarm_scaling": run_swarm_scaling,
     "autonomous_experiment": run_autonomous_experiment,
+    "transition_validation": run_transition_validation,
 }
 
 
