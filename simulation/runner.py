@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 
 """Unified runner for UFCPS simulation scenarios.
 
@@ -30,6 +30,7 @@ from .scenarios import (
     run_long_run_continuity,
     run_negative_result,
     run_parallel_resolution,
+    run_process_identity,
     run_recursion_stress,
     run_repeated_carrier_replacement,
     run_stateless_delegation_control,
@@ -51,6 +52,7 @@ SCENARIOS: dict[str, ScenarioCallable] = {
     "contradictory_branches": run_contradictory_branches,
     "composition": run_composition,
     "negative_result": run_negative_result,
+    "process_identity": run_process_identity,
     "recursion_stress": run_recursion_stress,
     "global_termination": run_global_termination,
     "long_run_continuity": run_long_run_continuity,
@@ -154,6 +156,10 @@ def scenario_passed(result: dict[str, Any]) -> bool:
         "explicit_termination_process_terminated",
         "termination_reason_recorded",
         "local_failure_distinct_from_global_termination",
+        "all_agent_identities_changed",
+        "all_process_steps_continued",
+        "all_continuation_state_preserved",
+        "carrier_identity_not_used_as_process_identity",
     )
 
     for field_name in checks_true:
@@ -217,6 +223,31 @@ def scenario_passed(result: dict[str, Any]) -> bool:
         if result.get("successful_replacements") != result.get(
             "configured_replacements"
         ):
+            return False
+
+    if (
+        "carrier_changes" in result
+        and "configured_steps" in result
+    ):
+        if result.get("carrier_changes") != result.get(
+            "configured_steps"
+        ) - 1:
+            return False
+
+    if "all_agent_identities_changed" in result:
+        if result.get("all_agent_identities_changed") is not True:
+            return False
+
+    if "all_process_steps_continued" in result:
+        if result.get("all_process_steps_continued") is not True:
+            return False
+
+    if "all_continuation_state_preserved" in result:
+        if result.get("all_continuation_state_preserved") is not True:
+            return False
+
+    if "carrier_identity_not_used_as_process_identity" in result:
+        if result.get("carrier_identity_not_used_as_process_identity") is not True:
             return False
 
     if "all_runs_isolated" in result:
