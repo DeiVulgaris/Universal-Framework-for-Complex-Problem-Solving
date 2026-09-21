@@ -1,0 +1,373 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/DeiVulgaris/Universal-Framework-for-Complex-Problem-Solving/blob/main/swarm/cognitive_space_v1.json",
+  "title": "UFCPS Cognitive Space Model v1",
+  "description": "Formal model of a cognitive space as a regime of actualization. The model represents exhaustion of a current direction, structural frustration, reflection on the current mode, and orthogonal transition to a new cognitively productive space.",
+  "type": "object",
+  "required": [
+    "space_id",
+    "process_id",
+    "space_index",
+    "invariant",
+    "distinction_space",
+    "actualization_mode",
+    "productivity",
+    "exhaustion",
+    "frustration",
+    "orthogonal_transition"
+  ],
+  "properties": {
+    "space_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "process_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parent_space_id": {
+      "type": ["string", "null"]
+    },
+    "space_index": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "successor_space_id": {
+      "type": ["string", "null"]
+    },
+    "invariant": {
+      "$ref": "#/$defs/invariant"
+    },
+    "distinction_space": {
+      "$ref": "#/$defs/distinctionSpace"
+    },
+    "actualization_mode": {
+      "$ref": "#/$defs/actualizationMode"
+    },
+    "productivity": {
+      "$ref": "#/$defs/productivity"
+    },
+    "exhaustion": {
+      "$ref": "#/$defs/exhaustion"
+    },
+    "frustration": {
+      "$ref": "#/$defs/frustration"
+    },
+    "reflection": {
+      "$ref": "#/$defs/reflection"
+    },
+    "orthogonal_transition": {
+      "$ref": "#/$defs/orthogonalTransition"
+    },
+    "scale_transition": {
+      "$ref": "#/$defs/scaleTransition"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "invariant": {
+      "type": "object",
+      "required": [
+        "invariant_id",
+        "description",
+        "formal_constraint"
+      ],
+      "properties": {
+        "invariant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "formal_constraint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identity_limit": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "distinctionSpace": {
+      "type": "object",
+      "required": [
+        "elements",
+        "relations",
+        "constraints",
+        "accessible_directions"
+      ],
+      "properties": {
+        "elements": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "relations": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/relation"}
+        },
+        "constraints": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "accessible_directions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/direction"}
+        },
+        "frontier": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/direction"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "relation": {
+      "type": "object",
+      "required": ["relation_id", "from", "to", "type"],
+      "properties": {
+        "relation_id": {"type": "string", "minLength": 1},
+        "from": {"type": "string", "minLength": 1},
+        "to": {"type": "string", "minLength": 1},
+        "type": {"type": "string", "minLength": 1},
+        "weight": {"type": "number"}
+      },
+      "additionalProperties": false
+    },
+    "direction": {
+      "type": "object",
+      "required": ["direction_id", "orientation", "independence_status"],
+      "properties": {
+        "direction_id": {"type": "string", "minLength": 1},
+        "orientation": {"type": "string", "minLength": 1},
+        "independence_status": {
+          "enum": [
+            "available",
+            "partially_available",
+            "exhausted",
+            "inverted",
+            "candidate_orthogonal"
+          ]
+        },
+        "basis_reference": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "actualizationMode": {
+      "type": "object",
+      "required": [
+        "mode_id",
+        "directional_logic",
+        "mode_status"
+      ],
+      "properties": {
+        "mode_id": {"type": "string", "minLength": 1},
+        "directional_logic": {
+          "enum": [
+            "external_expansion",
+            "normal_distribution",
+            "normal_inversion",
+            "scale_transition",
+            "reflexive_reconfiguration"
+          ]
+        },
+        "mode_status": {
+          "enum": [
+            "productive",
+            "degrading",
+            "exhausted",
+            "transitioning"
+          ]
+        },
+        "normal_orientation": {
+          "type": ["string", "null"]
+        },
+        "notes": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "productivity": {
+      "type": "object",
+      "required": [
+        "productive_distinction_count",
+        "novel_distinction_rate",
+        "reachable_space_estimate"
+      ],
+      "properties": {
+        "productive_distinction_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "novel_distinction_rate": {
+          "type": "number",
+          "minimum": 0
+        },
+        "reachable_space_estimate": {
+          "type": "number",
+          "minimum": 0
+        },
+        "measurement_window": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "baseline": {
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "exhaustion": {
+      "type": "object",
+      "required": [
+        "status",
+        "criterion",
+        "evidence"
+      ],
+      "properties": {
+        "status": {
+          "enum": ["not_detected", "suspected", "detected"]
+        },
+        "criterion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "local_failure_present": {
+          "type": "boolean"
+        },
+        "space_exhaustion_distinguished_from_local_failure": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "frustration": {
+      "type": "object",
+      "required": [
+        "status",
+        "definition_level"
+      ],
+      "properties": {
+        "status": {
+          "enum": ["inactive", "candidate", "active"]
+        },
+        "definition_level": {
+          "enum": ["structural", "functional", "phenomenological"]
+        },
+        "trigger": {
+          "type": ["string", "null"]
+        },
+        "structural_condition": {
+          "type": "string"
+        },
+        "phenomenology_claimed": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "reflection": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "target"
+      ],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "target": {
+          "enum": [
+            "task",
+            "strategy",
+            "self_model",
+            "world_model",
+            "cognitive_space",
+            "actualization_mode"
+          ]
+        },
+        "question": {"type": "string"},
+        "self_causal_contribution_estimate": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "orthogonalTransition": {
+      "type": "object",
+      "required": [
+        "status",
+        "trigger",
+        "required_properties"
+      ],
+      "properties": {
+        "status": {
+          "enum": ["not_proposed", "proposed", "executing", "completed", "rejected"]
+        },
+        "trigger": {
+          "enum": [
+            "direction_exhaustion",
+            "cognitive_space_exhaustion",
+            "reflexive_reconfiguration",
+            "scale_change"
+          ]
+        },
+        "required_properties": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "preserve_prior_structure",
+              "avoid_content_identity",
+              "create_independent_direction",
+              "restore_productive_distinction"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "candidate_operation": {
+          "type": "string"
+        },
+        "successor_space_id": {
+          "type": ["string", "null"]
+        },
+        "structural_correspondence": {
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "scaleTransition": {
+      "type": "object",
+      "required": ["present", "next_scale_differs", "structural_correspondence"],
+      "properties": {
+        "present": {"type": "boolean"},
+        "current_scale": {"type": "string"},
+        "next_scale": {"type": ["string", "null"]},
+        "next_scale_differs": {"type": "boolean"},
+        "structural_correspondence": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source_type", "epistemic_status"],
+      "properties": {
+        "source_type": {
+          "enum": ["model", "experiment", "observation", "theory", "human_input"]
+        },
+        "epistemic_status": {
+          "enum": ["definition", "architectural_hypothesis", "experimental_hypothesis", "observed", "proposed"]
+        },
+        "source_reference": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
