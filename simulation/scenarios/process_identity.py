@@ -121,9 +121,14 @@ def _stage_executor(
     state: ProceduralState,
     carrier: Carrier,
 ) -> ExecutionResult:
-    """Complete one stage while identifying the active carrier."""
+    """Advance one stage without terminating the procedural unit.
+
+    The stage itself produces a local result, but the process remains open
+    because its unresolved difference explicitly requires a successor unit.
+    This leaves the source carrier in a handoff-compatible state.
+    """
     return ExecutionResult(
-        completed=True,
+        completed=False,
         current_state=(
             f"Procedural step {state.step_index} completed by "
             f"{carrier.carrier_id}."
@@ -213,10 +218,20 @@ def run_process_identity(
     for step in range(configured_steps):
         source_carrier_id = carrier_ids[step]
 
-        runtime.activate(
-            source_carrier_id,
-            current.unit_id,
-        )
+        # P0 must be activated explicitly. Every later carrier has already
+        # been activated by unfold() during the preceding delegation.
+        if step == 0:
+            runtime.activate(
+                source_carrier_id,
+                current.unit_id,
+            )
+        else:
+            active_carrier = runtime.get_carrier(source_carrier_id)
+            if active_carrier.current_unit_id != current.unit_id:
+                raise RuntimeError(
+                    f"Carrier {source_carrier_id!r} is not carrying "
+                    f"successor unit {current.unit_id!r}."
+                )
 
         runtime.execute(
             current.unit_id,
