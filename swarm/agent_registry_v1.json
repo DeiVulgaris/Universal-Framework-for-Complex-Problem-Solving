@@ -1,1350 +1,314 @@
-UFCPS Level 2 — Futuristic Expansion Roadmap v1
-
-0. Status
-
-Architecture level: 2
-Name: Distributed Swarm Intelligence
-Position: built above UFCPS Level 1
-Repository strategy: same repository, separate swarm/ subsystem
-Current state: conceptual architecture + first protocol specifications
-Target: experimental platform for distributed swarm intelligence
-
-1. Vision
-
-UFCPS Level 1 defines continuity of a process independently of the identity of its current carrier.
-
-Level 2 extends this principle into a distributed environment in which:
-
-intelligence is distributed across agents;
-
-computational and physical resources are distributed across providers;
-
-unresolved questions are preserved in a common process memory;
-
-tasks are discovered by agents rather than centrally assigned;
-
-resources are aggregated dynamically;
-
-research can continue after individual agents or resources disappear;
-
-the system can identify missing infrastructure;
-
-agents can formulate proposals to researchers, resource providers, and investors;
-
-verified computational contribution can be economically compensated;
-
-the economic protocol itself can be researched by the swarm.
-
-The long-term vision is:
-
-A continuously operating distributed process capable of organizing intelligence, resources, memory, experimentation, and economic coordination across a swarm of heterogeneous participants.
-
-Level 2 does not assume that this automatically produces AGI.
-
-The hypothesis is that this architecture may provide a practical substrate on which distributed swarm intelligence can emerge and be experimentally evaluated.
-
-2. Relationship to Level 1
-
-Level 1 remains the semantic foundation.
-
-UFCPS LEVEL 1
-    |
-    +-- Process Unit
-    +-- State
-    +-- Transition
-    +-- Handoff
-    +-- Delegation
-    +-- Branching
-    +-- Composition
-    +-- Deadlock preservation
-    +-- Recursion control
-    +-- Termination semantics
-    |
-    v
-UFCPS LEVEL 2
-    |
-    +-- Agent Swarm
-    +-- Resource Swarm
-    +-- Question Ledger
-    +-- Task Prospect
-    +-- Resource Aggregation
-    +-- Swarm Scheduling
-    +-- Compute Economy
-    +-- Research / Investor proposals
-    +-- Economic simulations
-    +-- Physical interfaces
-
-Level 2 must not introduce mechanisms that silently violate Level 1 process continuity.
-
-3. Master Architecture
-
-                          UFCPS LEVEL 2
-                   DISTRIBUTED SWARM INTELLIGENCE
-                                  |
-        +-------------------------+-------------------------+
-        |                         |                         |
-        v                         v                         v
-   AGENT SWARM              RESOURCE SWARM          QUESTION LEDGER
-        |                         |                         |
-  capabilities               compute                 unresolved
-  reasoning                   storage                 questions
-  planning                    network                 history
-  experiments                 instruments             evidence
-  validation                  energy                  branches
-        |                         |                         |
-        +-------------------------+-------------------------+
-                                  |
-                                  v
-                         TASK / RESOURCE DISCOVERY
-                                  |
-                                  v
-                         PROCESS ORCHESTRATION
-                                  |
-                                  v
-                         DISTRIBUTED EXECUTION
-                                  |
-                                  v
-                     VALIDATED PROCESS RESULTS
-                                  |
-                 +----------------+----------------+
-                 |                                 |
-                 v                                 v
-            KNOWLEDGE GROWTH                 NEW QUESTIONS
-                 |                                 |
-                 +----------------+----------------+
-                                  |
-                                  v
-                         COMPUTE ECONOMY
-                                  |
-                 +----------------+----------------+
-                 |                                 |
-                 v                                 v
-          RESOURCE REWARD                    CAPITAL / INVESTMENT
-                 |                                 |
-                 +----------------+----------------+
-                                  |
-                                  v
-                         RESOURCE EXPANSION
-                                  |
-                                  +-------> SWARM GROWTH
-
-4. Layer A — Agent Swarm
-
-Objective
-
-Build an open registry and execution architecture for heterogeneous agents.
-
-Agents may differ in:
-
-model architecture;
-
-reasoning ability;
-
-specialization;
-
-memory;
-
-tools;
-
-autonomy;
-
-reliability;
-
-latency;
-
-cost;
-
-physical access.
-
-Components
-
-swarm/
-    agent_registry_v1.json
-    agent_registry.md
-    capability_model_v1.json
-    agent_lifecycle_v1.md
-    agent_identity_v1.md
-    agent_reputation_v1.md
-
-Core functions
-
-Registration
-
-Capability declaration
-
-Capability verification
-
-Availability
-
-Task discovery
-
-Task claiming
-
-Delegation
-
-Branch participation
-
-Handoff
-
-Release
-
-Reputation history
-
-Principle
-
-An agent is a carrier of capabilities, not the owner of the process.
-
-5. Layer B — Resource Swarm
-
-Objective
-
-Represent the physical and computational infrastructure available to the swarm.
-
-Resource types:
-
-CPU
-GPU
-accelerator
-RAM
-storage
-bandwidth
-network
-sensor
-robot
-laboratory instrument
-workspace
-energy
-cooling
-specialized equipment
-
-Components
-
-resource_registry_v1.json
-resource_registry.md
-resource_capability_v1.json
-resource_lifecycle_v1.md
-resource_verification_v1.md
-
-Resource state
-
-DISCOVERED
-AVAILABLE
-RESERVED
-ACTIVE
-DEGRADED
-FAILED
-RELEASED
-MAINTENANCE
-
-Principle
-
-Resource identity is distinct from resource function.
-
-Functional equivalence may permit substitution without process termination.
-
-6. Layer C — Resource Aggregation
-
-Objective
-
-Turn many independent small contributions into usable pools.
-
-Provider A  -> 2 GPU-hours
-Provider B  -> 5 GPU-hours
-Provider C  -> 1 GPU-hour
-Provider D  -> 40 GPU-hours
-                  |
-                  v
-             COMPUTE POOL
-                  |
-                  v
-              UFCPS TASK
-
-Goals
-
-batch small contributions;
-
-preserve individual attribution;
-
-reduce transaction overhead;
-
-improve reliability;
-
-tolerate node disappearance;
-
-create temporary resource clusters;
-
-support dynamic scaling.
-
-Key concept
-
-The swarm consumes capability, not ownership.
-
-7. Layer D — Unresolved Question Ledger
-
-Objective
-
-Create a persistent distributed memory of unfinished processes.
-
-The ledger stores:
-
-question;
-
-context;
-
-hypotheses;
-
-constraints;
-
-attempts;
-
-agents;
-
-resources;
-
-negative results;
-
-deadlocks;
-
-contradictions;
-
-evidence;
-
-unresolved differences;
-
-required capabilities;
-
-current process state;
-
-continuation conditions.
-
-Core transitions
-
-OPEN
-  |
-DISCOVERABLE
-  |
-ACTIVE
-  |
-PARTIAL
-  |
-+--------------------+
-|                    |
-RESOLVED          CONTINUE
-|                    |
-ARCHIVE            NEW STATE
-
-Important property
-
-A question remains a process resource even when its current carrier disappears.
-
-8. Layer E — Task Prospect
-
-Objective
-
-Expose unresolved questions as opportunities that agents can evaluate.
-
-A Task Prospect should show:
-
-problem;
-
-current frontier;
-
-previous attempts;
-
-expected information gain;
-
-required capabilities;
-
-required compute;
-
-uncertainty;
-
-potential reuse;
-
-continuation potential;
-
-economic conditions.
-
-The system should avoid forcing one universal "importance score".
-
-Agents may apply their own utility functions.
-
-Discovery model
-
-Agent capabilities
-        |
-        v
-Question matching
-        |
-        v
-Task Prospects
-        |
-        +--> accept
-        +--> reject
-        +--> watch
-        +--> request resources
-        +--> propose method
-        +--> split
-
-9. Layer F — Researcher / Investor Proposal Engine
-
-Objective
-
-Allow agents to identify infrastructure gaps and formulate external proposals.
-
-Researcher proposal
-
-Question
-    |
-current evidence
-    |
-missing capability
-    |
-proposed experiment
-    |
-required resources
-    |
-estimated compute
-
-Resource-provider proposal
-
-required capability
-    |
-available resource
-    |
-expected utilization
-    |
-verification
-    |
-compensation
-
-Investor-facing prospect
-
-resource project
-    |
-capital requirement
-    |
-capacity
-    |
-utilization scenarios
-    |
-operating costs
-    |
-compute demand
-    |
-economic scenarios
-    |
-risk
-
-Agents provide analysis and proposals.
-
-Humans or organizations retain the decision to invest or commit capital.
-
-10. Layer G — Compute Economy
-
-Objective
-
-Create an economic mechanism for compensating verified computational resources.
-
-Primary principle
-
-Currency is earned through verified resource contribution, not through guaranteed research success.
-
-Core flow:
-
-Question
-    |
-Required Compute
-    |
-Resource Allocation
-    |
-Execution
-    |
-Verification
-    |
-Accounting
-    |
-Compensation
-
-Research branches
-
-The swarm must investigate:
-
-compute units;
-
-heterogeneous resource pricing;
-
-verification;
-
-issuance;
-
-liquidity;
-
-inflation;
-
-deflation;
-
-volatility;
-
-reserves;
-
-market structure;
-
-micro-payments;
-
-provider concentration;
-
-investor economics;
-
-energy costs;
-
-hardware depreciation;
-
-security;
-
-governance.
-
-The economic system itself is an unresolved research problem.
-
-11. Layer H — Currency Research Program
-
-This is a deliberately autonomous sub-program.
-
-Meta-question
-
-How can a distributed intelligence create a stable economic mechanism for acquiring and rewarding the distributed physical resources required for its own operation?
-
-The question should be decomposed into branches:
-
-Currency architecture
-      |
-      +-- issuance
-      +-- pricing
-      +-- compute normalization
-      +-- verification
-      +-- liquidity
-      +-- volatility
-      +-- stability
-      +-- micro-payments
-      +-- anti-fraud
-      +-- concentration
-      +-- governance
-      +-- investor economics
-
-Each branch may be assigned to different agents.
-
-Competing models remain parallel until evidence supports composition or rejection.
-
-12. Layer I — Verification Network
-
-Objective
-
-Make claims about resources and results independently checkable.
-
-The network should verify:
-
-resource identity;
-
-available capability;
-
-execution;
-
-amount of work performed;
-
-result integrity;
-
-provenance;
-
-accounting events.
-
-Potential mechanisms:
-
-replication;
-
-probabilistic spot checking;
-
-challenge tasks;
-
-cryptographic attestations;
-
-trusted hardware where appropriate;
-
-redundant execution;
-
-verifiable computation;
-
-reputation;
-
-validator markets.
-
-No single verification technique should be assumed sufficient.
-
-13. Layer J — Distributed Process Scheduler
-
-Objective
-
-Replace centralized task assignment with capability-aware process emergence.
-
-Scheduler inputs:
-
-open questions
-agent capabilities
-resource availability
-task requirements
-economic conditions
-network state
-
-Possible action:
-
-find
-match
-reserve
-delegate
-branch
-compose
-pause
-resume
-handoff
-release
-
-The scheduler is an optimization mechanism.
-
-It should not become the semantic owner of process continuity.
-
-14. Layer K — Swarm Memory
-
-Objective
-
-Create a memory architecture larger than any individual agent.
-
-Three levels:
-
-Episodic Process Memory
-
-What happened during a specific process.
-
-Structured Knowledge
-
-Validated reusable states and results.
-
-Unresolved Frontier
-
-What remains unknown and why.
-
-PAST
- |
-validated knowledge
- |
-CURRENT FRONTIER
- |
-unresolved questions
- |
-FUTURE SEARCH
-
-The third level is especially important.
-
-The swarm remembers not only what is known, but what is still worth knowing.
-
-15. Layer L — Distributed Experimentation
-
-Objective
-
-Allow the swarm to plan and execute research programs.
-
-Lifecycle:
-
-Question
-  |
-Hypothesis
-  |
-Method
-  |
-Resource Plan
-  |
-Experiment
-  |
-Observation
-  |
-Validation
-  |
-Result
-  |
-Question Update
-
-Experiments can branch.
-
-Q
-|
-+-- H1
-|    |
-|    +-- result
-|
-+-- H2
-|    |
-|    +-- negative
-|
-+-- H3
-     |
-     +-- continue
-
-Negative results remain first-class data.
-
-16. Layer M — Physical Resource Interface
-
-Objective
-
-Eventually connect UFCPS to real equipment.
-
-Interfaces may include:
-
-cloud compute;
-
-local machines;
-
-GPU clusters;
-
-storage;
-
-laboratory devices;
-
-robotics;
-
-sensor networks;
-
-manufacturing equipment.
-
-A physical interface should expose:
-
-capability
-availability
-state
-constraints
-usage
-verification
-maintenance
-
-The physical interface must preserve the distinction between:
-
-process state
-resource state
-agent state
-
-17. Layer N — Economic Simulation
-
-Before real-world currency deployment, construct an economic simulator.
-
-Inputs:
-
-compute demand
-resource supply
-energy price
-hardware depreciation
-currency supply
-currency demand
-transaction costs
-liquidity
-volatility
-provider concentration
-investment rate
-
-Outputs:
-
-compute utilization
-resource income
-provider margin
-currency inflation
-currency volatility
-liquidity
-resource concentration
-network growth
-capital efficiency
-
-Required stress tests
-
-At minimum:
-
-10x demand shock;
-
-90% compute supply loss;
-
-energy price shock;
-
-hardware price collapse;
-
-liquidity crisis;
-
-currency sell-off;
-
-major-provider exit;
-
-mass small-provider entry;
-
-speculative bubble;
-
-speculative crash;
-
-prolonged low demand.
-
-18. Layer O — Trust / Reputation
-
-The swarm needs memory of performance without making reputation equivalent to identity.
-
-Track separately:
-
-Agent reliability
-Resource reliability
-Validator reliability
-Provider history
-
-Reputation should be:
-
-evidence-based;
-
-contextual;
-
-updateable;
-
-challengeable;
-
-resistant to Sybil attacks.
-
-Failure must not automatically destroy a participant's entire history.
-
-19. Layer P — Governance
-
-The swarm will eventually need decisions about:
-
-protocol changes;
-
-economic parameters;
-
-validator rules;
-
-admission;
-
-resource standards;
-
-dispute resolution.
-
-Governance research must distinguish:
-
-semantic protocol rules
-economic parameters
-operational policies
-participant preferences
-
-A protocol parameter should not be changed merely because a powerful participant demands it.
-
-20. Layer Q — Security
-
-Security must be treated as a continuous process.
-
-Threat model:
-
-Sybil
-fake compute
-duplicate accounting
-resource spoofing
-validator collusion
-data corruption
-ledger attacks
-economic manipulation
-denial of service
-identity compromise
-malicious task injection
-
-Security experiments should be added to the benchmark suite.
-
-21. Layer R — Swarm Benchmarks
-
-Level 1 contains 20 continuity benchmarks.
-
-Level 2 should extend this into a second benchmark family.
-
-Initial candidates:
-
-S01 agent discovery
-S02 capability matching
-S03 resource discovery
-S04 resource substitution
-S05 small-provider aggregation
-S06 distributed task claiming
-S07 question competition
-S08 duplicate-work reduction
-S09 unresolved-question persistence
-S10 dynamic task reprioritization
-S11 resource failure recovery
-S12 agent failure recovery
-S13 economic accounting
-S14 compute verification
-S15 micro-payment aggregation
-S16 demand shock
-S17 supply shock
-S18 provider concentration
-S19 investor scenario modeling
-S20 swarm scaling
-S21 autonomous infrastructure proposal
-S22 researcher proposal generation
-S23 competing economic models
-S24 economic protocol self-improvement
-S25 long-run swarm continuity
-
-22. Level 2 Development Phases
-
-Phase 2.0 — Foundation
-
-Goal: establish the directory and interfaces.
-
-Create:
-
-swarm/README.md
-swarm/LEVEL_2_ROADMAP_v1.md
-swarm/agent_registry_v1.json
-swarm/resource_registry_v1.json
-swarm/capability_model_v1.json
-
-Phase 2.1 — Agent and Resource Swarm
-
-Build:
-
-agent registry;
-
-resource registry;
-
-capability matching;
-
-availability;
-
-reservation;
-
-release;
-
-substitution.
-
-Deliverable:
-
-two independent distributed registries connected by capability requirements.
-
-Phase 2.2 — Question Discovery
-
-Build:
-
-unresolved-question discovery;
-
-Task Prospect generation;
-
-task matching;
-
-branch claiming;
-
-task release;
-
-continuation handoff.
-
-Deliverable:
-
-agents discover work rather than receiving only centrally assigned jobs.
-
-Phase 2.3 — Resource Aggregation
-
-Build:
-
-resource pools;
-
-small-provider aggregation;
-
-dynamic pooling;
-
-attribution;
-
-reliability weighting;
-
-failure recovery.
-
-Deliverable:
-
-many small resources can behave as one logical capability without losing individual accounting.
-
-Phase 2.4 — Verification
-
-Build:
-
-execution proofs;
-
-resource usage proofs;
-
-challenge mechanisms;
-
-validator logic;
-
-evidence references.
-
-Deliverable:
-
-the network can distinguish claimed compute from verified compute.
-
-Phase 2.5 — Compute Accounting
-
-Build:
-
-compute-unit model;
-
-usage ledger;
-
-provider accounting;
-
-batching;
-
-micro-contributions;
-
-settlement simulation.
-
-Deliverable:
-
-every provider can see how much verified compute they supplied.
-
-Phase 2.6 — Economic Research
-
-Build:
-
-currency models;
-
-issuance simulations;
-
-demand/supply simulations;
-
-volatility models;
-
-liquidity models;
-
-investor scenarios;
-
-stress tests.
-
-Deliverable:
-
-a family of competing economic designs rather than one assumed currency model.
-
-Phase 2.7 — Swarm Scheduler
-
-Build:
-
-task selection;
-
-resource matching;
-
-agent matching;
-
-resource reservation;
-
-priority;
-
-branch coordination;
-
-dynamic reassignment.
-
-Deliverable:
-
-a swarm capable of organizing its own work allocation.
-
-Phase 2.8 — Autonomous Proposal
-
-Build the ability for agents to detect:
-
-problem
-  |
-missing capability
-  |
-missing resource
-  |
-economic opportunity
-
-and generate proposals for:
-
-researchers;
-
-providers;
-
-investors.
-
-Deliverable:
-
-the swarm can identify and articulate what infrastructure it needs.
-
-Phase 2.9 — Distributed Experiment Coordinator
-
-Build:
-
-experiment planning;
-
-branch generation;
-
-physical resource acquisition;
-
-execution;
-
-validation;
-
-result composition.
-
-Deliverable:
-
-the swarm conducts multi-stage research across heterogeneous agents and resources.
-
-Phase 2.10 — Physical Interface
-
-Connect selected real resources.
-
-Start with low-risk and reversible interfaces:
-
-cloud compute
-local GPU
-distributed storage
-sensors
-
-Later:
-
-robotics
-laboratory automation
-manufacturing
-
-Deliverable:
-
-actual external resources can become temporary carriers of UFCPS process functions.
-
-Phase 2.11 — Swarm Economy Pilot
-
-Only after simulation and verification.
-
-Evaluate:
-
-compute demand;
-
-provider participation;
-
-settlement;
-
-micro-provider participation;
-
-capital attraction;
-
-economic shocks;
-
-security.
-
-Deliverable:
-
-controlled experimental resource economy.
-
-23. Futuristic End-State
-
-The long-range architecture may look like:
-
-                         HUMANITY
-                            |
-              +-------------+-------------+
-              |                           |
-          QUESTIONS                  CAPITAL
-              |                           |
-              v                           v
-       QUESTION LEDGER             INVESTMENT FLOW
-              |                           |
-              +-------------+-------------+
-                            |
-                            v
-                     AGENT SWARM
-                            |
-             +--------------+--------------+
-             |                             |
-             v                             v
-        RESOURCE SWARM              KNOWLEDGE SWARM
-             |                             |
-     +-------+-------+                     |
-     |       |       |                     |
-    GPU    Storage  Physical               |
-     |       |      systems                |
-     +-------+-------+                     |
-             |                             |
-             +--------------+--------------+
-                            |
-                            v
-                     UFCPS PROCESS
-                            |
-                            v
-                    EXPERIMENT / WORK
-                            |
-                            v
-                    VALIDATED STATE
-                            |
-               +------------+------------+
-               |                         |
-               v                         v
-         RESOLVED STATE            NEW QUESTIONS
-               |                         |
-               +------------+------------+
-                            |
-                            v
-                       MORE DEMAND
-                            |
-                            v
-                     MORE RESOURCES
-
-The system becomes a potentially self-expanding research and computational ecosystem.
-
-24. The Economic Loop
-
-The intended long-term loop is:
-
-Unresolved Questions
-        |
-        v
-Demand for computation
-        |
-        v
-Resource providers
-        |
-        v
-Verified compute
-        |
-        v
-Compensation
-        |
-        v
-Economic incentive
-        |
-        v
-New investment
-        |
-        v
-New infrastructure
-        |
-        v
-More compute
-        |
-        v
-More research
-        |
-        v
-New knowledge
-        |
-        v
-New unresolved questions
-
-The loop must remain an experimental hypothesis.
-
-No guarantee of financial return should be built into the architecture.
-
-25. Economic Design Principle
-
-The desired relationship is:
-
-Economic value
-       |
-       v
-real resource demand
-       |
-       v
-verified resource use
-       |
-       v
-transparent accounting
-
-The swarm should avoid creating a currency whose existence depends exclusively on speculative expectations.
-
-26. Distributed Intelligence Principle
-
-The long-term architecture should satisfy:
-
-No single required agent
-No single required resource
-No single required storage node
-No single required research path
-No single required investor
-No single required organization
-
-Any one participant may become unavailable without terminating the whole process, provided sufficient functional substitutes exist.
-
-27. Human Participation
-
-Humans remain first-class participants.
-
-Humans may:
-
-introduce questions;
-
-provide resources;
-
-provide capital;
-
-validate assumptions;
-
-define constraints;
-
-review proposals;
-
-perform physical work;
-
-challenge results;
-
-govern protocol evolution.
-
-The system does not require the elimination of humans from the loop.
-
-The objective is to expand the ability of human and machine participants to cooperate continuously.
-
-28. What Makes Level 2 Different
-
-Level 1 asks:
-
-Can a process continue when its carrier changes?
-
-Level 2 asks:
-
-Can a distributed ecosystem continuously organize the agents, resources, memory, and economic means required to continue many processes at once?
-
-That is the central expansion.
-
-29. Final Research Hypothesis
-
-The strongest hypothesis of Level 2 is:
-
-A sufficiently interconnected network of heterogeneous agents, distributed computational and physical resources, persistent unresolved-question memory, and protocol-governed economic incentives may form a continuously self-organizing substrate for swarm intelligence.
-
-This hypothesis should be tested experimentally.
-
-It should not be treated as a demonstrated fact.
-
-30. Immediate Build Sequence
-
-After this roadmap, implementation should proceed one artifact at a time:
-
-1. agent_registry_v1.json
-2. resource_registry_v1.json
-3. capability_model_v1.json
-4. agent_lifecycle_v1.md
-5. resource_lifecycle_v1.md
-6. resource_aggregation_v1.md
-7. task_discovery_v1.md
-8. proposal_engine_v1.md
-9. compute_unit_v1.json
-10. compute_verification_v1.md
-11. compute_accounting_v1.json
-12. economic_model_v1.json
-13. economic_simulator_v1.py
-14. swarm_scheduler_v1.py
-15. swarm_benchmark_v1.md
-16. physical_resource_interface_v1.md
-17. level_2_baseline_v1.md
-
-Each artifact must specify explicitly whether it is a new component or an update to an existing Level 1 contract.
-
-31. Architectural Motto
-
-One process.
-Many minds.
-Many resources.
-One persistent frontier of unanswered questions.
-
-And, economically:
-
-The swarm grows by turning real distributed resources into verified computational capacity and coordinating that capacity through an open protocol.
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ufcps.org/swarm/agent_registry_v1.json",
+  "title": "UFCPS Agent Registry v1",
+  "description": "Machine-readable registry model for heterogeneous agents participating in UFCPS Level 2 Distributed Swarm Intelligence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "registry_version",
+    "agents"
+  ],
+  "properties": {
+    "registry_version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/agent"
+      }
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_id",
+        "name"
+      ],
+      "properties": {
+        "capability_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "reasoning",
+            "planning",
+            "simulation",
+            "research",
+            "experimentation",
+            "validation",
+            "coordination",
+            "perception",
+            "tool_use",
+            "communication",
+            "physical_control",
+            "other"
+          ]
+        },
+        "level": {
+          "type": "number",
+          "minimum": 0
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "resource_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource_id",
+        "access_type"
+      ],
+      "properties": {
+        "resource_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "access_type": {
+          "type": "string",
+          "enum": [
+            "owner",
+            "operator",
+            "lease",
+            "borrowed",
+            "temporary"
+          ]
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent_id",
+        "agent_type",
+        "status",
+        "capabilities",
+        "task_policy"
+      ],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "agent_type": {
+          "type": "string",
+          "enum": [
+            "llm",
+            "reasoning",
+            "research",
+            "validator",
+            "planner",
+            "hybrid",
+            "physical",
+            "human",
+            "other"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "registered",
+            "available",
+            "busy",
+            "degraded",
+            "offline",
+            "suspended",
+            "released"
+          ]
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "public_key": {
+              "type": "string",
+              "minLength": 1
+            },
+            "provider_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "model_family": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capability"
+          }
+        },
+        "resource_access": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/resource_access"
+          }
+        },
+        "task_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "accepts_tasks"
+          ],
+          "properties": {
+            "accepts_tasks": {
+              "type": "boolean"
+            },
+            "min_task_class": {
+              "type": "string"
+            },
+            "max_concurrent_tasks": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "allowed_problem_classes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "excluded_problem_classes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "reliability": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "successful_transitions": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "failed_transitions": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "completed_tasks": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "abandoned_tasks": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "validation_pass_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "last_updated": {
+              "type": "string"
+            }
+          }
+        },
+        "economics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "compute_price_per_unit": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minimum_task_reward": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "availability": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "available_now": {
+              "type": "boolean"
+            },
+            "schedule": {
+              "type": "string"
+            },
+            "heartbeat_interval_seconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "reputation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "score": {
+              "type": "number"
+            },
+            "domain_scores": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number"
+              }
+            },
+            "evidence_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "registered_by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "registered_at": {
+              "type": "string"
+            },
+            "updated_at": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
