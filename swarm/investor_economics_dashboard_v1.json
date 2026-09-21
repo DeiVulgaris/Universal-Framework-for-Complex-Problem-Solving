@@ -1,0 +1,284 @@
+{
+  "dashboard_version": "1.0",
+  "status": "experimental",
+  "purpose": "Machine-readable investor-facing economic dashboard for a distributed compute infrastructure supporting UFCPS swarm processes.",
+  "principles": {
+    "outcome_independent_compute_compensation": true,
+    "no_guaranteed_returns": true,
+    "author_royalty_rate_per_qualifying_transaction": 0.00001,
+    "author_royalty_reference": "swarm/author_royalty_v1.md"
+  },
+  "project": {
+    "project_id": "UFCPS-L2",
+    "question_reference": "swarm/unresolved_question_ledger_v1.md",
+    "task_prospect_reference": "swarm/task_discovery_v1.md",
+    "resource_registry_reference": "swarm/resource_registry_v1.json",
+    "compute_accounting_reference": "swarm/compute_accounting_v1.json"
+  },
+  "capital_requirement": {
+    "currency": "USD",
+    "initial_capital": 0,
+    "working_capital_reserve": 0,
+    "contingency_reserve": 0,
+    "total_required": 0,
+    "status": "to_be_calibrated",
+    "notes": "Capital values must be derived from an actual deployment plan, verified quotations, capacity targets, and operating assumptions."
+  },
+  "compute_capacity": {
+    "installed": {
+      "units": 0,
+      "normalized_compute_units": 0,
+      "measurement_basis": "to_be_calibrated"
+    },
+    "available": {
+      "units": 0,
+      "normalized_compute_units": 0,
+      "measurement_basis": "verified_availability"
+    },
+    "planned": {
+      "units": 0,
+      "normalized_compute_units": 0,
+      "measurement_basis": "deployment_plan"
+    },
+    "capacity_unit_reference": "swarm/compute_unit_v1.json"
+  },
+  "utilization": {
+    "unit": "fraction_of_verified_available_capacity",
+    "scenarios": {
+      "downside": 0.25,
+      "base": 0.50,
+      "upside": 0.75,
+      "stress": 0.10
+    },
+    "measurement": "verified_compute_delivered / verified_compute_available"
+  },
+  "economics": {
+    "compute_pricing": {
+      "currency": "USD",
+      "price_per_verified_compute_unit": 0,
+      "pricing_status": "to_be_calibrated",
+      "pricing_method": "benchmark_and_market_calibration",
+      "do_not_assume_gpu_hour_equivalence": true
+    },
+    "provider_compensation": {
+      "basis": "verified_compute",
+      "outcome_independent": true,
+      "outcome_reference": "swarm/compute_verification_v1.md"
+    },
+    "transaction_costs": {
+      "network_fee_rate": 0,
+      "settlement_fee_rate": 0,
+      "platform_fee_rate": 0
+    },
+    "author_royalty": {
+      "rate_per_qualifying_transaction": 0.00001,
+      "formula": "transaction_amount * 0.00001",
+      "recipient_reference": "swarm/author_royalty_v1.md",
+      "excluded_from_provider_compensation": true,
+      "excluded_from_validator_compensation": true,
+      "excluded_from_research_bounty": true
+    }
+  },
+  "operating_costs": {
+    "currency": "USD",
+    "energy": {
+      "monthly": 0,
+      "unit": "USD/month",
+      "assumption_status": "to_be_calibrated"
+    },
+    "maintenance": {
+      "monthly": 0,
+      "unit": "USD/month",
+      "assumption_status": "to_be_calibrated"
+    },
+    "hardware_depreciation": {
+      "monthly": 0,
+      "unit": "USD/month",
+      "assumption_status": "to_be_calibrated"
+    },
+    "network": {
+      "monthly": 0,
+      "unit": "USD/month",
+      "assumption_status": "to_be_calibrated"
+    },
+    "transaction": {
+      "monthly": 0,
+      "unit": "USD/month",
+      "assumption_status": "to_be_calibrated"
+    },
+    "other": {
+      "monthly": 0,
+      "unit": "USD/month",
+      "assumption_status": "to_be_calibrated"
+    }
+  },
+  "scenario_model": {
+    "currency": "USD",
+    "horizon_months": 12,
+    "scenarios": {
+      "downside": {
+        "utilization": 0.25,
+        "compute_price_multiplier": 0.75,
+        "energy_price_multiplier": 1.25,
+        "hardware_depreciation_multiplier": 1.20,
+        "transaction_cost_multiplier": 1.20,
+        "demand_multiplier": 0.60
+      },
+      "base": {
+        "utilization": 0.50,
+        "compute_price_multiplier": 1.00,
+        "energy_price_multiplier": 1.00,
+        "hardware_depreciation_multiplier": 1.00,
+        "transaction_cost_multiplier": 1.00,
+        "demand_multiplier": 1.00
+      },
+      "upside": {
+        "utilization": 0.75,
+        "compute_price_multiplier": 1.15,
+        "energy_price_multiplier": 0.90,
+        "hardware_depreciation_multiplier": 0.90,
+        "transaction_cost_multiplier": 0.90,
+        "demand_multiplier": 1.30
+      },
+      "stress": {
+        "utilization": 0.10,
+        "compute_price_multiplier": 0.60,
+        "energy_price_multiplier": 1.50,
+        "hardware_depreciation_multiplier": 1.30,
+        "transaction_cost_multiplier": 1.50,
+        "demand_multiplier": 0.40
+      }
+    },
+    "derived_outputs": {
+      "verified_compute_delivered": "verified_capacity * utilization",
+      "gross_compute_revenue": "verified_compute_delivered * price_per_verified_compute_unit",
+      "provider_compensation": "verified_compute_delivered * provider_rate_per_verified_compute_unit",
+      "transaction_costs": "gross_transaction_volume * applicable_transaction_cost_rate",
+      "author_royalty": "qualifying_transaction_volume * 0.00001",
+      "operating_costs": "energy + maintenance + depreciation + network + transaction + other",
+      "net_operating_result": "gross_compute_revenue - provider_compensation - transaction_costs - author_royalty - operating_costs"
+    }
+  },
+  "sensitivity_analysis": {
+    "primary_dimensions": [
+      "utilization",
+      "energy_price",
+      "compute_price",
+      "currency_volatility",
+      "hardware_depreciation",
+      "transaction_fees",
+      "demand"
+    ],
+    "method": "one_factor_and_multi_factor_scenario_analysis",
+    "required_outputs": [
+      "monthly_revenue",
+      "monthly_provider_compensation",
+      "monthly_operating_costs",
+      "monthly_author_royalty",
+      "monthly_net_operating_result",
+      "capacity_utilization",
+      "cash_requirement",
+      "break_even_utilization_when_defined"
+    ]
+  },
+  "risk_register": [
+    {
+      "risk_id": "R1",
+      "category": "demand",
+      "description": "Insufficient demand for verified compute capacity.",
+      "monitoring_metric": "utilization_rate",
+      "status": "open"
+    },
+    {
+      "risk_id": "R2",
+      "category": "energy",
+      "description": "Energy cost increases reduce operating margin.",
+      "monitoring_metric": "energy_cost_per_compute_unit",
+      "status": "open"
+    },
+    {
+      "risk_id": "R3",
+      "category": "hardware",
+      "description": "Hardware depreciation, failure, or obsolescence reduces effective capacity.",
+      "monitoring_metric": "effective_capacity_after_depreciation",
+      "status": "open"
+    },
+    {
+      "risk_id": "R4",
+      "category": "currency",
+      "description": "Currency volatility affects cross-border compute procurement and settlement.",
+      "monitoring_metric": "settlement_currency_volatility",
+      "status": "open"
+    },
+    {
+      "risk_id": "R5",
+      "category": "verification",
+      "description": "Weak verification can create disputes over delivered compute.",
+      "monitoring_metric": "verification_dispute_rate",
+      "status": "open"
+    },
+    {
+      "risk_id": "R6",
+      "category": "network",
+      "description": "Network or settlement costs may become material at scale.",
+      "monitoring_metric": "network_cost_per_verified_compute_unit",
+      "status": "open"
+    },
+    {
+      "risk_id": "R7",
+      "category": "regulatory",
+      "description": "Applicable legal, tax, financial, or data rules may constrain operating design.",
+      "monitoring_metric": "jurisdictional_compliance_status",
+      "status": "open"
+    },
+    {
+      "risk_id": "R8",
+      "category": "research",
+      "description": "The underlying swarm-intelligence hypothesis may remain experimentally unresolved.",
+      "monitoring_metric": "validated_experimental_results",
+      "status": "open"
+    }
+  ],
+  "investor_view": {
+    "display_sections": [
+      "capital_requirement",
+      "verified_compute_capacity",
+      "utilization",
+      "unit_economics",
+      "scenario_analysis",
+      "sensitivity_analysis",
+      "risk_register",
+      "verification_status",
+      "assumptions_and_uncertainties"
+    ],
+    "prohibited_claims": [
+      "guaranteed_return",
+      "guaranteed_profit",
+      "guaranteed_demand",
+      "guaranteed_scaling",
+      "guaranteed_agi",
+      "risk_free_investment"
+    ]
+  },
+  "assumptions_and_uncertainties": [
+    "Compute-unit normalization requires benchmark calibration and verification.",
+    "Market pricing for verified compute is not fixed by this model.",
+    "Capital requirements are deployment-specific and must be populated from evidence.",
+    "Scenario multipliers are analytical placeholders, not forecasts.",
+    "The economic model does not establish that distributed resources will produce AGI or swarm intelligence.",
+    "Legal, tax, payment, and regulatory treatment requires jurisdiction-specific review."
+  ],
+  "provenance": {
+    "model_origin": "UFCPS Level 2 economic architecture",
+    "source_files": [
+      "swarm/compute_unit_v1.json",
+      "swarm/compute_accounting_v1.json",
+      "swarm/compute_verification_v1.md",
+      "swarm/compute_economy_model_v1.json",
+      "swarm/author_royalty_v1.md",
+      "swarm/resource_registry_v1.json"
+    ],
+    "status": "initial_structural_model",
+    "last_calibration": null
+  }
+}
