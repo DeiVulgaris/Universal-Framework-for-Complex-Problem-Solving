@@ -1,0 +1,128 @@
+{
+  "scenario_id": "parallel-resolution-001",
+  "description": "One procedural unit creates two independent continuation branches. Each branch resolves a different component of the same structural difference. The branch states are then composed into a successor state.",
+  "initial_procedural_unit": {
+    "step_index": 0,
+    "unit_id": "P0",
+    "carrier_id": "agent_001",
+    "carrier_type": "general_reasoner",
+    "session_status": "active",
+    "state_reference": "state://task-002/p0",
+    "structural_difference": "The target problem contains two coupled unresolved components: constraint_A and constraint_B."
+  },
+  "parallel_transitions": [
+    {
+      "transition_id": "parallel-resolution-001-A",
+      "transition_type": "branch",
+      "source_procedural_unit": {
+        "step_index": 0,
+        "carrier_id": "agent_001",
+        "carrier_type": "general_reasoner",
+        "session_status": "active",
+        "state_reference": "state://task-002/p0"
+      },
+      "operation": {
+        "name": "unfold",
+        "flow": "diff -> fix -> diss -> unfold"
+      },
+      "destination_procedural_unit": {
+        "step_index": 1,
+        "carrier_id": "agent_002",
+        "carrier_type": "constraint_solver",
+        "session_status": "active",
+        "state_reference": "state://task-002/p1a"
+      },
+      "carrier_transition": {
+        "changed": true,
+        "source_carrier": "agent_001",
+        "destination_carrier": "agent_002",
+        "reason": "Branch A is assigned to a carrier specialized in resolving constraint_A."
+      },
+      "continuation_state": {
+        "state_preserved": true,
+        "state_reference": "state://task-002/handoff-001a",
+        "unresolved_difference": "constraint_A",
+        "next_required_operation": "diff",
+        "continuation_required": true
+      },
+      "validation": {
+        "schema_valid": true,
+        "process_rule_valid": true,
+        "continuation_valid": true,
+        "runtime_validation_note": "Branch A must operate on the inherited state without rewriting branch B state."
+      }
+    },
+    {
+      "transition_id": "parallel-resolution-001-B",
+      "transition_type": "branch",
+      "source_procedural_unit": {
+        "step_index": 0,
+        "carrier_id": "agent_001",
+        "carrier_type": "general_reasoner",
+        "session_status": "active",
+        "state_reference": "state://task-002/p0"
+      },
+      "operation": {
+        "name": "unfold",
+        "flow": "diff -> fix -> diss -> unfold"
+      },
+      "destination_procedural_unit": {
+        "step_index": 1,
+        "carrier_id": "agent_003",
+        "carrier_type": "model_solver",
+        "session_status": "active",
+        "state_reference": "state://task-002/p1b"
+      },
+      "carrier_transition": {
+        "changed": true,
+        "source_carrier": "agent_001",
+        "destination_carrier": "agent_003",
+        "reason": "Branch B is assigned to a carrier specialized in resolving constraint_B."
+      },
+      "continuation_state": {
+        "state_preserved": true,
+        "state_reference": "state://task-002/handoff-001b",
+        "unresolved_difference": "constraint_B",
+        "next_required_operation": "diff",
+        "continuation_required": true
+      },
+      "validation": {
+        "schema_valid": true,
+        "process_rule_valid": true,
+        "continuation_valid": true,
+        "runtime_validation_note": "Branch B must operate independently from branch A."
+      }
+    }
+  ],
+  "branch_results": {
+    "branch_A": {
+      "state_reference": "state://task-002/p1a",
+      "resolved_difference": "constraint_A",
+      "result": "Constraint_A resolved under the tested conditions.",
+      "result_status": "partial"
+    },
+    "branch_B": {
+      "state_reference": "state://task-002/p1b",
+      "resolved_difference": "constraint_B",
+      "result": "Constraint_B resolved under the tested conditions.",
+      "result_status": "partial"
+    }
+  },
+  "composition": {
+    "composition_id": "compose-002",
+    "input_state_references": [
+      "state://task-002/p1a",
+      "state://task-002/p1b"
+    ],
+    "relation": "complement",
+    "preserve_provenance": true,
+    "resulting_difference": "No unresolved difference remains at the tested problem scope.",
+    "resulting_state_reference": "state://task-002/p2",
+    "next_required_operation": "validate"
+  },
+  "continuation": {
+    "next_step_index": 2,
+    "next_state_reference": "state://task-002/p2",
+    "process_relation": "P1a + P1b -> P2"
+  }
+}
