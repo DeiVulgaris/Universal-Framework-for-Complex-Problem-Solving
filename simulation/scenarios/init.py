@@ -1,4 +1,4 @@
-"""Scenario package for UFCPS simulations."""
+
 
 from .autonomous_experiment import (
     AutonomousExperimentPlan,
@@ -52,6 +52,15 @@ from .stateless_delegation_control import (
     StatelessDelegationResult,
     run_stateless_delegation_control,
 )
+from .long_run_continuity import (
+    LongRunContinuityResult,
+    run_long_run_continuity,
+)
+from .swarm_scaling import (
+    ScalingRun,
+    SwarmScalingResult,
+    run_swarm_scaling,
+)
 
 __all__ = [
     "AutonomousExperimentPlan",
@@ -63,11 +72,14 @@ __all__ = [
     "DeadlockScenarioResult",
     "DelegationConditionResult",
     "GlobalTerminationResult",
+    "LongRunContinuityResult",
     "NegativeResultScenario",
     "ParallelScenarioResult",
     "RecursionStressResult",
+    "ScalingRun",
     "ScenarioResult",
     "StatelessDelegationResult",
+    "SwarmScalingResult",
     "execute_autonomous_experiment",
     "generate_experiment",
     "run_autonomous_experiment",
@@ -78,8 +90,10 @@ __all__ = [
     "run_contradictory_branches",
     "run_forced_deadlock",
     "run_global_termination",
+    "run_long_run_continuity",
     "run_negative_result",
     "run_parallel_resolution",
     "run_recursion_stress",
     "run_stateless_delegation_control",
+    "run_swarm_scaling",
 ]
