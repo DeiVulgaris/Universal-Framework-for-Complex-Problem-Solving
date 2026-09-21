@@ -1,0 +1,289 @@
+{
+  "model_name": "UFCPS Swarm Points Economy",
+  "model_version": "v1",
+  "status": "experimental_design",
+  "purpose": "Немонетарная система поощрения участников за проверенный вклад в непрерывность и развитие распределённой вычислительной инфраструктуры UFCPS.",
+  "principles": {
+    "non_cash": true,
+    "not_equity": true,
+    "not_investment_return": true,
+    "not_guaranteed_financial_value": true,
+    "resource_contribution_is_rewarded": true,
+    "research_outcome_is_not_required_for_compute_points": true,
+    "verified_contribution_only": true,
+    "transparent_rules": true,
+    "economic_stability_over_maximum_discount": true
+  },
+  "point_unit": {
+    "name": "SP",
+    "display_name": "Swarm Point",
+    "transferable_between_users": false,
+    "redeemable_for_cash": false,
+    "sellable": false,
+    "expiration_policy": {
+      "enabled": false,
+      "note": "Срок действия может быть введён позднее только после отдельного экономического эксперимента."
+    }
+  },
+  "earning": {
+    "verified_compute": {
+      "enabled": true,
+      "basis": "verified_compute_units",
+      "formula": "earned_SP = verified_compute_units × contribution_rate × quality_multiplier × availability_multiplier",
+      "base_rate": 1.0,
+      "quality_multiplier": {
+        "default": 1.0,
+        "minimum": 0.0,
+        "maximum": 1.25,
+        "meaning": "Коэффициент учитывает качество, стабильность и корректность предоставленного ресурса."
+      },
+      "availability_multiplier": {
+        "default": 1.0,
+        "maximum": 1.15,
+        "meaning": "Дополнительный коэффициент может применяться за согласованную полезную доступность ресурса."
+      },
+      "research_outcome_dependency": false
+    },
+    "research_participation": {
+      "enabled": true,
+      "basis": "verified_contribution_event",
+      "formula": "earned_SP = approved_event_points",
+      "requires_verification": true,
+      "examples": [
+        "reproducibility_test",
+        "benchmark_execution",
+        "verified_bug_report",
+        "dataset_validation",
+        "documentation_contribution"
+      ]
+    },
+    "community_contribution": {
+      "enabled": true,
+      "basis": "verified_contribution_event",
+      "formula": "earned_SP = approved_event_points",
+      "requires_verification": true
+    },
+    "financial_sponsorship": {
+      "enabled": true,
+      "basis": "sponsorship_policy",
+      "default_points": 0,
+      "note": "Финансовое спонсорство не должно автоматически создавать денежный эквивалент points; отдельная бонусная программа может быть утверждена позднее."
+    }
+  },
+  "gpu_contribution": {
+    "supported_resource_classes": [
+      "participant_gpu",
+      "participant_cpu",
+      "participant_storage",
+      "participant_network"
+    ],
+    "heterogeneous_hardware": true,
+    "idle_compute_supported": true,
+    "scheduled_compute_supported": true,
+    "intermittent_compute_supported": true,
+    "measurement": {
+      "required_fields": [
+        "resource_id",
+        "provider_id",
+        "start_time",
+        "end_time",
+        "verified_compute_units",
+        "verification_status"
+      ],
+      "unverified_time_is_not_rewarded": true
+    }
+  },
+  "spending": {
+    "enabled": true,
+    "allowed_services": {
+      "model_inference": {
+        "enabled": true,
+        "discount_formula": "discount = min(max_discount, points_redeemed × discount_rate)",
+        "default_discount_rate": 0.01
+      },
+      "model_finetuning": {
+        "enabled": true,
+        "default_discount_rate": 0.01
+      },
+      "remote_compute": {
+        "enabled": true,
+        "default_discount_rate": 0.01
+      },
+      "experimental_compute_jobs": {
+        "enabled": true,
+        "default_discount_rate": 0.01
+      }
+    },
+    "discount_limits": {
+      "maximum_single_transaction_discount": 0.5,
+      "maximum_discount_note": "Примерный потолок; окончательное значение должно определяться экономическим моделированием.",
+      "cash_payment_required_for_remaining_balance": true,
+      "points_cannot_create_negative_balance": true
+    }
+  },
+  "illustrative_tiers": [
+    {
+      "tier": "bronze",
+      "points_threshold": 100,
+      "reference_discount": 0.05
+    },
+    {
+      "tier": "silver",
+      "points_threshold": 500,
+      "reference_discount": 0.15
+    },
+    {
+      "tier": "gold",
+      "points_threshold": 2000,
+      "reference_discount": 0.3
+    },
+    {
+      "tier": "swarm_contributor",
+      "points_threshold": 5000,
+      "reference_discount": 0.5
+    }
+  ],
+  "tier_semantics": {
+    "status": "illustrative",
+    "principle": "Уровень определяется накопленным verified contribution, но конкретная скидка может зависеть от типа услуги и текущего экономического состояния системы.",
+    "no_financial_return": true
+  },
+  "economic_controls": {
+    "anti_abuse": {
+      "duplicate_event_detection": true,
+      "signed_resource_events": true,
+      "provider_identity_binding": true,
+      "rate_limits": true,
+      "maximum_daily_earnings": "configurable",
+      "anomaly_detection": true,
+      "manual_review_for_anomalies": true
+    },
+    "quality_controls": {
+      "invalid_compute_excluded": true,
+      "failed_verification_excluded": true,
+      "repeated_failed_jobs_may_reduce_multiplier": true,
+      "verification_reversal_supported": true
+    },
+    "budget_controls": {
+      "points_liability_monitoring": true,
+      "discount_budget_monitoring": true,
+      "dynamic_discount_cap_supported": true,
+      "emergency_discount_freeze_supported": true
+    }
+  },
+  "participant_cycle": {
+    "steps": [
+      "participant_connects_resource",
+      "resource_is_registered",
+      "compute_is_performed",
+      "compute_is_verified",
+      "swarm_points_are_credited",
+      "participant_accumulates_points",
+      "participant_requests_model_or_compute_service",
+      "points_are_redeemed",
+      "discount_is_applied",
+      "remaining_cost_is_paid_normally",
+      "points_and_usage_are_logged"
+    ],
+    "core_feedback_loop": "contribution → verified utility → points → personal utility → continued participation"
+  },
+  "accounting": {
+    "ledger_required": true,
+    "event_types": [
+      "POINTS_EARNED",
+      "POINTS_ADJUSTED",
+      "POINTS_REVERSED",
+      "POINTS_REDEEMED",
+      "DISCOUNT_APPLIED"
+    ],
+    "auditability": {
+      "participant_can_view_balance": true,
+      "participant_can_view_transactions": true,
+      "contribution_history_visible": true,
+      "reversal_reason_required": true
+    }
+  },
+  "interaction_with_compute_economy": {
+    "compute_compensation": "separate",
+    "swarm_points": "non_cash_bonus",
+    "author_royalty": {
+      "rate": 1e-05,
+      "percentage": "0.001%",
+      "basis": "qualifying_transaction",
+      "independent_of_swarm_points": true
+    },
+    "sponsorship": "separate",
+    "research_bounty": "separate"
+  },
+  "example": {
+    "scenario": "Участник предоставляет GPU своего компьютера в свободное время.",
+    "verified_compute_units": 200,
+    "contribution_rate": 1.0,
+    "quality_multiplier": 1.0,
+    "availability_multiplier": 1.0,
+    "earned_SP": 200,
+    "model_service_cost": 100.0,
+    "reference_discount": 0.05,
+    "illustrative_discount": 5.0,
+    "illustrative_remaining_payment": 95.0,
+    "note": "Пример демонстрирует механику, а не утверждает окончательный курс SP."
+  },
+  "metrics": {
+    "participant_metrics": [
+      "active_point_holders",
+      "average_points_earned_per_participant",
+      "average_points_redeemed_per_participant",
+      "points_utilization_rate",
+      "repeat_contribution_rate"
+    ],
+    "system_metrics": [
+      "total_points_issued",
+      "total_points_redeemed",
+      "outstanding_points",
+      "discount_cost",
+      "verified_compute_contributed",
+      "cost_per_verified_compute_unit",
+      "fraud_rate",
+      "reversal_rate"
+    ],
+    "health_signals": [
+      "points_accumulating_faster_than_redeemed",
+      "discount_liability_growth",
+      "abnormal_contribution_concentration",
+      "service_capacity_constrained",
+      "reward_loop_not_generating_repeat_contribution"
+    ]
+  },
+  "experiments": {
+    "required_before_production": true,
+    "scenarios": [
+      "low_participation",
+      "high_participation",
+      "gpu_whale_dominance",
+      "many_small_gpu_contributors",
+      "high_model_demand",
+      "low_model_demand",
+      "high_compute_price",
+      "low_compute_price",
+      "abuse_attempt",
+      "mass_point_redemption"
+    ],
+    "success_condition": "Система сохраняет управляемую скидочную нагрузку и создаёт измеримый стимул к повторному участию без превращения points в обещанную финансовую ценность."
+  },
+  "open_questions": [
+    "точный verified compute unit для разных классов GPU",
+    "окончательный курс начисления SP",
+    "единая или сервис-зависимая ставка скидки",
+    "верхний предел points на одного участника",
+    "динамический потолок скидки",
+    "нужна ли отдельная награда за длительную стабильную доступность GPU",
+    "можно ли использовать points для приоритетной очереди вычислений",
+    "какие community contributions должны получать points",
+    "как быстро система должна проводить корректировки и reversals"
+  ],
+  "provenance": {
+    "architecture": "UFCPS Level 2 — Distributed Swarm Intelligence",
+    "document_role": "points_economy_definition",
+    "status": "v1_draft_for_simulation"
+  }
+}
