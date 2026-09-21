@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ufcps.org/swarm/compute_economy_model_v1.json",
   "title": "UFCPS Compute Economy Model v1 — Dual Payment Rails",
-  "description": "Machine-readable economic model for the UFCPS distributed compute economy. Supports two optional internal settlement rails: non-crypto Resource Credits for service consumption and an optional crypto asset rail for participants who prefer transferable crypto settlement. The model is experimental and is not a promise of financial return. Internal conversion between crypto and Resource Credits may be operated with zero UFCPS protocol commission and zero internal spread; any external blockchain network fee is not an UFCPS commission and must be disclosed separately. Every transaction carries the mandatory author royalty of 0.001% (0.00001 of transaction amount), regardless of payment rail. To prevent Bitcoin-like early issuance concentration, provider rewards and crypto/resource-credit issuance are cost-anchored: annual verified cost is computed from equipment/depreciation, energy, maintenance and applicable operating costs, and maximum profit is capped at 10 times that annual cost.",
+  "description": "Machine-readable economic model for the UFCPS distributed compute economy. Supports two optional internal settlement rails: non-crypto Resource Credits for service consumption and an optional crypto asset rail for participants who prefer transferable crypto settlement. The model is experimental and is not a promise of financial return. Internal conversion between crypto and Resource Credits may be operated with zero UFCPS protocol commission and zero internal spread; any external blockchain network fee is not an UFCPS commission and must be disclosed separately. Every transaction carries the mandatory author royalty of 0.001% (0.00001 of transaction amount), regardless of payment rail. To prevent Bitcoin-like early issuance concentration, provider rewards and crypto/resource-credit issuance are cost-anchored: annual verified cost is computed from equipment/depreciation, energy, maintenance and applicable operating costs, and maximum profit is capped at 10 times that annual cost. The annual cost anchor is recalculated each year using the current year's verified actual prices/costs as the reference for the following year's projected cost. The next year's profit and compensation ceilings are then rebased to that projected annual cost.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -306,6 +306,10 @@
             "verified_runtime",
             "hybrid"
           ]
+        },
+        "cost_anchor_year_rule": {
+          "type": "string",
+          "const": "target_year_projected_from_current_year_prices"
         }
       }
     },
@@ -453,6 +457,10 @@
           "const": "10x_annual_verified_cost"
         },
         "cost_basis_required_for_resource_reward": {
+          "type": "boolean",
+          "const": true
+        },
+        "annual_cost_rebase_required": {
           "type": "boolean",
           "const": true
         }
@@ -920,7 +928,8 @@
         },
         "cost_basis_period": {
           "type": "string",
-          "const": "1_year"
+          "const": "1_year",
+          "description": "One-year target period whose cost is projected from the current reference year's prices."
         },
         "annual_cost_components": {
           "type": "array",
@@ -1001,6 +1010,142 @@
         },
         "formula": {
           "type": "string"
+        },
+        "calculation_year": {
+          "type": "integer",
+          "minimum": 2000
+        },
+        "cost_reference_year": {
+          "type": "integer",
+          "minimum": 2000
+        },
+        "target_reward_year": {
+          "type": "integer",
+          "minimum": 2000
+        },
+        "annual_cost_projection_reference": {
+          "type": "string",
+          "const": "annual_cost_projection"
+        },
+        "rebase_policy": {
+          "type": "string",
+          "enum": [
+            "annual_rebase",
+            "rolling_12_month_rebase"
+          ]
+        }
+      }
+    },
+    "annual_cost_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "cost_reference_year",
+        "target_year",
+        "projection_method",
+        "price_basis",
+        "recalculation_frequency",
+        "recalculation_trigger"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "const": true
+        },
+        "cost_reference_year": {
+          "type": "integer",
+          "minimum": 2000
+        },
+        "target_year": {
+          "type": "integer",
+          "minimum": 2000
+        },
+        "projection_method": {
+          "type": "string",
+          "enum": [
+            "current_year_actual_to_next_year_projection",
+            "rolling_actual_to_next_year",
+            "weighted_actual_and_forward_prices"
+          ]
+        },
+        "price_basis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "equipment",
+            "energy",
+            "maintenance",
+            "network",
+            "storage",
+            "verification"
+          ],
+          "properties": {
+            "equipment": {
+              "type": "string"
+            },
+            "energy": {
+              "type": "string"
+            },
+            "maintenance": {
+              "type": "string"
+            },
+            "network": {
+              "type": "string"
+            },
+            "storage": {
+              "type": "string"
+            },
+            "verification": {
+              "type": "string"
+            }
+          }
+        },
+        "projection_multipliers": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "equipment_price_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "energy_price_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "maintenance_price_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "network_price_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "storage_price_multiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "verification_price_multiplier": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "recalculation_frequency": {
+          "type": "string",
+          "enum": [
+            "annual"
+          ]
+        },
+        "recalculation_trigger": {
+          "type": "string",
+          "enum": [
+            "calendar_year_boundary",
+            "annual_cost_audit"
+          ]
+        },
+        "current_year_to_target_year_rule": {
+          "type": "string"
         }
       }
     }
@@ -1017,6 +1162,18 @@
       "total_compensation_ceiling": "11 × verified_annual_cost",
       "purpose": "prevent excessive early-generation rewards and concentration",
       "not_a_market_price": true
+    },
+    "annual_rebase_policy": {
+      "rule": "current_year_verified_costs -> next_year_projected_cost -> next_year reward ceiling",
+      "example": "2026 actual prices/costs -> 2027 projected annual cost -> 2027 issuance/profit ceiling",
+      "recalculation": "annual",
+      "purpose": "avoid using obsolete hardware, energy, maintenance, and service prices"
     }
+  },
+  "annual_cost_projection_instance": {
+    "reference_year": 2026,
+    "target_year": 2027,
+    "status": "method_defined_values_to_be_calibrated",
+    "rule": "Use verified 2026 actual costs/prices, apply documented 2027 projection multipliers, and calculate the 2027 cost anchor before applying the 10x profit ceiling."
   }
 }
