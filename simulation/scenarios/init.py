@@ -1,4 +1,4 @@
-
+"""Scenario package for UFCPS simulations."""
 
 from .autonomous_experiment import (
     AutonomousExperimentPlan,
