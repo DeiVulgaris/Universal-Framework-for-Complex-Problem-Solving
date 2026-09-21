@@ -1,0 +1,41 @@
+{
+  "transition_id": "basic-handoff-001",
+  "transition_type": "delegation",
+  "source_procedural_unit": {
+    "step_index": 0,
+    "carrier_id": "agent_001",
+    "carrier_type": "general_reasoner",
+    "session_status": "stuck",
+    "state_reference": "state://task-001/p0"
+  },
+  "operation": {
+    "name": "delegate",
+    "flow": "diff -> fix -> diss -> unfold"
+  },
+  "destination_procedural_unit": {
+    "step_index": 1,
+    "carrier_id": "agent_002",
+    "carrier_type": "specialist_reasoner",
+    "session_status": "active",
+    "state_reference": "state://task-001/p1"
+  },
+  "carrier_transition": {
+    "changed": true,
+    "source_carrier": "agent_001",
+    "destination_carrier": "agent_002",
+    "reason": "The source carrier reached a local deadlock and delegated continuation to a carrier with a more suitable reasoning profile."
+  },
+  "continuation_state": {
+    "state_preserved": true,
+    "state_reference": "state://task-001/handoff-001",
+    "unresolved_difference": "The current approach cannot resolve the constraint introduced by the observed contradiction.",
+    "next_required_operation": "diff",
+    "continuation_required": true
+  },
+  "validation": {
+    "schema_valid": true,
+    "process_rule_valid": true,
+    "continuation_valid": true,
+    "runtime_validation_note": "Example record. Runtime validation must confirm that the referenced state exists and is available to the destination carrier."
+  }
+}
