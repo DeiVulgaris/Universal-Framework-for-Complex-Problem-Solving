@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ufcps.org/swarm/compute_economy_model_v1.json",
-  "title": "UFCPS Compute Economy Model v1",
-  "description": "Machine-readable economic model for the UFCPS distributed compute economy. The model describes supply, demand, pricing, issuance, liquidity, volatility, reserves, transaction costs, provider economics, and stability scenarios. It is a simulation model, not a promise of financial return.",
+  "title": "UFCPS Compute Economy Model v1 — Dual Payment Rails",
+  "description": "Machine-readable economic model for the UFCPS distributed compute economy. Supports two optional internal settlement rails: non-crypto Resource Credits for service consumption and an optional crypto asset rail for participants who prefer transferable crypto settlement. The model is experimental and is not a promise of financial return. Internal conversion between crypto and Resource Credits may be operated with zero UFCPS protocol commission and zero internal spread; any external blockchain network fee is not an UFCPS commission and must be disclosed separately. Every transaction carries the mandatory author royalty of 0.001% (0.00001 of transaction amount), regardless of payment rail.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -76,6 +76,25 @@
         "initial_supply": {
           "type": "number",
           "minimum": 0
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "crypto_asset",
+            "fiat_reference",
+            "internal_reference",
+            "unspecified"
+          ]
+        },
+        "instrument_type": {
+          "type": "string",
+          "enum": [
+            "crypto_asset",
+            "service_credit",
+            "fiat",
+            "reference_unit",
+            "unspecified"
+          ]
         }
       }
     },
@@ -188,6 +207,24 @@
               "items": {
                 "type": "string"
               }
+            },
+            "accepted_units": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "service_price_anchor": {
+              "type": "string",
+              "enum": [
+                "resource_credits",
+                "fiat_reference",
+                "crypto_market",
+                "hybrid"
+              ]
+            },
+            "crypto_conversion_reference": {
+              "type": "string"
             }
           }
         }
@@ -267,7 +304,8 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "const": 1e-05
+          "const": 1e-05,
+          "description": "Обязательный авторский гонорар с каждой транзакции."
         },
         "transaction_cost_model": {
           "type": "string",
@@ -296,6 +334,102 @@
         },
         "micro_provider_settlement": {
           "type": "boolean"
+        },
+        "settlement_rails": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "resource_credits",
+              "crypto",
+              "fiat"
+            ]
+          }
+        },
+        "participant_preference_supported": {
+          "type": "boolean"
+        },
+        "crypto_to_credit_conversion": {
+          "type": "boolean"
+        },
+        "credit_to_crypto_conversion": {
+          "type": "boolean"
+        },
+        "service_pricing_stability_policy": {
+          "type": "string",
+          "enum": [
+            "anchor_in_resource_credits",
+            "anchor_in_fiat_reference",
+            "dynamic_crypto",
+            "hybrid",
+            "experimental"
+          ]
+        },
+        "internal_conversion_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "crypto_to_resource_credits_fee_free",
+            "hidden_fees_prohibited"
+          ],
+          "properties": {
+            "crypto_to_resource_credits_fee_free": {
+              "type": "boolean",
+              "const": true
+            },
+            "resource_credits_to_crypto_fee_free": {
+              "type": "boolean"
+            },
+            "hidden_fees_prohibited": {
+              "type": "boolean",
+              "const": true
+            },
+            "external_network_fees_disclosed": {
+              "type": "boolean"
+            }
+          }
+        },
+        "author_royalty_basis": {
+          "type": "string",
+          "const": "every_transaction"
+        },
+        "author_royalty_mandatory": {
+          "type": "boolean",
+          "const": true
+        },
+        "author_royalty_exceptions": {
+          "type": "array",
+          "maxItems": 0,
+          "items": {
+            "type": "string"
+          }
+        },
+        "author_royalty_applies_to": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "resource_credit_purchase",
+              "resource_credit_spend",
+              "crypto_settlement",
+              "crypto_to_resource_credit_conversion",
+              "resource_credit_to_crypto_conversion",
+              "compute_service",
+              "data_access",
+              "storage_service",
+              "network_service",
+              "research_service",
+              "other_supported_transaction"
+            ]
+          }
+        },
+        "author_royalty_collection": {
+          "type": "string",
+          "enum": [
+            "at_transaction_settlement",
+            "atomic_with_transaction"
+          ]
         }
       }
     },
@@ -323,6 +457,36 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "resource_credit_liquidity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "source": {
+              "type": "string"
+            },
+            "redeem_for_services_only": {
+              "type": "boolean"
+            }
+          }
+        },
+        "crypto_liquidity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "source": {
+              "type": "string"
+            },
+            "market_exposure": {
+              "type": "boolean"
+            }
           }
         }
       }
@@ -511,6 +675,15 @@
         },
         "audit_required": {
           "type": "boolean"
+        },
+        "payment_rail_policy": {
+          "type": "string"
+        },
+        "conversion_rate_disclosure": {
+          "type": "string"
+        },
+        "zero_fee_conversion_rule": {
+          "type": "string"
         }
       }
     },
@@ -531,6 +704,184 @@
           }
         }
       }
+    },
+    "payment_rails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "preferred_service_unit",
+        "participant_choice",
+        "resource_credits",
+        "crypto"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "dual_optional"
+        },
+        "preferred_service_unit": {
+          "type": "string",
+          "enum": [
+            "resource_credits",
+            "crypto",
+            "participant_choice"
+          ]
+        },
+        "participant_choice": {
+          "type": "string",
+          "enum": [
+            "free_choice",
+            "service_dependent",
+            "account_policy"
+          ]
+        },
+        "resource_credits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "unit_id",
+            "cash_convertible"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "unit_id": {
+              "type": "string",
+              "const": "RC"
+            },
+            "cash_convertible": {
+              "type": "boolean",
+              "const": false
+            },
+            "purchase_with_fiat": {
+              "type": "boolean"
+            },
+            "earn_from_verified_contribution": {
+              "type": "boolean"
+            },
+            "usable_for": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "pricing_role": {
+              "type": "string",
+              "enum": [
+                "primary_service_unit",
+                "optional_service_unit"
+              ]
+            }
+          }
+        },
+        "crypto": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "optional_for_participants",
+            "direct_settlement_supported",
+            "conversion_to_resource_credits_supported"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "optional_for_participants": {
+              "type": "boolean"
+            },
+            "direct_settlement_supported": {
+              "type": "boolean"
+            },
+            "conversion_to_resource_credits_supported": {
+              "type": "boolean"
+            },
+            "accepted_assets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "price_volatility_isolated_from_service_pricing": {
+              "type": "boolean"
+            },
+            "pricing_role": {
+              "type": "string",
+              "enum": [
+                "secondary_settlement_unit",
+                "primary_service_unit",
+                "participant_choice"
+              ]
+            },
+            "internal_exchange": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "enabled",
+                "crypto_to_resource_credits",
+                "protocol_commission_rate",
+                "protocol_flat_fee",
+                "protocol_spread",
+                "rate_source"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "crypto_to_resource_credits": {
+                  "type": "boolean"
+                },
+                "resource_credits_to_crypto": {
+                  "type": "boolean"
+                },
+                "protocol_commission_rate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "const": 0
+                },
+                "protocol_flat_fee": {
+                  "type": "number",
+                  "minimum": 0,
+                  "const": 0
+                },
+                "protocol_spread": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "const": 0
+                },
+                "rate_source": {
+                  "type": "string",
+                  "enum": [
+                    "published_reference_rate",
+                    "external_market_reference",
+                    "hybrid_reference",
+                    "governance_set_rate"
+                  ]
+                },
+                "rate_update_policy": {
+                  "type": "string"
+                },
+                "participant_visible_quote": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
     }
+  },
+  "provenance_extension": {
+    "status": "recommended_update",
+    "change": "Added dual payment rails and fee-free internal crypto-to-Resource-Credit conversion with transparent reference-rate rules.",
+    "backward_compatibility": "Existing required fields remain unchanged.",
+    "design_note": "Resource Credits are optimized for predictable service consumption; crypto is an optional participant-selected settlement rail. A participant may prefer either rail, and crypto can optionally be converted to Resource Credits for service use.",
+    "internal_conversion_rule": "UFCPS protocol commission = 0; internal spread = 0; external network fees, when applicable, remain external and must be disclosed.",
+    "author_royalty_policy": "Universal rule: 0.001% of every transaction. No transaction-class exceptions are defined by this model."
   }
 }
