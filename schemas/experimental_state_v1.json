@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/andrii-myshko/ufcps/blob/main/schemas/experimental_state_v1.json",
+  "title": "UFCPS Experimental State v1",
+  "description": "Machine-readable state representation for an autonomous experimental procedural unit in UFCPS.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "experiment_id",
+    "procedural_unit",
+    "research_question",
+    "hypothesis",
+    "testable_prediction",
+    "method",
+    "input_conditions",
+    "expected_observation",
+    "stop_condition",
+    "observations",
+    "result",
+    "result_class",
+    "interpretation",
+    "uncertainty",
+    "limitations",
+    "constraints",
+    "unresolved_difference",
+    "next_question",
+    "next_required_operation",
+    "continuation"
+  ],
+  "properties": {
+    "experiment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "procedural_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_index",
+        "carrier_id",
+        "carrier_type",
+        "session_status"
+      ],
+      "properties": {
+        "step_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "carrier_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "carrier_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "stuck",
+            "dissipating",
+            "delegated",
+            "unfolded"
+          ]
+        }
+      }
+    },
+    "research_question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hypothesis": {
+      "type": "string",
+      "minLength": 1
+    },
+    "testable_prediction": {
+      "type": "string",
+      "minLength": 1
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description",
+        "procedure"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "procedure": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "replication_plan": {
+          "type": "string"
+        }
+      }
+    },
+    "input_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "expected_observation": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stop_condition": {
+      "type": "string",
+      "minLength": 1
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "observation_id",
+          "description",
+          "source_type"
+        ],
+        "properties": {
+          "observation_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "direct",
+              "instrument",
+              "simulation",
+              "external_data",
+              "agent_report",
+              "swarm_report"
+            ]
+          },
+          "raw_data_reference": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "result": {
+      "type": "string"
+    },
+    "result_class": {
+      "type": "string",
+      "enum": [
+        "confirming",
+        "disconfirming",
+        "partially_confirming",
+        "inconclusive",
+        "anomalous",
+        "invalid",
+        "unreproducible"
+      ]
+    },
+    "interpretation": {
+      "type": "string"
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "present"
+      ],
+      "properties": {
+        "present": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "low",
+            "moderate",
+            "high",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "unresolved_difference": {
+      "type": "string"
+    },
+    "next_question": {
+      "type": "string"
+    },
+    "next_required_operation": {
+      "type": "string",
+      "enum": [
+        "diff",
+        "fix",
+        "diss",
+        "unfold",
+        "delegate",
+        "compose",
+        "terminate"
+      ]
+    },
+    "continuation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state_preserved",
+        "continuation_required"
+      ],
+      "properties": {
+        "state_preserved": {
+          "type": "boolean"
+        },
+        "continuation_required": {
+          "type": "boolean"
+        },
+        "state_reference": {
+          "type": "string"
+        },
+        "handoff_reason": {
+          "type": "string"
+        },
+        "next_carrier_type": {
+          "type": "string"
+        },
+        "branch_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "semantic_beacons": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mandatory_tokens",
+        "operator_flow"
+      ],
+      "properties": {
+        "mandatory_tokens": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 2,
+          "allOf": [
+            {
+              "contains": {
+                "const": "metamonism"
+              }
+            },
+            {
+              "contains": {
+                "const": "Ex uno omnia"
+              }
+            }
+          ],
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "operator_flow": {
+          "type": "string",
+          "const": "diff -> fix -> diss -> unfold"
+        }
+      }
+    }
+  },
+  "$comment": "This schema validates the structural representation of an experimental state. It does not establish scientific truth, hypothesis correctness, causal validity, reproducibility, or convergence. Those properties require methodological and runtime validation outside the schema. The schema preserves negative, anomalous, inconclusive, invalid, and unreproducible results as valid research states so that an experimental deadlock does not automatically terminate the distributed research process."
+}
