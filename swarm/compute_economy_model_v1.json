@@ -1,162 +1,256 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ufcps.org/swarm/compute_accounting_v1.json",
-  "title": "UFCPS Compute Accounting v1",
-  "description": "Machine-readable accounting record for verified computational resources supplied to UFCPS processes. Compensation is based on verified resource contribution supporting process continuity, not on successful resolution of the underlying research question.",
+  "$id": "https://ufcps.org/swarm/compute_economy_model_v1.json",
+  "title": "UFCPS Compute Economy Model v1",
+  "description": "Machine-readable economic model for the UFCPS distributed compute economy. The model describes supply, demand, pricing, issuance, liquidity, volatility, reserves, transaction costs, provider economics, and stability scenarios. It is a simulation model, not a promise of financial return.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "accounting_version",
-    "accounting_event_id",
-    "verification_event_id",
-    "resource_id",
-    "provider_id",
-    "process_id",
-    "compute_unit_id",
-    "verified_quantity",
-    "compensation",
-    "status"
+    "model_version",
+    "currency",
+    "compute_market",
+    "issuance",
+    "settlement",
+    "stability",
+    "risk",
+    "scenarios"
   ],
   "properties": {
-    "accounting_version": {
+    "model_version": {
       "type": "string",
       "const": "v1"
     },
-    "accounting_event_id": {
+    "model_id": {
       "type": "string",
       "minLength": 1
     },
-    "verification_event_id": {
+    "status": {
       "type": "string",
-      "minLength": 1
+      "enum": [
+        "draft",
+        "simulation",
+        "candidate",
+        "validated",
+        "deprecated"
+      ]
     },
-    "resource_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "provider_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "process_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "question_id": {
-      "type": "string"
-    },
-    "task_id": {
-      "type": "string"
-    },
-    "workload_id": {
-      "type": "string"
-    },
-    "compute_unit_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "verified_quantity": {
-      "type": "number",
-      "minimum": 0
-    },
-    "verification_confidence": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1
-    },
-    "process_continuity": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "operation": {
-          "type": "string",
-          "minLength": 1
-        },
-        "continuation_supported": {
-          "type": "boolean"
-        },
-        "continuation_state_ref": {
-          "type": "string",
-          "minLength": 1
-        },
-        "outcome_independent_compensation": {
-          "type": "boolean",
-          "const": true
-        }
-      }
-    },
-    "compensation": {
+    "currency": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "rate",
-        "currency",
-        "gross_amount",
-        "author_royalty",
-        "net_provider_amount"
+        "currency_id",
+        "name",
+        "supply_policy"
       ],
       "properties": {
+        "currency_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reference_currency": {
+          "type": "string"
+        },
+        "supply_policy": {
+          "type": "string",
+          "enum": [
+            "fixed",
+            "bounded",
+            "elastic",
+            "compute_linked",
+            "hybrid",
+            "experimental"
+          ]
+        },
+        "maximum_supply": {
+          "type": "number",
+          "minimum": 0
+        },
+        "initial_supply": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "compute_market": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "demand",
+        "supply",
+        "pricing"
+      ],
+      "properties": {
+        "demand": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "baseline_units",
+            "growth_rate"
+          ],
+          "properties": {
+            "baseline_units": {
+              "type": "number",
+              "minimum": 0
+            },
+            "growth_rate": {
+              "type": "number"
+            },
+            "demand_sources": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "supply": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "baseline_units",
+            "growth_rate"
+          ],
+          "properties": {
+            "baseline_units": {
+              "type": "number",
+              "minimum": 0
+            },
+            "growth_rate": {
+              "type": "number"
+            },
+            "provider_classes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "small_provider_share": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "utilization": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "target_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "minimum_viable_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "pricing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "price_discovery"
+          ],
+          "properties": {
+            "price_discovery": {
+              "type": "string",
+              "enum": [
+                "fixed",
+                "market",
+                "auction",
+                "negotiated",
+                "dynamic_reference",
+                "hybrid"
+              ]
+            },
+            "reference_compute_unit": {
+              "type": "string"
+            },
+            "base_price": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string"
+            },
+            "resource_adjustments": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "issuance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trigger",
+        "rate_policy",
+        "limits"
+      ],
+      "properties": {
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "verified_compute",
+            "verified_settlement",
+            "scheduled",
+            "demand_linked",
+            "hybrid",
+            "experimental"
+          ]
+        },
+        "rate_policy": {
+          "type": "string",
+          "enum": [
+            "fixed_per_compute_unit",
+            "dynamic",
+            "market_clearing",
+            "bounded_dynamic",
+            "experimental"
+          ]
+        },
         "rate": {
           "type": "number",
           "minimum": 0
         },
         "rate_unit": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
-        "currency": {
-          "type": "string",
-          "minLength": 1
+        "demand_adjustment": {
+          "type": "number"
         },
-        "gross_amount": {
-          "type": "number",
-          "minimum": 0
+        "utilization_adjustment": {
+          "type": "number"
         },
-        "network_fee": {
-          "type": "number",
-          "minimum": 0
-        },
-        "author_royalty_rate": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1,
-          "default": 1e-05
-        },
-        "author_royalty": {
-          "type": "number",
-          "minimum": 0
-        },
-        "net_provider_amount": {
-          "type": "number",
-          "minimum": 0
-        }
-      }
-    },
-    "deduplication": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "claim_fingerprint",
-        "duplicate_check_status"
-      ],
-      "properties": {
-        "claim_fingerprint": {
-          "type": "string",
-          "minLength": 1
-        },
-        "duplicate_check_status": {
-          "type": "string",
-          "enum": [
-            "not_checked",
-            "clear",
-            "duplicate",
-            "disputed"
-          ]
-        },
-        "source_event_refs": {
-          "type": "array",
-          "items": {
-            "type": "string"
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_issuance_per_period": {
+              "type": "number",
+              "minimum": 0
+            },
+            "max_issuance_rate": {
+              "type": "number",
+              "minimum": 0
+            },
+            "period": {
+              "type": "string"
+            }
           }
         }
       }
@@ -164,44 +258,259 @@
     "settlement": {
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "author_royalty_rate",
+        "transaction_cost_model"
+      ],
       "properties": {
-        "settlement_status": {
+        "author_royalty_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "const": 1e-05
+        },
+        "transaction_cost_model": {
           "type": "string",
           "enum": [
-            "pending",
-            "eligible",
-            "submitted",
-            "settled",
-            "reversed",
-            "disputed"
+            "fixed",
+            "percentage",
+            "dynamic",
+            "hybrid"
           ]
         },
-        "settlement_reference": {
-          "type": "string"
+        "base_transaction_fee": {
+          "type": "number",
+          "minimum": 0
         },
-        "settled_at": {
-          "type": "string"
+        "transaction_fee_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minimum_settlement": {
+          "type": "number",
+          "minimum": 0
+        },
+        "batching_enabled": {
+          "type": "boolean"
+        },
+        "micro_provider_settlement": {
+          "type": "boolean"
         }
       }
     },
-    "research_outcome": {
+    "liquidity": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "outcome_class": {
+        "target_liquidity_ratio": {
+          "type": "number",
+          "minimum": 0
+        },
+        "reserve_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "settlement_depth_target": {
+          "type": "number",
+          "minimum": 0
+        },
+        "redemption_mechanism": {
+          "type": "string"
+        },
+        "liquidity_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "stability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "volatility_target",
+        "stabilization_policy"
+      ],
+      "properties": {
+        "volatility_target": {
+          "type": "number",
+          "minimum": 0
+        },
+        "measurement_window": {
+          "type": "string"
+        },
+        "stabilization_policy": {
           "type": "string",
           "enum": [
-            "resolved",
-            "partial",
-            "negative",
-            "inconclusive",
-            "blocked",
-            "unresolved",
-            "not_available"
+            "none",
+            "reserve",
+            "dynamic_issuance",
+            "dynamic_pricing",
+            "liquidity_buffer",
+            "hybrid",
+            "experimental"
           ]
         },
-        "record_ref": {
+        "circuit_breakers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provider_economics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "hardware_cost": {
+          "type": "number",
+          "minimum": 0
+        },
+        "energy_cost_per_compute_unit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maintenance_cost_per_period": {
+          "type": "number",
+          "minimum": 0
+        },
+        "depreciation_per_period": {
+          "type": "number",
+          "minimum": 0
+        },
+        "target_margin": {
+          "type": "number"
+        },
+        "small_provider_minimum_viable_contribution": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "network_externalities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "compute_demand_multiplier": {
+          "type": "number",
+          "minimum": 0
+        },
+        "resource_network_multiplier": {
+          "type": "number",
+          "minimum": 0
+        },
+        "participant_growth_rate": {
+          "type": "number"
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "risk_factors"
+      ],
+      "properties": {
+        "risk_factors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "sensitivity"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sensitivity": {
+                "type": "number"
+              },
+              "shock_range": {
+                "type": "number"
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scenario_id",
+          "name",
+          "assumptions"
+        ],
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "enum": [
+              "base",
+              "high_demand",
+              "low_demand",
+              "supply_shock",
+              "energy_shock",
+              "liquidity_crisis",
+              "bubble",
+              "crash",
+              "provider_exit",
+              "small_provider_influx",
+              "custom"
+            ]
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "duration": {
+            "type": "string"
+          },
+          "expected_outputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parameter_change_method": {
           "type": "string"
+        },
+        "cooldown_period": {
+          "type": "string"
+        },
+        "audit_required": {
+          "type": "boolean"
         }
       }
     },
@@ -222,18 +531,6 @@
           }
         }
       }
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "recorded",
-        "verified",
-        "accounting_eligible",
-        "settled",
-        "reversed",
-        "disputed",
-        "void"
-      ]
     }
   }
 }
