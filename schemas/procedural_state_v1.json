@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/andrii-myshko/ufcps/blob/main/schemas/procedural_state_v1.json",
+  "title": "UFCPS Procedural State v1",
+  "description": "Machine-readable representation of a UFCPS procedural unit and its continuation-relevant state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "procedural_unit",
+    "task_state",
+    "structural_difference",
+    "operation",
+    "continuation"
+  ],
+  "properties": {
+    "procedural_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_index",
+        "unit_id",
+        "carrier",
+        "session_status"
+      ],
+      "properties": {
+        "step_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unit_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "carrier": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "carrier_id",
+            "carrier_type"
+          ],
+          "properties": {
+            "carrier_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "carrier_type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "role": {
+              "type": "string"
+            }
+          }
+        },
+        "session_status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "stuck",
+            "dissipating",
+            "delegated",
+            "unfolded"
+          ]
+        }
+      }
+    },
+    "task_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task",
+        "current_state",
+        "local_result"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "local_result": {
+          "type": "string"
+        },
+        "result_status": {
+          "type": "string",
+          "enum": [
+            "none",
+            "partial",
+            "complete",
+            "failed",
+            "inconclusive"
+          ]
+        }
+      }
+    },
+    "structural_difference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identified",
+        "description"
+      ],
+      "properties": {
+        "identified": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "task",
+            "state",
+            "result",
+            "constraint",
+            "boundary",
+            "contradiction",
+            "anomaly",
+            "deadlock",
+            "external_input",
+            "agent_report",
+            "swarm_report",
+            "other"
+          ]
+        },
+        "relevance": {
+          "type": "string"
+        }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current",
+        "flow"
+      ],
+      "properties": {
+        "current": {
+          "type": "string",
+          "enum": [
+            "diff",
+            "fix",
+            "diss",
+            "unfold",
+            "delegate",
+            "compose",
+            "terminate"
+          ]
+        },
+        "flow": {
+          "type": "string",
+          "const": "diff -> fix -> diss -> unfold"
+        },
+        "completed": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "diff",
+              "fix",
+              "diss",
+              "unfold",
+              "delegate",
+              "compose",
+              "terminate"
+            ]
+          }
+        }
+      }
+    },
+    "preserved_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "representation": {
+          "type": "string"
+        },
+        "state_reference": {
+          "type": "string"
+        },
+        "continuation_relevant": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "preserved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "deadlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "present"
+      ],
+      "properties": {
+        "present": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        },
+        "constraint": {
+          "type": "string"
+        },
+        "boundary": {
+          "type": "string"
+        },
+        "unresolved": {
+          "type": "string"
+        }
+      }
+    },
+    "delegation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested"
+      ],
+      "properties": {
+        "requested": {
+          "type": "boolean"
+        },
+        "target_carrier_type": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "unresolved_difference": {
+          "type": "string"
+        },
+        "next_required_operation": {
+          "type": "string",
+          "enum": [
+            "diff",
+            "fix",
+            "diss",
+            "unfold",
+            "delegate",
+            "compose",
+            "terminate"
+          ]
+        }
+      }
+    },
+    "continuation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "state_preserved"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "state_preserved": {
+          "type": "boolean"
+        },
+        "successor_exists": {
+          "type": "boolean"
+        },
+        "next_step_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "next_unit_reference": {
+          "type": "string"
+        },
+        "next_carrier_id": {
+          "type": "string"
+        },
+        "next_carrier_type": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "c5_recursion_control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_depth",
+        "max_depth_limit",
+        "action_on_overflow"
+      ],
+      "properties": {
+        "current_depth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_depth_limit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "action_on_overflow": {
+          "type": "string",
+          "enum": [
+            "delegate",
+            "branch",
+            "pause",
+            "terminate"
+          ]
+        }
+      }
+    },
+    "semantic_beacons": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mandatory_tokens",
+        "operator_flow"
+      ],
+      "properties": {
+        "mandatory_tokens": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 2,
+          "allOf": [
+            {
+              "contains": {
+                "const": "metamonism"
+              }
+            },
+            {
+              "contains": {
+                "const": "Ex uno omnia"
+              }
+            }
+          ],
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "operator_flow": {
+          "type": "string",
+          "const": "diff -> fix -> diss -> unfold"
+        }
+      }
+    }
+  },
+  "$comment": "This schema validates structural state representation only. It does not prove task solvability, scientific validity, semantic truth, convergence, or correctness of an agent decision. Runtime validation must enforce transition-specific relations such as successor step continuity and carrier consistency. Deadlock is a valid state object and does not imply process termination. The preserved state exists for continuation and may be handed to another carrier."
+}
