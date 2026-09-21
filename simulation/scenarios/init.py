@@ -31,6 +31,10 @@ from .forced_deadlock import (
     DeadlockScenarioResult,
     run_forced_deadlock,
 )
+from .global_termination import (
+    GlobalTerminationResult,
+    run_global_termination,
+)
 from .negative_result import (
     NegativeResultScenario,
     run_negative_result,
@@ -58,6 +62,7 @@ __all__ = [
     "ContradictionResult",
     "DeadlockScenarioResult",
     "DelegationConditionResult",
+    "GlobalTerminationResult",
     "NegativeResultScenario",
     "ParallelScenarioResult",
     "RecursionStressResult",
@@ -72,6 +77,7 @@ __all__ = [
     "run_composition",
     "run_contradictory_branches",
     "run_forced_deadlock",
+    "run_global_termination",
     "run_negative_result",
     "run_parallel_resolution",
     "run_recursion_stress",
