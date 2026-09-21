@@ -169,7 +169,7 @@ def run_recursion_stress(
         event_type=__import__(
             "simulation.core.models",
             fromlist=["EventType"],
-        ).EventType.TERMINATION_REQUESTED,
+        ).EventType.CONTROL_BOUNDARY_REACHED,
         unit_id=current.unit_id,
         carrier_id=carrier.carrier_id,
         details={
@@ -182,7 +182,8 @@ def run_recursion_stress(
     )
 
     explicit_control_event_recorded = any(
-        event.details.get("action_on_overflow") == overflow_action
+        event.event_type.value == "CONTROL_BOUNDARY_REACHED"
+        and event.details.get("action_on_overflow") == overflow_action
         and event.details.get("max_depth_limit") == max_depth
         for event in runtime.snapshot.events
     )
