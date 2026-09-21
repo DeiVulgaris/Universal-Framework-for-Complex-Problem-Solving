@@ -37,6 +37,7 @@ from .scenarios import (
     run_swarm_scaling,
     run_transition_validation,
     run_schema_validation,
+    run_autonomous_negative_result,
 )
 
 
@@ -63,6 +64,7 @@ SCENARIOS: dict[str, ScenarioCallable] = {
     "autonomous_experiment": run_autonomous_experiment,
     "transition_validation": run_transition_validation,
     "schema_validation": run_schema_validation,
+    "autonomous_negative_result": run_autonomous_negative_result,
 }
 
 
