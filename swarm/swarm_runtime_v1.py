@@ -48,6 +48,7 @@ if str(SWARM_DIR) not in sys.path:
 
 from distributed_experiment_coordinator_v1 import CoordinatorResult, coordinate_experiments
 from task_claim_engine_v1 import Claim, ClaimResult, TaskClaimEngine
+from task_claim_store_v1 import TaskClaimStore
 from task_discovery_engine_v1 import TaskProspect, discover as discover_task_prospects
 from uql_store_v1 import UQLStore
 
@@ -110,6 +111,9 @@ class RuntimeResult:
     persistence_enabled: bool
     uql_integrity_valid: Optional[bool]
     uql_event_count: Optional[int]
+    claim_store_enabled: bool
+    claim_store_integrity_valid: Optional[bool]
+    claim_store_event_count: Optional[int]
     ledger_snapshot: list[dict[str, Any]]
     tick_history: list[dict[str, Any]]
     errors: list[str]
@@ -144,6 +148,7 @@ class SwarmRuntime:
         resources: Iterable[Mapping[str, Any]],
         max_batch_size: int = 8,
         persistence_path: Optional[str | Path] = None,
+        claim_persistence_path: Optional[str | Path] = None,
         recover_existing: bool = True,
     ) -> None:
         if max_batch_size < 1:
@@ -166,6 +171,16 @@ class SwarmRuntime:
         self.global_process_terminated = False
         self.uql_store = UQLStore(persistence_path) if persistence_path is not None else None
         self.persistence_path = str(persistence_path) if persistence_path is not None else None
+        if claim_persistence_path is None and persistence_path is not None:
+            claim_persistence_path = f"{persistence_path}.claims"
+        self.claim_store = (
+            TaskClaimStore(claim_persistence_path, store_id=f"{self.runtime_id}-claim-store")
+            if claim_persistence_path is not None
+            else None
+        )
+        self.claim_persistence_path = str(claim_persistence_path) if claim_persistence_path is not None else None
+        self._claim_store_event_cursor = 0
+        self.claim_store_recovered = False
         if self.uql_store is not None and recover_existing:
             self._restore_from_uql()
 
@@ -410,6 +425,38 @@ class SwarmRuntime:
             return True
         return False
 
+    def _persist_claim_engine(self) -> None:
+        """Persist claim/reservation state and only append unseen engine events."""
+        if self.claim_store is None or self.claim_engine is None:
+            return
+        try:
+            self.claim_store.persist_engine(
+                self.claim_engine,
+                event_cursor=self._claim_store_event_cursor,
+            )
+            self._claim_store_event_cursor = len(self.claim_engine.events)
+        except (OSError, ValueError, TypeError) as exc:
+            self.errors.append(f"claim persistence failed: {exc}")
+
+    def _restore_claim_engine_from_store(self, prospects: Sequence[TaskProspect]) -> None:
+        """Restore persistent claims once the runtime claim engine exists."""
+        if self.claim_store is None or self.claim_engine is None or self.claim_store_recovered:
+            return
+        try:
+            self.claim_store.restore_into_engine(
+                self.claim_engine,
+                stale_active_policy="RELEASE_ACTIVE_ON_RESTART",
+            )
+            self.resources = [dict(resource) for resource in self.claim_engine.resources.values()]
+            self._claim_store_event_cursor = len(self.claim_engine.events)
+            self.claim_store_recovered = True
+        except FileNotFoundError:
+            # First run: there is no claim snapshot yet.
+            self.claim_store_recovered = True
+        except (OSError, ValueError, TypeError) as exc:
+            self.errors.append(f"claim store recovery failed: {exc}")
+            self.claim_store_recovered = True
+
     def _ensure_claim_engine(self, prospects: Sequence[TaskProspect]) -> TaskClaimEngine:
         """Return the runtime claim engine synchronized with current frontier inputs."""
         now = datetime.now(timezone.utc)
@@ -422,6 +469,7 @@ class SwarmRuntime:
                 resources=self.resources,
                 now=now.isoformat().replace("+00:00", "Z"),
             )
+            self._restore_claim_engine_from_store(prospects)
         else:
             self.claim_engine.now = now
             self.claim_engine.questions = {
@@ -512,6 +560,7 @@ class SwarmRuntime:
         self._persist_entry(entry, event_type="claim_active" if active.accepted else "claim_admission")
         # Make the scheduler see the capacity after claim reservation.
         self.resources = [dict(resource) for resource in engine.resources.values()]
+        self._persist_claim_engine()
         return engine.claims[claim_id], active
 
     def _finalize_claim_for_outcome(self, entry: LedgerEntry, outcome: Mapping[str, Any]) -> None:
@@ -531,6 +580,7 @@ class SwarmRuntime:
             if result.accepted:
                 entry.metadata["claim_result"] = asdict(result)
             self.resources = [dict(resource) for resource in self.claim_engine.resources.values()]
+            self._persist_claim_engine()
             self._persist_entry(entry, event_type=f"claim_{_text(self.claim_engine.claims[claim_id].status).lower()}")
         except (KeyError, ValueError) as exc:
             self.errors.append(f"{entry.process_id}: claim finalization failed: {exc}")
@@ -684,6 +734,7 @@ class SwarmRuntime:
                     try:
                         self.claim_engine.release(claim_id, reason="coordinator exception")
                         self.resources = [dict(resource) for resource in self.claim_engine.resources.values()]
+                        self._persist_claim_engine()
                     except (KeyError, ValueError):
                         pass
                 entry.status = "local_exception"
@@ -838,6 +889,9 @@ class SwarmRuntime:
             persistence_enabled=self.uql_store is not None,
             uql_integrity_valid=(self.persistence_integrity() or {}).get("valid") if self.uql_store is not None else None,
             uql_event_count=(self.persistence_integrity() or {}).get("event_count") if self.uql_store is not None else None,
+            claim_store_enabled=self.claim_store is not None,
+            claim_store_integrity_valid=(self.claim_store.verify_integrity() or {}).get("valid") if self.claim_store is not None else None,
+            claim_store_event_count=(self.claim_store.verify_integrity() or {}).get("event_count") if self.claim_store is not None else None,
             ledger_snapshot=[_safe(asdict(e)) for e in self.ledger.values()],
             tick_history=[_safe(asdict(t)) for t in self.tick_history],
             errors=list(self.errors),
@@ -845,7 +899,7 @@ class SwarmRuntime:
 
 
 def demo() -> dict[str, Any]:
-    """Run a deterministic runtime + restart-recovery demonstration."""
+    """Run deterministic runtime + claim-store crash/recovery demonstration."""
     with __import__("tempfile").TemporaryDirectory(prefix="ufcps-runtime-") as temp_dir:
         base = Path(temp_dir) / "uql"
 
@@ -871,7 +925,7 @@ def demo() -> dict[str, Any]:
                 "status": "available",
                 "capabilities": [{"name": "gpu"}],
                 "verification": {"verification_status": "verified"},
-                "availability": {"available_capacity": 1000},
+                "availability": {"available_capacity": 1000, "capacity_unit": "GPU-hours"},
             },
             {
                 "resource_id": "gpu-runtime-002",
@@ -880,7 +934,7 @@ def demo() -> dict[str, Any]:
                 "status": "available",
                 "capabilities": [{"name": "gpu"}],
                 "verification": {"verification_status": "verified"},
-                "availability": {"available_capacity": 1000},
+                "availability": {"available_capacity": 1000, "capacity_unit": "GPU-hours"},
             },
         ]
         questions = [
@@ -906,6 +960,8 @@ def demo() -> dict[str, Any]:
             },
         ]
 
+        # Runtime 1 reaches ACTIVE claims and persists them, then stops before
+        # coordinator execution. This is the crash boundary we want to test.
         runtime1 = SwarmRuntime(
             runtime_id="RUNTIME-PERSIST-DEMO",
             agents=agents,
@@ -914,11 +970,22 @@ def demo() -> dict[str, Any]:
             persistence_path=base,
         )
         seeded = runtime1.seed_questions(questions)
-        first = runtime1.tick()
-        snapshot_before = runtime1.snapshot(seeded=seeded, ticks_executed=1)
+        prospects1 = runtime1.discover()
+        for question in questions:
+            runtime1.record_agent_decision(
+                question_id=question["question_id"],
+                agent_id="agent-runtime-001",
+                decision="accept",
+            )
+        runtime1._ensure_claim_engine(prospects1)
+        prepared_entries = list(runtime1.ledger.values())
+        for entry in prepared_entries:
+            if entry.source != "seed":
+                continue
+            runtime1._prepare_claim(entry, prospects1)
+        pre_crash = runtime1.snapshot(seeded=seeded, ticks_executed=0)
+        claim_store_before_restart = runtime1.claim_store.verify_integrity() if runtime1.claim_store else {}
 
-        # Simulate a process restart. The new runtime reconstructs the active
-        # frontier and accepted pending work exclusively from UQL persistence.
         runtime2 = SwarmRuntime(
             runtime_id="RUNTIME-PERSIST-DEMO",
             agents=agents,
@@ -928,12 +995,22 @@ def demo() -> dict[str, Any]:
         )
         recovered_entries = len(runtime2.ledger)
         recovered_queue_before_decisions = len(runtime2.queue)
-        continuation_entries = [
+        restored_claims = runtime2.claim_engine.claims if runtime2.claim_engine else {}
+
+        # Force claim-engine initialization so the persisted claim snapshot is
+        # loaded and stale ACTIVE claims are released before new work begins.
+        prospects2 = runtime2.discover()
+        runtime2._ensure_claim_engine(prospects2)
+        restored_claims = runtime2.claim_engine.claims if runtime2.claim_engine else {}
+        stale_released = sum(1 for c in restored_claims.values() if c.status == "RELEASED")
+        active_after_restart = sum(1 for c in restored_claims.values() if c.status == "ACTIVE")
+        claim_store_after_restart = runtime2.claim_store.verify_integrity() if runtime2.claim_store else {}
+
+        continuation_or_recovered = [
             entry for entry in runtime2.ledger.values()
-            if entry.source == "continuation" and entry.status == "discoverable"
+            if entry.status == "discoverable" and entry.source == "seed"
         ]
-        for entry in continuation_entries:
-            runtime2.discover()
+        for entry in continuation_or_recovered:
             runtime2.record_agent_decision(
                 question_id=_text(entry.question.get("question_id")),
                 agent_id="agent-runtime-001",
@@ -942,39 +1019,48 @@ def demo() -> dict[str, Any]:
         second = runtime2.tick()
         snapshot_after = runtime2.snapshot(seeded=seeded, ticks_executed=runtime2._tick_number)
         integrity = runtime2.persistence_integrity() or {}
+        claim_store_final = runtime2.claim_store.verify_integrity() if runtime2.claim_store else {}
 
-        assert first.global_process_terminated is False
-        assert second.global_process_terminated is False
-        assert first.claims_created == 2
-        assert first.claims_active == 2
-        assert len(snapshot_before.claims) >= 2
-        assert recovered_entries == 4
+        assert pre_crash.claim_store_enabled is True
+        assert pre_crash.claim_store_integrity_valid is True
+        assert pre_crash.claim_store_event_count is not None and pre_crash.claim_store_event_count > 0
+        assert claim_store_before_restart.get("valid") is True
+        assert recovered_entries == 2
         assert recovered_queue_before_decisions == 0
-        assert len(continuation_entries) == 2
-        assert snapshot_after.continuations_created == 4
+        assert stale_released >= 2
+        assert active_after_restart == 0
+        assert claim_store_after_restart.get("valid") is True
+        assert any(entry.status == "active" for entry in runtime1.ledger.values())
+        assert second.global_process_terminated is False
+        assert snapshot_after.continuations_created == 2
         assert integrity.get("valid") is True
         assert integrity.get("hash_chain_valid") is True
         assert integrity.get("frontier_replay_equal") is True
+        assert claim_store_final.get("valid") is True
+        assert claim_store_final.get("event_count", 0) > claim_store_after_restart.get("event_count", 0)
 
         return {
             "status": "PASS",
             "claim_integration": {
                 "policy": runtime1.claim_policy,
-                "first_tick_claims_created": first.claims_created,
-                "first_tick_claims_active": first.claims_active,
-                "recovered_runtime_claims": len(runtime2.claim_engine.claims) if runtime2.claim_engine else 0,
+                "pre_crash_active_claims": pre_crash.claim_store_event_count,
+                "stale_claims_released_on_restart": stale_released,
+                "active_claims_after_restart": active_after_restart,
+                "final_claim_store_events": claim_store_final.get("event_count"),
             },
             "persistence_path": str(base),
-            "first_tick": _safe(asdict(first)),
+            "pre_crash": _safe(asdict(pre_crash)),
             "recovered_entries": recovered_entries,
             "recovered_queue_before_decisions": recovered_queue_before_decisions,
-            "recovered_continuation_entries": len(continuation_entries),
             "second_runtime": _safe(asdict(snapshot_after)),
             "integrity": integrity,
+            "claim_store_before_restart": claim_store_before_restart,
+            "claim_store_after_restart": claim_store_after_restart,
+            "claim_store_final": claim_store_final,
             "persisted_question_ids": sorted(runtime2.uql_store.frontier.keys()) if runtime2.uql_store else [],
-            "pre_restart_event_count": snapshot_before.uql_event_count,
+            "claim_store_path": runtime2.claim_persistence_path,
+            "restored_claim_statuses": {cid: c.status for cid, c in restored_claims.items()},
         }
-
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
