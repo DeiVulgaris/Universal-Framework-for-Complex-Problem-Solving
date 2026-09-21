@@ -37,6 +37,7 @@ import json
 import sys
 from collections import deque
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Deque, Iterable, Mapping, Optional, Sequence
@@ -46,6 +47,7 @@ if str(SWARM_DIR) not in sys.path:
     sys.path.insert(0, str(SWARM_DIR))
 
 from distributed_experiment_coordinator_v1 import CoordinatorResult, coordinate_experiments
+from task_claim_engine_v1 import Claim, ClaimResult, TaskClaimEngine
 from task_discovery_engine_v1 import TaskProspect, discover as discover_task_prospects
 from uql_store_v1 import UQLStore
 
@@ -85,6 +87,10 @@ class RuntimeTick:
     global_process_terminated: bool
     coordinator_status: str
     errors: list[str]
+    claims_created: int = 0
+    claims_accepted: int = 0
+    claims_resource_reserved: int = 0
+    claims_active: int = 0
 
 
 @dataclass(frozen=True)
@@ -100,6 +106,7 @@ class RuntimeResult:
     continuations_created: int
     current_queue_size: int
     global_process_terminated: bool
+    claims: list[dict[str, Any]]
     persistence_enabled: bool
     uql_integrity_valid: Optional[bool]
     uql_event_count: Optional[int]
@@ -150,6 +157,8 @@ class SwarmRuntime:
         self.tick_history: list[RuntimeTick] = []
         self.prospects: dict[str, TaskProspect] = {}
         self.agent_decisions: dict[tuple[str, str], str] = {}
+        self.claim_engine: Optional[TaskClaimEngine] = None
+        self.claim_policy = "ACCEPT_ONE_AND_QUEUE_OTHERS"
         self._tick_number = 0
         self._entry_sequence = 0
         self._continuation_sequence = 0
@@ -176,6 +185,8 @@ class SwarmRuntime:
             "latest_outcome": _safe(entry.metadata.get("latest_outcome")),
             "from_outcome": _safe(entry.metadata.get("from_outcome")),
             "last_runtime_event": _safe(entry.metadata.get("last_runtime_event")),
+            "claim": _safe(entry.metadata.get("claim")),
+            "historical_claims": _safe(entry.metadata.get("historical_claims", [])),
         }
 
     def _uql_status(self, entry: LedgerEntry) -> str:
@@ -245,11 +256,20 @@ class SwarmRuntime:
             question.setdefault("process_id", frontier.process_id)
             entry_id = _text(meta.get("runtime_entry_id")) or f"Q-{frontier.question_id}"
             source = _text(meta.get("source")) or ("continuation" if meta.get("parent_entry_id") else "seed")
-            status = _text(meta.get("runtime_status")) or frontier.status
+            persisted_status = _text(meta.get("runtime_status")) or frontier.status
+            status = persisted_status
             if status == "queued":
                 status = "discoverable"
             if status == "admitted":
                 status = "accepted"
+            # A runtime restart invalidates a local claim lease. The question
+            # survives, but the new runtime must rediscover it rather than
+            # silently inheriting an old agent/resource reservation.
+            claim_like_statuses = {"accepted", "claimed", "resource_reserved", "active", "awaiting_resources"}
+            recovered_claim = meta.get("claim")
+            historical_decisions = dict(meta.get("agent_decisions") or {})
+            if persisted_status in claim_like_statuses or recovered_claim:
+                status = "discoverable"
             entry = LedgerEntry(
                 entry_id=entry_id,
                 process_id=frontier.process_id,
@@ -261,7 +281,10 @@ class SwarmRuntime:
                 last_runtime_tick=int(meta.get("last_runtime_tick", 0)),
                 last_process_status=_text(meta.get("last_process_status")),
                 metadata={
-                    "agent_decisions": dict(meta.get("agent_decisions") or {}),
+                    "agent_decisions": {} if (persisted_status in claim_like_statuses or recovered_claim) else historical_decisions,
+                    "historical_agent_decisions": historical_decisions if (persisted_status in claim_like_statuses or recovered_claim) else {},
+                    "claim": recovered_claim,
+                    "historical_claims": list(meta.get("historical_claims") or []),
                     "latest_outcome": meta.get("latest_outcome"),
                     "from_outcome": meta.get("from_outcome"),
                     "last_runtime_event": meta.get("last_runtime_event"),
@@ -387,6 +410,131 @@ class SwarmRuntime:
             return True
         return False
 
+    def _ensure_claim_engine(self, prospects: Sequence[TaskProspect]) -> TaskClaimEngine:
+        """Return the runtime claim engine synchronized with current frontier inputs."""
+        now = datetime.now(timezone.utc)
+        if self.claim_engine is None:
+            self.claim_engine = TaskClaimEngine(
+                engine_id=f"{self.runtime_id}-claims",
+                questions=[entry.question for entry in self.ledger.values()],
+                prospects=[p.to_dict() for p in prospects],
+                agents=self.agents,
+                resources=self.resources,
+                now=now.isoformat().replace("+00:00", "Z"),
+            )
+        else:
+            self.claim_engine.now = now
+            self.claim_engine.questions = {
+                _text(entry.question.get("question_id")): dict(entry.question)
+                for entry in self.ledger.values()
+                if _text(entry.question.get("question_id"))
+            }
+            self.claim_engine.prospects = {p.prospect_id: p.to_dict() for p in prospects}
+            self.claim_engine.agents = {
+                _text(agent.get("agent_id")): dict(agent)
+                for agent in self.agents
+                if _text(agent.get("agent_id"))
+            }
+            self.claim_engine.resources = {
+                _text(resource.get("resource_id")): dict(resource)
+                for resource in self.resources
+                if _text(resource.get("resource_id"))
+            }
+        return self.claim_engine
+
+    @staticmethod
+    def _claim_id(entry: LedgerEntry, agent_id: str) -> str:
+        safe_process = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in entry.process_id)
+        safe_agent = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in agent_id)
+        return f"CL-{safe_process}-{entry.generation}-{safe_agent}"
+
+    def _accepted_agent_for_entry(self, entry: LedgerEntry) -> Optional[str]:
+        accepted = sorted(
+            agent_id
+            for (question_id, agent_id), decision in self.agent_decisions.items()
+            if question_id == _text(entry.question.get("question_id")) and decision == "accept"
+        )
+        return accepted[0] if accepted else None
+
+    def _prepare_claim(self, entry: LedgerEntry, prospects: Sequence[TaskProspect]) -> tuple[Optional[Claim], Optional[ClaimResult]]:
+        agent_id = self._accepted_agent_for_entry(entry)
+        if not agent_id:
+            return None, None
+        question_id = _text(entry.question.get("question_id"))
+        prospect = next((p for p in prospects if p.question_id == question_id and p.agent_id == agent_id), None)
+        if prospect is None:
+            entry.status = "blocked_local"
+            self._persist_entry(entry, event_type="claim_missing_prospect")
+            return None, ClaimResult("", False, "REJECTED", "accepted agent has no current prospect", False, None)
+        engine = self._ensure_claim_engine(prospects)
+        existing = entry.metadata.get("claim") or {}
+        existing_id = _text(existing.get("claim_id"))
+        if existing_id and existing_id in engine.claims:
+            claim = engine.claims[existing_id]
+            if claim.status in {"CLAIM_REQUESTED", "CLAIMED", "ACCEPTED", "RESOURCE_RESERVED", "ACTIVE"}:
+                return claim, ClaimResult(claim.claim_id, True, claim.status, "existing runtime claim reused", False, engine._reservation_for_claim(claim.claim_id))
+
+        base_id = self._claim_id(entry, agent_id)
+        claim_id = base_id
+        suffix = 0
+        while claim_id in engine.claims:
+            suffix += 1
+            claim_id = f"{base_id}-r{suffix}"
+        expires = engine.now + timedelta(hours=1)
+        claim = engine.create_claim(
+            claim_id=claim_id,
+            question_id=question_id,
+            agent_id=agent_id,
+            prospect_id=prospect.prospect_id,
+            expires_at=expires.isoformat().replace("+00:00", "Z"),
+            method_intent=_text(entry.question.get("method_intent")) or "runtime continuation",
+            provenance={"runtime_id": self.runtime_id, "runtime_tick": self._tick_number},
+            estimated_compute=prospect.estimated_compute,
+            estimated_duration=prospect.estimated_duration,
+        )
+        admitted = engine.admit_claim(claim_id)
+        if not admitted.accepted:
+            return engine.claims[claim_id], admitted
+        reserved = engine.reserve_resources(claim_id)
+        if not reserved.accepted:
+            return engine.claims[claim_id], reserved
+        active = engine.activate(claim_id)
+        entry.metadata["claim"] = {**asdict(engine.claims[claim_id]), "reservation_id": active.resource_reservation_id}
+        entry.metadata.setdefault("historical_claims", []).append({
+            "claim_id": claim_id,
+            "question_id": question_id,
+            "agent_id": agent_id,
+            "prospect_id": prospect.prospect_id,
+            "created_at": claim.created_at,
+        })
+        entry.status = "active" if active.accepted else "claimed"
+        entry.last_runtime_tick = self._tick_number
+        self._persist_entry(entry, event_type="claim_active" if active.accepted else "claim_admission")
+        # Make the scheduler see the capacity after claim reservation.
+        self.resources = [dict(resource) for resource in engine.resources.values()]
+        return engine.claims[claim_id], active
+
+    def _finalize_claim_for_outcome(self, entry: LedgerEntry, outcome: Mapping[str, Any]) -> None:
+        claim_meta = entry.metadata.get("claim") or {}
+        claim_id = _text(claim_meta.get("claim_id"))
+        if not claim_id or self.claim_engine is None or claim_id not in self.claim_engine.claims:
+            return
+        status = _text(outcome.get("status")).lower()
+        try:
+            if outcome.get("deadlock_recorded") or "deadlock" in status:
+                result = self.claim_engine.deadlock(claim_id, deadlock_ref=_text(outcome.get("deadlock_ref")) or f"deadlock:{entry.process_id}")
+            elif outcome.get("continuation_ready") or outcome.get("process_terminated") or not outcome.get("local_failure"):
+                result = self.claim_engine.complete(claim_id, outcome=_text(outcome.get("research_outcome")) or status or "completed")
+            else:
+                result = self.claim_engine.release(claim_id, reason="local coordinator failure")
+            entry.metadata["claim"] = asdict(self.claim_engine.claims[claim_id])
+            if result.accepted:
+                entry.metadata["claim_result"] = asdict(result)
+            self.resources = [dict(resource) for resource in self.claim_engine.resources.values()]
+            self._persist_entry(entry, event_type=f"claim_{_text(self.claim_engine.claims[claim_id].status).lower()}")
+        except (KeyError, ValueError) as exc:
+            self.errors.append(f"{entry.process_id}: claim finalization failed: {exc}")
+
     def _build_experiment(self, entry: LedgerEntry) -> dict[str, Any]:
         """Build the minimal coordinator input from a ledger entry."""
         q = dict(entry.question)
@@ -472,14 +620,30 @@ class SwarmRuntime:
             return tick
 
         admitted_ids: list[str] = []
+        claims_created = 0
+        claims_accepted = 0
+        claims_resource_reserved = 0
+        claims_active = 0
+        self._ensure_claim_engine(prospects)
         while self.queue and len(admitted_ids) < self.max_batch_size:
             entry_id = self.queue.popleft()
             entry = self.ledger[entry_id]
             if entry.status in TERMINAL_QUESTION_STATES:
                 continue
-            entry.status = "admitted"
+            claim_before = len(self.claim_engine.claims) if self.claim_engine else 0
+            claim, claim_result = self._prepare_claim(entry, prospects)
+            claims_created += max(0, (len(self.claim_engine.claims) if self.claim_engine else claim_before) - claim_before)
+            if claim is None or claim_result is None or not claim_result.accepted:
+                if claim_result is not None and claim_result.status == "AWAITING_RESOURCES":
+                    entry.status = "awaiting_resources"
+                else:
+                    entry.status = "blocked_local" if claim_result is not None else "discoverable"
+                self._persist_entry(entry, event_type="claim_blocked")
+                continue
+            claims_accepted += int(claim.status in {"ACCEPTED", "RESOURCE_RESERVED", "ACTIVE"})
+            claims_resource_reserved += int(claim.status in {"RESOURCE_RESERVED", "ACTIVE"})
+            claims_active += int(claim.status == "ACTIVE")
             entry.last_runtime_tick = self._tick_number
-            self._persist_entry(entry, event_type="runtime_admission")
             admitted_ids.append(entry_id)
 
         if not admitted_ids:
@@ -514,6 +678,14 @@ class SwarmRuntime:
             self.errors.append(message)
             for eid in admitted_ids:
                 entry = self.ledger[eid]
+                claim_meta = entry.metadata.get("claim") or {}
+                claim_id = _text(claim_meta.get("claim_id"))
+                if claim_id and self.claim_engine is not None and claim_id in self.claim_engine.claims:
+                    try:
+                        self.claim_engine.release(claim_id, reason="coordinator exception")
+                        self.resources = [dict(resource) for resource in self.claim_engine.resources.values()]
+                    except (KeyError, ValueError):
+                        pass
                 entry.status = "local_exception"
                 self._persist_entry(entry, event_type="runtime_exception")
             tick = RuntimeTick(
@@ -529,6 +701,10 @@ class SwarmRuntime:
                 global_process_terminated=False,
                 coordinator_status="tick_isolated_exception",
                 errors=[message],
+                claims_created=claims_created,
+                claims_accepted=claims_accepted,
+                claims_resource_reserved=claims_resource_reserved,
+                claims_active=claims_active,
             )
             self.tick_history.append(tick)
             return tick
@@ -544,6 +720,7 @@ class SwarmRuntime:
                 continue
             entry.last_process_status = _text(outcome.get("status"))
             entry.metadata["latest_outcome"] = _safe(outcome)
+            self._finalize_claim_for_outcome(entry, outcome)
             if outcome.get("process_terminated"):
                 entry.status = "terminated_local"
                 self._persist_entry(entry, event_type="process_terminated")
@@ -603,6 +780,10 @@ class SwarmRuntime:
             global_process_terminated=self.global_process_terminated,
             coordinator_status=_text(result_dict.get("status")),
             errors=[str(x) for x in result_dict.get("errors", [])],
+            claims_created=claims_created,
+            claims_accepted=claims_accepted,
+            claims_resource_reserved=claims_resource_reserved,
+            claims_active=claims_active,
         )
         self.tick_history.append(tick)
         self.errors.extend(tick.errors)
@@ -653,6 +834,7 @@ class SwarmRuntime:
             continuations_created=continuation_count,
             current_queue_size=len(self.queue),
             global_process_terminated=self.global_process_terminated,
+            claims=[asdict(claim) for claim in (self.claim_engine.claims.values() if self.claim_engine is not None else [])],
             persistence_enabled=self.uql_store is not None,
             uql_integrity_valid=(self.persistence_integrity() or {}).get("valid") if self.uql_store is not None else None,
             uql_event_count=(self.persistence_integrity() or {}).get("event_count") if self.uql_store is not None else None,
@@ -763,6 +945,9 @@ def demo() -> dict[str, Any]:
 
         assert first.global_process_terminated is False
         assert second.global_process_terminated is False
+        assert first.claims_created == 2
+        assert first.claims_active == 2
+        assert len(snapshot_before.claims) >= 2
         assert recovered_entries == 4
         assert recovered_queue_before_decisions == 0
         assert len(continuation_entries) == 2
@@ -773,6 +958,12 @@ def demo() -> dict[str, Any]:
 
         return {
             "status": "PASS",
+            "claim_integration": {
+                "policy": runtime1.claim_policy,
+                "first_tick_claims_created": first.claims_created,
+                "first_tick_claims_active": first.claims_active,
+                "recovered_runtime_claims": len(runtime2.claim_engine.claims) if runtime2.claim_engine else 0,
+            },
             "persistence_path": str(base),
             "first_tick": _safe(asdict(first)),
             "recovered_entries": recovered_entries,
@@ -814,6 +1005,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("UQL integrity:", result["integrity"]["valid"])
         print("UQL hash chain:", result["integrity"]["hash_chain_valid"])
         print("UQL events:", result["integrity"]["event_count"])
+        print("Claim policy:", result["claim_integration"]["policy"])
+        print("First tick claims:", result["claim_integration"]["first_tick_claims_created"])
+        print("First tick active claims:", result["claim_integration"]["first_tick_claims_active"])
 
     return 0
 
