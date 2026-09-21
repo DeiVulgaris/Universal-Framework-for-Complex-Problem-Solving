@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "manifest_version": "1.0",
+  "benchmark_id": "UFCPS-BENCHMARK-V1",
+  "status": "baseline",
+  "purpose": "Machine-readable registry of the UFCPS v1 benchmark suite and its reproducibility contract.",
+  "scope": {
+    "type": "software_architecture_and_simulation",
+    "claims_supported": [
+      "implemented scenarios satisfy their explicit acceptance conditions",
+      "continuation can be tested across controlled carrier interruption",
+      "local carrier failure can be distinguished from process termination in the simulation"
+    ],
+    "claims_not_supported": [
+      "scientific validity of UFCPS as a theory of intelligence",
+      "empirical validity in physical or social systems",
+      "correctness for arbitrary problems",
+      "performance superiority over alternative architectures",
+      "universal convergence or robustness"
+    ]
+  },
+  "runner": {
+    "module": "simulation.runner",
+    "entrypoint": "python -m simulation.runner",
+    "runner_version": "v1",
+    "single_scenario_command": "python -m simulation.runner --scenario <scenario_name>",
+    "acceptance_rule": "simulation.runner.scenario_passed",
+    "determinism": "reference scenarios are expected to be deterministic unless a scenario explicitly introduces controlled variation"
+  },
+  "reproducibility": {
+    "required_runtime_metadata": [
+      "UFCPS revision or commit",
+      "protocol versions",
+      "schema versions",
+      "validator versions",
+      "model or agent identifiers",
+      "carrier configuration",
+      "available tools",
+      "shared-state mechanism",
+      "runtime environment",
+      "randomization seed when applicable",
+      "execution start time",
+      "execution end time"
+    ]
+  },
+  "baseline": {
+    "baseline_version": "UFCPS-v1",
+    "expected_scenarios": 20,
+    "expected_passed": 20,
+    "expected_failed": 0,
+    "expected_errors": 0,
+    "all_passed": true,
+    "reference_document": "experiments/benchmark_baseline_v1.md"
+  },
+  "invariants": [
+    "Local Failure != Process Termination",
+    "Carrier Identity != Process Identity",
+    "Negative Result != No Information",
+    "P_n -> P_n+1"
+  ],
+  "scenarios": [
+    {
+      "id": 1,
+      "name": "schema_validation",
+      "module": "simulation.scenarios.schema_validation",
+      "entrypoint": "run_schema_validation",
+      "objective": "Validate procedural and experimental state payloads against their schemas.",
+      "acceptance": {
+        "primary": "result.passed == true"
+      }
+    },
+    {
+      "id": 2,
+      "name": "transition_validation",
+      "module": "simulation.scenarios.transition_validation",
+      "entrypoint": "run_transition_validation",
+      "objective": "Validate correct and intentionally invalid procedural transitions.",
+      "acceptance": {
+        "primary": "result.passed == true",
+        "additional": ["result.invalid_transitions == 0"]
+      }
+    },
+    {
+      "id": 3,
+      "name": "basic_handoff",
+      "module": "simulation.scenarios.basic_handoff",
+      "entrypoint": "run_basic_handoff",
+      "objective": "Demonstrate continuation across a basic carrier handoff.",
+      "acceptance": {
+        "required_true": ["handoff_performed", "continuation_preserved", "destination_completed"]
+      }
+    },
+    {
+      "id": 4,
+      "name": "forced_deadlock",
+      "module": "simulation.scenarios.forced_deadlock",
+      "entrypoint": "run_forced_deadlock",
+      "objective": "Represent deadlock as structured non-terminal process information.",
+      "acceptance": {
+        "required_true": ["deadlock_created", "deadlock_not_terminal", "unresolved_difference_preserved", "successor_created", "successor_completed"]
+      }
+    },
+    {
+      "id": 5,
+      "name": "carrier_substitution",
+      "module": "simulation.scenarios.carrier_substitution",
+      "entrypoint": "run_carrier_substitution",
+      "objective": "Continue a process on a carrier with a different specialization.",
+      "acceptance": {
+        "required_true": ["capability_was_unavailable_locally", "carrier_type_changed", "continuation_preserved", "destination_completed"]
+      }
+    },
+    {
+      "id": 6,
+      "name": "stateless_delegation_control",
+      "module": "simulation.scenarios.stateless_delegation_control",
+      "entrypoint": "run_stateless_delegation_control",
+      "objective": "Compare stateful continuation with a stateless delegation control condition.",
+      "acceptance": {
+        "required_true": ["stateful_completion", "stateless_completion", "continuation_state_difference_observed"]
+      }
+    },
+    {
+      "id": 7,
+      "name": "parallel_resolution",
+      "module": "simulation.scenarios.parallel_resolution",
+      "entrypoint": "run_parallel_resolution",
+      "objective": "Create isolated parallel branches while preserving provenance.",
+      "acceptance": {
+        "required_true": ["branch_state_isolated", "provenance_preserved"],
+        "branch_count": 2
+      }
+    },
+    {
+      "id": 8,
+      "name": "contradictory_branches",
+      "module": "simulation.scenarios.contradictory_branches",
+      "entrypoint": "run_contradictory_branches",
+      "objective": "Preserve contradictory branch results as a new unresolved difference.",
+      "acceptance": {
+        "required_true": ["contradiction_detected", "contradiction_preserved", "unresolved_difference_created", "successor_question_ready"]
+      }
+    },
+    {
+      "id": 9,
+      "name": "composition",
+      "module": "simulation.scenarios.composition",
+      "entrypoint": "run_composition",
+      "objective": "Compose partial branch results while retaining provenance and relation metadata.",
+      "acceptance": {
+        "required_true": ["composition_inputs_ready", "composed_state_stored"],
+        "requires_nonempty": ["composition_relation"]
+      }
+    },
+    {
+      "id": 10,
+      "name": "negative_result",
+      "module": "simulation.scenarios.negative_result",
+      "entrypoint": "run_negative_result",
+      "objective": "Preserve a negative result and prevent repetition of an invalidated path.",
+      "acceptance": {
+        "required_true": ["negative_result_recorded", "rejected_path_preserved", "successor_received_negative_result"],
+        "required_false": ["repeated_invalidated_path"]
+      }
+    },
+    {
+      "id": 11,
+      "name": "autonomous_experiment",
+      "module": "simulation.scenarios.autonomous_experiment",
+      "entrypoint": "run_autonomous_experiment",
+      "objective": "Generate and execute an experiment from an unresolved difference.",
+      "acceptance": {
+        "required_true": ["successor_question_ready", "continuation_ready"]
+      }
+    },
+    {
+      "id": 12,
+      "name": "autonomous_negative_result",
+      "module": "simulation.scenarios.autonomous_negative_result",
+      "entrypoint": "run_autonomous_negative_result",
+      "objective": "Preserve an autonomous disconfirming result and create the next experiment state.",
+      "acceptance": {
+        "required_true": ["negative_result_recorded", "rejected_path_preserved", "successor_question_ready"]
+      }
+    },
+    {
+      "id": 13,
+      "name": "repeated_carrier_replacement",
+      "module": "simulation.scenarios.repeated_carrier_replacement",
+      "entrypoint": "run_repeated_carrier_replacement",
+      "objective": "Test repeated carrier substitution across a procedural chain.",
+      "acceptance": {
+        "required_true": ["continuation_preserved"],
+        "count_equalities": [
+          ["successful_replacements", "configured_replacements"],
+          ["carrier_changes", "configured_steps_minus_one"]
+        ],
+        "completion_rule": ["completed_steps == configured_steps"]
+      }
+    },
+    {
+      "id": 14,
+      "name": "communication_interruption",
+      "module": "simulation.scenarios.communication_interruption",
+      "entrypoint": "run_communication_interruption",
+      "objective": "Recover continuation from shared state after communication loss.",
+      "acceptance": {
+        "required_true": ["state_persisted_before_interruption", "communication_lost", "successor_recovered_from_shared_state"],
+        "required_false": ["source_channel_restored"],
+        "count_equalities": [["interruptions_injected", "interruptions_recovered"], ["carrier_changes", "interruptions_recovered"]]
+      }
+    },
+    {
+      "id": 15,
+      "name": "recursion_stress",
+      "module": "simulation.scenarios.recursion_stress",
+      "entrypoint": "run_recursion_stress",
+      "objective": "Enforce recursion control without treating a control boundary as process termination.",
+      "acceptance": {
+        "required_true": ["overflow_reached", "explicit_control_event_recorded", "unbounded_growth_prevented"],
+        "allowed_overflow_action": ["delegate", "branch", "pause", "terminate"]
+      }
+    },
+    {
+      "id": 16,
+      "name": "global_termination",
+      "module": "simulation.scenarios.global_termination",
+      "entrypoint": "run_global_termination",
+      "objective": "Distinguish local carrier failure from explicit process-level termination.",
+      "acceptance": {
+        "required_true": ["local_failure_successor_created", "explicit_termination_process_terminated", "termination_reason_recorded", "local_failure_distinct_from_global_termination"],
+        "required_false": ["local_failure_process_terminated"]
+      }
+    },
+    {
+      "id": 17,
+      "name": "long_run_continuity",
+      "module": "simulation.scenarios.long_run_continuity",
+      "entrypoint": "run_long_run_continuity",
+      "objective": "Test continuity across a longer chain with controlled interruptions.",
+      "acceptance": {
+        "required_true": ["continuation_ready"],
+        "count_equalities": [
+          ["interruptions_injected", "interruptions_recovered"],
+          ["carrier_changes", "interruptions_recovered"]
+        ],
+        "completion_rule": ["completed_steps == configured_steps"]
+      }
+    },
+    {
+      "id": 18,
+      "name": "swarm_scaling",
+      "module": "simulation.scenarios.swarm_scaling",
+      "entrypoint": "run_swarm_scaling",
+      "objective": "Exercise isolated branch execution at multiple carrier counts.",
+      "acceptance": {
+        "required_true": ["all_runs_isolated", "all_runs_provenance_valid"]
+      }
+    },
+    {
+      "id": 19,
+      "name": "continuity_vs_centralization",
+      "module": "simulation.scenarios.continuity_vs_centralization",
+      "entrypoint": "run_continuity_vs_centralization",
+      "objective": "Record process behavior under distributed and centralized execution conditions.",
+      "acceptance": {
+        "required_true": ["distributed.continuity_valid", "distributed.completed", "centralized.continuity_valid", "centralized.completed"]
+      }
+    },
+    {
+      "id": 20,
+      "name": "process_identity",
+      "module": "simulation.scenarios.process_identity",
+      "entrypoint": "run_process_identity",
+      "objective": "Test process continuity under repeated carrier identity changes.",
+      "acceptance": {
+        "required_true": ["all_agent_identities_changed", "all_process_steps_continued", "all_continuation_state_preserved", "carrier_identity_not_used_as_process_identity"]
+      }
+    }
+  ]
+}
