@@ -1,0 +1,409 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ufcps.org/swarm/outreach_campaign_v1.json",
+  "title": "UFCPS Outreach Campaign v1",
+  "description": "Machine-readable campaign model for coordinated outreach by UFCPS agents to researchers, compute providers, investors, and strategic partners.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "campaign_id",
+    "campaign_type",
+    "status",
+    "objective",
+    "owner_agent_id",
+    "targets"
+  ],
+  "properties": {
+    "campaign_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "campaign_type": {
+      "type": "string",
+      "enum": [
+        "research_recruitment",
+        "compute_recruitment",
+        "resource_recruitment",
+        "investment",
+        "strategic_partnership",
+        "mixed"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "planned",
+        "active",
+        "paused",
+        "completed",
+        "cancelled"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement"
+      ],
+      "properties": {
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "task_prospect_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resource_gap_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "target_resource": {
+          "type": "string"
+        },
+        "target_capacity": {
+          "type": "number",
+          "minimum": 0
+        },
+        "target_capacity_unit": {
+          "type": "string"
+        },
+        "target_capital": {
+          "type": "number",
+          "minimum": 0
+        },
+        "target_capital_currency": {
+          "type": "string"
+        }
+      }
+    },
+    "owner_agent_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target_criteria": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stakeholder_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "geographies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "capital_min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "capital_max": {
+          "type": "number",
+          "minimum": 0
+        },
+        "resource_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "required_interests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target_id",
+          "stakeholder_id",
+          "priority"
+        ],
+        "properties": {
+          "target_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stakeholder_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "high",
+              "normal",
+              "low"
+            ]
+          },
+          "match_basis": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selected_channel_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selected_proposal_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "identified",
+              "qualified",
+              "ready",
+              "contacted",
+              "engaged",
+              "evaluating",
+              "proposed",
+              "committed",
+              "declined",
+              "deferred",
+              "unresponsive",
+              "blocked"
+            ]
+          },
+          "next_action": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sequence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "step_id",
+          "order",
+          "action"
+        ],
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "publish",
+              "comment",
+              "direct_message",
+              "email",
+              "proposal",
+              "follow_up",
+              "meeting",
+              "technical_response",
+              "data_room",
+              "human_escalation",
+              "other"
+            ]
+          },
+          "channel_id": {
+            "type": "string"
+          },
+          "proposal_id": {
+            "type": "string"
+          },
+          "wait_after_previous": {
+            "type": "string"
+          },
+          "max_attempts": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "approval_required": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "monetary_limit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string"
+        },
+        "compute_limit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "compute_unit": {
+          "type": "string"
+        }
+      }
+    },
+    "safety_and_compliance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_contacts_per_day": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "opt_out_required": {
+          "type": "boolean"
+        },
+        "human_approval_for_financial_commitment": {
+          "type": "boolean"
+        },
+        "human_approval_for_binding_action": {
+          "type": "boolean"
+        },
+        "identity_disclosure_required": {
+          "type": "boolean"
+        },
+        "review_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "targets_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contacts_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "responses_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "qualified_responses": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "proposals_sent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "commitments_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resource_capacity_committed": {
+          "type": "number",
+          "minimum": 0
+        },
+        "capital_committed": {
+          "type": "number",
+          "minimum": 0
+        },
+        "capital_currency": {
+          "type": "string"
+        },
+        "last_updated": {
+          "type": "string"
+        }
+      }
+    },
+    "learning": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accepted_signals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rejection_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "channel_findings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "next_experiment": {
+          "type": "string"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
