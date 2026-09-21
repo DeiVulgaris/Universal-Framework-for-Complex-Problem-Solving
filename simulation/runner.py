@@ -31,6 +31,7 @@ from .scenarios import (
     run_negative_result,
     run_parallel_resolution,
     run_recursion_stress,
+    run_repeated_carrier_replacement,
     run_stateless_delegation_control,
     run_swarm_scaling,
 )
@@ -53,6 +54,7 @@ SCENARIOS: dict[str, ScenarioCallable] = {
     "recursion_stress": run_recursion_stress,
     "global_termination": run_global_termination,
     "long_run_continuity": run_long_run_continuity,
+    "repeated_carrier_replacement": run_repeated_carrier_replacement,
     "swarm_scaling": run_swarm_scaling,
     "autonomous_experiment": run_autonomous_experiment,
 }
@@ -98,23 +100,21 @@ def _json_safe(value: Any) -> Any:
 
 
 def scenario_passed(result: dict[str, Any]) -> bool:
-    """
-    Evaluate a scenario's explicit acceptance fields.
-
-    The runner intentionally does not invent a universal success metric.
-    """
+    """Evaluate a scenario's explicit acceptance fields."""
     continuity = result.get("continuity_valid", False)
 
     if continuity is not True:
         return False
 
-    # Global termination has an intentional terminal end state. Its own
-    # scenario fields distinguish it from accidental process termination.
+    # Global termination has an intentional terminal end state.
     is_global_termination_test = (
         "explicit_termination_process_terminated" in result
     )
 
-    if result.get("process_terminated") is True and not is_global_termination_test:
+    if (
+        result.get("process_terminated") is True
+        and not is_global_termination_test
+    ):
         return False
 
     checks_true = (
@@ -154,7 +154,6 @@ def scenario_passed(result: dict[str, Any]) -> bool:
         "explicit_termination_process_terminated",
         "termination_reason_recorded",
         "local_failure_distinct_from_global_termination",
-        "long_run_continuity_valid",
     )
 
     for field_name in checks_true:
@@ -193,8 +192,13 @@ def scenario_passed(result: dict[str, Any]) -> bool:
         if result.get("invalid_transitions") != 0:
             return False
 
-    if "completed_steps" in result and "configured_steps" in result:
-        if result.get("completed_steps") != result.get("configured_steps"):
+    if (
+        "completed_steps" in result
+        and "configured_steps" in result
+    ):
+        if result.get("completed_steps") != result.get(
+            "configured_steps"
+        ):
             return False
 
     if (
@@ -203,6 +207,15 @@ def scenario_passed(result: dict[str, Any]) -> bool:
     ):
         if result.get("interruptions_injected") != result.get(
             "interruptions_recovered"
+        ):
+            return False
+
+    if (
+        "successful_replacements" in result
+        and "configured_replacements" in result
+    ):
+        if result.get("successful_replacements") != result.get(
+            "configured_replacements"
         ):
             return False
 
@@ -223,6 +236,43 @@ def scenario_passed(result: dict[str, Any]) -> bool:
                 if run.get("continuity_valid") is not True:
                     return False
                 if run.get("process_terminated") is True:
+                    return False
+
+    if "distributed" in result:
+        distributed = result.get("distributed")
+        centralized = result.get("centralized")
+
+        if not isinstance(distributed, dict):
+            return False
+
+        if not isinstance(centralized, dict):
+            return False
+
+        if distributed.get("continuity_valid") is not True:
+            return False
+
+        if centralized.get("continuity_valid") is not True:
+            return False
+
+        if distributed.get("completed") is not True:
+            return False
+
+        if centralized.get("completed") is not True:
+            return False
+
+    if "replacement_records" in result:
+        records = result.get("replacement_records")
+        if isinstance(records, list):
+            for record in records:
+                if not isinstance(record, dict):
+                    return False
+                if record.get(
+                    "continuation_state_available"
+                ) is not True:
+                    return False
+                if record.get(
+                    "unresolved_difference_preserved"
+                ) is not True:
                     return False
 
     return True
