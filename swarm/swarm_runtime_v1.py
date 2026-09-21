@@ -47,6 +47,7 @@ if str(SWARM_DIR) not in sys.path:
 
 from distributed_experiment_coordinator_v1 import CoordinatorResult, coordinate_experiments
 from task_discovery_engine_v1 import TaskProspect, discover as discover_task_prospects
+from uql_store_v1 import UQLStore
 
 
 TERMINAL_QUESTION_STATES = {
@@ -99,6 +100,9 @@ class RuntimeResult:
     continuations_created: int
     current_queue_size: int
     global_process_terminated: bool
+    persistence_enabled: bool
+    uql_integrity_valid: Optional[bool]
+    uql_event_count: Optional[int]
     ledger_snapshot: list[dict[str, Any]]
     tick_history: list[dict[str, Any]]
     errors: list[str]
@@ -132,6 +136,8 @@ class SwarmRuntime:
         agents: Iterable[Mapping[str, Any]],
         resources: Iterable[Mapping[str, Any]],
         max_batch_size: int = 8,
+        persistence_path: Optional[str | Path] = None,
+        recover_existing: bool = True,
     ) -> None:
         if max_batch_size < 1:
             raise ValueError("max_batch_size must be >= 1")
@@ -149,6 +155,141 @@ class SwarmRuntime:
         self._continuation_sequence = 0
         self.errors: list[str] = []
         self.global_process_terminated = False
+        self.uql_store = UQLStore(persistence_path) if persistence_path is not None else None
+        self.persistence_path = str(persistence_path) if persistence_path is not None else None
+        if self.uql_store is not None and recover_existing:
+            self._restore_from_uql()
+
+
+    def _runtime_metadata(self, entry: LedgerEntry) -> dict[str, Any]:
+        return {
+            "runtime_id": self.runtime_id,
+            "runtime_entry_id": entry.entry_id,
+            "runtime_question": _safe(entry.question),
+            "runtime_status": entry.status,
+            "source": entry.source,
+            "parent_entry_id": entry.parent_entry_id,
+            "generation": entry.generation,
+            "last_runtime_tick": entry.last_runtime_tick,
+            "last_process_status": entry.last_process_status,
+            "agent_decisions": _safe(entry.metadata.get("agent_decisions", {})),
+            "latest_outcome": _safe(entry.metadata.get("latest_outcome")),
+            "from_outcome": _safe(entry.metadata.get("from_outcome")),
+            "last_runtime_event": _safe(entry.metadata.get("last_runtime_event")),
+        }
+
+    def _uql_status(self, entry: LedgerEntry) -> str:
+        if entry.status == "terminated_local":
+            return "resolved"
+        if entry.status == "rejected_by_agent":
+            return "abandoned_with_reason"
+        if entry.status == "blocked_local":
+            return "blocked"
+        if entry.status == "local_exception":
+            return "unresolved"
+        if entry.status == "continuation_ready":
+            return "delegated"
+        return entry.status
+
+    def _persist_entry(self, entry: LedgerEntry, *, event_type: str = "runtime_state") -> None:
+        if self.uql_store is None:
+            return
+        question_id = _text(entry.question.get("question_id"))
+        required_capabilities = entry.question.get("required_capabilities", [])
+        requirements = entry.question.get("requirements", {})
+        required_resources = requirements.get("resources", []) if isinstance(requirements, Mapping) else []
+        entry.metadata["last_runtime_event"] = event_type
+        metadata = self._runtime_metadata(entry)
+        try:
+            frontier = self.uql_store.get_frontier(question_id)
+        except KeyError:
+            self.uql_store.create_question(
+                question_id=question_id,
+                process_id=entry.process_id,
+                formulation=_text(entry.question.get("formulation")) or _text(entry.question.get("title")) or question_id,
+                required_capabilities=[str(x) for x in required_capabilities],
+                required_resources=[dict(x) for x in required_resources if isinstance(x, Mapping)],
+                metadata=metadata,
+            )
+            return
+        patch = {
+            "status": self._uql_status(entry),
+            "generation": entry.generation,
+            "candidate_carriers": list(frontier.candidate_carriers),
+            "required_capabilities": [str(x) for x in required_capabilities],
+            "required_resources": [dict(x) for x in required_resources if isinstance(x, Mapping)],
+            "metadata": metadata,
+        }
+        self.uql_store.update_frontier(
+            question_id=question_id,
+            event_type="frontier_update",
+            patch=patch,
+            process_id=entry.process_id,
+        )
+
+    def _restore_from_uql(self) -> None:
+        """Recover runtime entries and pending work from persisted UQL frontier."""
+        if self.uql_store is None:
+            return
+        max_entry = 0
+        max_cont = 0
+        max_tick = 0
+        for frontier in self.uql_store.frontier.values():
+            meta = dict(frontier.metadata or {})
+            runtime_question = meta.get("runtime_question")
+            runtime_id = _text(meta.get("runtime_id"))
+            if runtime_question is None or (runtime_id and runtime_id != self.runtime_id):
+                continue
+            question = dict(runtime_question)
+            question.setdefault("question_id", frontier.question_id)
+            question.setdefault("process_id", frontier.process_id)
+            entry_id = _text(meta.get("runtime_entry_id")) or f"Q-{frontier.question_id}"
+            source = _text(meta.get("source")) or ("continuation" if meta.get("parent_entry_id") else "seed")
+            status = _text(meta.get("runtime_status")) or frontier.status
+            if status == "queued":
+                status = "discoverable"
+            if status == "admitted":
+                status = "accepted"
+            entry = LedgerEntry(
+                entry_id=entry_id,
+                process_id=frontier.process_id,
+                question=question,
+                source=source,
+                status=status,
+                generation=int(meta.get("generation", frontier.generation or 0)),
+                parent_entry_id=meta.get("parent_entry_id"),
+                last_runtime_tick=int(meta.get("last_runtime_tick", 0)),
+                last_process_status=_text(meta.get("last_process_status")),
+                metadata={
+                    "agent_decisions": dict(meta.get("agent_decisions") or {}),
+                    "latest_outcome": meta.get("latest_outcome"),
+                    "from_outcome": meta.get("from_outcome"),
+                    "last_runtime_event": meta.get("last_runtime_event"),
+                },
+            )
+            self.ledger[entry_id] = entry
+            for agent_id, decision in entry.metadata.get("agent_decisions", {}).items():
+                self.agent_decisions[(frontier.question_id, _text(agent_id))] = _text(decision)
+            if status == "accepted":
+                self.queue.append(entry_id)
+            max_entry = max(max_entry, self._trailing_number(entry_id))
+            max_cont = max(max_cont, self._trailing_number(_text(question.get("question_id"))))
+            max_tick = max(max_tick, entry.last_runtime_tick)
+        self._entry_sequence = max_entry
+        self._continuation_sequence = max_cont
+        self._tick_number = max_tick
+
+    @staticmethod
+    def _trailing_number(value: str) -> int:
+        try:
+            return int(value.rsplit("-", 1)[-1])
+        except (ValueError, IndexError):
+            return 0
+
+    def persistence_integrity(self) -> dict[str, Any] | None:
+        if self.uql_store is None:
+            return None
+        return self.uql_store.verify_integrity()
 
     def _next_entry_id(self, prefix: str = "LEDGER") -> str:
         self._entry_sequence += 1
@@ -188,6 +329,7 @@ class SwarmRuntime:
                         )
                     except ValueError as exc:
                         self.errors.append(f"{question_id}: invalid predeclared decision: {exc}")
+            self._persist_entry(entry, event_type="question_created" if self.uql_store is not None and question_id not in self.uql_store.frontier else "runtime_state")
         return seeded
 
     def discover(self) -> list[TaskProspect]:
@@ -241,6 +383,7 @@ class SwarmRuntime:
                 entry.status = "awaiting_resources"
             elif decision == "reject":
                 entry.status = "rejected_by_agent"
+            self._persist_entry(entry, event_type="agent_decision")
             return True
         return False
 
@@ -336,6 +479,7 @@ class SwarmRuntime:
                 continue
             entry.status = "admitted"
             entry.last_runtime_tick = self._tick_number
+            self._persist_entry(entry, event_type="runtime_admission")
             admitted_ids.append(entry_id)
 
         if not admitted_ids:
@@ -371,6 +515,7 @@ class SwarmRuntime:
             for eid in admitted_ids:
                 entry = self.ledger[eid]
                 entry.status = "local_exception"
+                self._persist_entry(entry, event_type="runtime_exception")
             tick = RuntimeTick(
                 tick_id=tick_id,
                 tick_number=self._tick_number,
@@ -401,8 +546,10 @@ class SwarmRuntime:
             entry.metadata["latest_outcome"] = _safe(outcome)
             if outcome.get("process_terminated"):
                 entry.status = "terminated_local"
+                self._persist_entry(entry, event_type="process_terminated")
             elif outcome.get("continuation_ready"):
                 entry.status = "continuation_ready"
+                self._persist_entry(entry, event_type="continuation_ready")
                 child_question = self._make_continuation_question(entry, outcome)
                 child_entry_id = self._next_entry_id("C")
                 child = LedgerEntry(
@@ -410,7 +557,7 @@ class SwarmRuntime:
                     process_id=entry.process_id,
                     question=child_question,
                     source="continuation",
-                    status="queued",
+                    status="discoverable",
                     generation=entry.generation + 1,
                     parent_entry_id=entry.entry_id,
                     last_runtime_tick=self._tick_number,
@@ -418,12 +565,29 @@ class SwarmRuntime:
                     metadata={"from_outcome": _safe(outcome)},
                 )
                 self.ledger[child_entry_id] = child
-                self.queue.append(child_entry_id)
+                if self.uql_store is not None:
+                    parent_qid = _text(entry.question.get("question_id"))
+                    child_qid = _text(child.question.get("question_id"))
+                    formulation = _text(child.question.get("formulation")) or _text(child.question.get("title")) or child_qid
+                    try:
+                        self.uql_store.derive_question(
+                            parent_question_id=parent_qid,
+                            child_question_id=child_qid,
+                            formulation=formulation,
+                            process_id=child.process_id,
+                            unresolved_difference=_text(outcome.get("unresolved_difference")),
+                            metadata=self._runtime_metadata(child),
+                        )
+                        self._persist_entry(child, event_type="continuation_discovery")
+                    except ValueError as exc:
+                        self.errors.append(f"{child_qid}: UQL continuation persistence failed: {exc}")
                 continuation_count += 1
             elif outcome.get("local_failure"):
                 entry.status = "blocked_local"
+                self._persist_entry(entry, event_type="local_failure")
             else:
                 entry.status = "processed"
+                self._persist_entry(entry, event_type="process_processed")
 
         self.global_process_terminated = bool(result_dict.get("global_process_terminated", False))
         tick = RuntimeTick(
@@ -489,6 +653,9 @@ class SwarmRuntime:
             continuations_created=continuation_count,
             current_queue_size=len(self.queue),
             global_process_terminated=self.global_process_terminated,
+            persistence_enabled=self.uql_store is not None,
+            uql_integrity_valid=(self.persistence_integrity() or {}).get("valid") if self.uql_store is not None else None,
+            uql_event_count=(self.persistence_integrity() or {}).get("event_count") if self.uql_store is not None else None,
             ledger_snapshot=[_safe(asdict(e)) for e in self.ledger.values()],
             tick_history=[_safe(asdict(t)) for t in self.tick_history],
             errors=list(self.errors),
@@ -496,123 +663,126 @@ class SwarmRuntime:
 
 
 def demo() -> dict[str, Any]:
-    agents = [
-        {
-            "agent_id": "agent-runtime-001",
-            "status": "available",
-            "capabilities": [{"name": "simulation", "category": "research"}],
-            "task_policy": {"accepts_tasks": True},
-        },
-        {
-            "agent_id": "agent-runtime-002",
-            "status": "available",
-            "capabilities": [{"name": "analysis", "category": "research"}],
-            "task_policy": {"accepts_tasks": True},
-        },
-    ]
-    resources = [
-        {
-            "resource_id": "gpu-runtime-001",
-            "provider_id": "provider-runtime-001",
-            "resource_type": "gpu",
-            "status": "available",
-            "capabilities": [{"name": "gpu"}],
-            "verification": {"verification_status": "verified"},
-            "availability": {"available_capacity": 1000},
-        },
-        {
-            "resource_id": "gpu-runtime-002",
-            "provider_id": "provider-runtime-002",
-            "resource_type": "gpu",
-            "status": "available",
-            "capabilities": [{"name": "gpu"}],
-            "verification": {"verification_status": "verified"},
-            "availability": {"available_capacity": 1000},
-        },
-    ]
+    """Run a deterministic runtime + restart-recovery demonstration."""
+    with __import__("tempfile").TemporaryDirectory(prefix="ufcps-runtime-") as temp_dir:
+        base = Path(temp_dir) / "uql"
 
-    questions = [
-        {
-            "question_id": "Q-RUNTIME-001",
-            "task_prospect_id": "TP-RUNTIME-001",
-            "title": "seed process",
-            "required_capabilities": ["simulation"],
-            "requirements": {"resources": [{"resource_type": "gpu", "quantity": 25, "unit": "GPU-hours"}]},
-            "priority": 2,
-            "requested_reward_rc": 10,
-            "agent_decisions": {"agent-runtime-001": "accept"},
-        },
-        {
-            "question_id": "Q-RUNTIME-002",
-            "task_prospect_id": "TP-RUNTIME-002",
-            "title": "seed deadlock process",
-            "required_capabilities": ["simulation"],
-            "requirements": {"resources": [{"resource_type": "gpu", "quantity": 25, "unit": "GPU-hours"}]},
-            "priority": 1,
-            "requested_reward_rc": 10,
-            "execution_claim": {
-                "claim_id": "claim-Q-RUNTIME-002",
-                "execution_status": "deadlock",
-                "verification_status": "verified",
-                "verified_compute": 25,
-                "compute_unit": "GPU-hours",
-                "research_outcome": "not_required_for_provider_payment",
-                "evidence_refs": ["proof-Q-RUNTIME-002"],
-                "new_information_score": 0.8,
-                "unresolved_information_delta": 0.3,
-                "c5_valid": True,
-                "deadlock": {
-                    "deadlock_id": "deadlock-Q-RUNTIME-002",
-                    "boundary_completeness": 1.0,
-                    "constraint_completeness": 0.9,
-                    "attempt_trace_completeness": 0.9,
-                    "negative_result_quality": 0.8,
-                    "evidence_quality": 1.0,
-                    "substitution_guidance": 0.7,
-                    "reproducibility": 0.8,
-                },
+        agents = [
+            {
+                "agent_id": "agent-runtime-001",
+                "status": "available",
+                "capabilities": [{"name": "simulation", "category": "research"}],
+                "task_policy": {"accepts_tasks": True},
             },
-            "deadlock_bonus_budget": 10,
-            "agent_decisions": {"agent-runtime-001": "accept"},
-        },
-    ]
+            {
+                "agent_id": "agent-runtime-002",
+                "status": "available",
+                "capabilities": [{"name": "analysis", "category": "research"}],
+                "task_policy": {"accepts_tasks": True},
+            },
+        ]
+        resources = [
+            {
+                "resource_id": "gpu-runtime-001",
+                "provider_id": "provider-runtime-001",
+                "resource_type": "gpu",
+                "status": "available",
+                "capabilities": [{"name": "gpu"}],
+                "verification": {"verification_status": "verified"},
+                "availability": {"available_capacity": 1000},
+            },
+            {
+                "resource_id": "gpu-runtime-002",
+                "provider_id": "provider-runtime-002",
+                "resource_type": "gpu",
+                "status": "available",
+                "capabilities": [{"name": "gpu"}],
+                "verification": {"verification_status": "verified"},
+                "availability": {"available_capacity": 1000},
+            },
+        ]
+        questions = [
+            {
+                "question_id": "Q-RUNTIME-PERSIST-001",
+                "task_prospect_id": "TP-RUNTIME-PERSIST-001",
+                "title": "persistent seed process",
+                "required_capabilities": ["simulation"],
+                "requirements": {"resources": [{"resource_type": "gpu", "quantity": 25, "unit": "GPU-hours"}]},
+                "priority": 2,
+                "requested_reward_rc": 10,
+                "agent_decisions": {"agent-runtime-001": "accept"},
+            },
+            {
+                "question_id": "Q-RUNTIME-PERSIST-002",
+                "task_prospect_id": "TP-RUNTIME-PERSIST-002",
+                "title": "persistent second process",
+                "required_capabilities": ["simulation"],
+                "requirements": {"resources": [{"resource_type": "gpu", "quantity": 25, "unit": "GPU-hours"}]},
+                "priority": 1,
+                "requested_reward_rc": 10,
+                "agent_decisions": {"agent-runtime-001": "accept"},
+            },
+        ]
 
-    runtime = SwarmRuntime(
-        runtime_id="RUNTIME-DEMO-001",
-        agents=agents,
-        resources=resources,
-        max_batch_size=2,
-    )
-    seeded = runtime.seed_questions(questions)
-    # Tick 1 runs the explicitly accepted seed questions.
-    first_tick = runtime.tick()
-
-    # Continuations must re-enter discovery. The demo simulates two explicit
-    # agent decisions before Tick 2 rather than inheriting the old decision.
-    continuation_entries = [
-        entry for entry in runtime.ledger.values() if entry.source == "continuation"
-    ]
-    for entry in continuation_entries:
-        runtime.record_agent_decision(
-            question_id=_text(entry.question.get("question_id")),
-            agent_id="agent-runtime-001",
-            decision="accept",
+        runtime1 = SwarmRuntime(
+            runtime_id="RUNTIME-PERSIST-DEMO",
+            agents=agents,
+            resources=resources,
+            max_batch_size=2,
+            persistence_path=base,
         )
+        seeded = runtime1.seed_questions(questions)
+        first = runtime1.tick()
+        snapshot_before = runtime1.snapshot(seeded=seeded, ticks_executed=1)
 
-    second_tick = runtime.tick()
-    data = _safe(asdict(runtime.snapshot(seeded=seeded, ticks_executed=2)))
+        # Simulate a process restart. The new runtime reconstructs the active
+        # frontier and accepted pending work exclusively from UQL persistence.
+        runtime2 = SwarmRuntime(
+            runtime_id="RUNTIME-PERSIST-DEMO",
+            agents=agents,
+            resources=resources,
+            max_batch_size=2,
+            persistence_path=base,
+        )
+        recovered_entries = len(runtime2.ledger)
+        recovered_queue_before_decisions = len(runtime2.queue)
+        continuation_entries = [
+            entry for entry in runtime2.ledger.values()
+            if entry.source == "continuation" and entry.status == "discoverable"
+        ]
+        for entry in continuation_entries:
+            runtime2.discover()
+            runtime2.record_agent_decision(
+                question_id=_text(entry.question.get("question_id")),
+                agent_id="agent-runtime-001",
+                decision="accept",
+            )
+        second = runtime2.tick()
+        snapshot_after = runtime2.snapshot(seeded=seeded, ticks_executed=runtime2._tick_number)
+        integrity = runtime2.persistence_integrity() or {}
 
-    assert data["global_process_terminated"] is False
-    assert data["questions_seeded"] == 2
-    assert data["ticks_executed"] == 2
-    assert data["continuations_created"] == 4
-    assert data["current_queue_size"] == 2
-    assert data["prospects_current"] >= 4
-    assert all(t["prospects_generated"] >= 4 for t in data["tick_history"])
-    assert all(t["global_process_terminated"] is False for t in data["tick_history"])
-    assert any(e["source"] == "continuation" for e in data["ledger_snapshot"])
+        assert first.global_process_terminated is False
+        assert second.global_process_terminated is False
+        assert recovered_entries == 4
+        assert recovered_queue_before_decisions == 0
+        assert len(continuation_entries) == 2
+        assert snapshot_after.continuations_created == 4
+        assert integrity.get("valid") is True
+        assert integrity.get("hash_chain_valid") is True
+        assert integrity.get("frontier_replay_equal") is True
 
-    return data
+        return {
+            "status": "PASS",
+            "persistence_path": str(base),
+            "first_tick": _safe(asdict(first)),
+            "recovered_entries": recovered_entries,
+            "recovered_queue_before_decisions": recovered_queue_before_decisions,
+            "recovered_continuation_entries": len(continuation_entries),
+            "second_runtime": _safe(asdict(snapshot_after)),
+            "integrity": integrity,
+            "persisted_question_ids": sorted(runtime2.uql_store.frontier.keys()) if runtime2.uql_store else [],
+            "pre_restart_event_count": snapshot_before.uql_event_count,
+        }
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -634,15 +804,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         print("UFCPS Swarm Runtime v1")
         print("Status:", result["status"])
-        print("Ticks:", result["ticks_executed"])
-        print("Questions seeded:", result["questions_seeded"])
-        print("Prospects current:", result["prospects_current"])
-        print("Discoverable count:", result["discoverable_count"])
-        print("Agent decisions:", len(result["agent_decisions"]))
-        print("Processes started:", result["processes_started"])
-        print("Continuations created:", result["continuations_created"])
-        print("Queue size:", result["current_queue_size"])
-        print("Global terminated:", result["global_process_terminated"])
+        print("Recovered entries:", result["recovered_entries"])
+        print("Recovered queue before decisions:", result["recovered_queue_before_decisions"])
+        print("Recovered continuations:", result["recovered_continuation_entries"])
+        print("Second runtime status:", result["second_runtime"]["status"])
+        print("Second runtime continuations:", result["second_runtime"]["continuations_created"])
+        print("Second runtime processes:", result["second_runtime"]["processes_started"])
+        print("Second runtime queue:", result["second_runtime"]["current_queue_size"])
+        print("UQL integrity:", result["integrity"]["valid"])
+        print("UQL hash chain:", result["integrity"]["hash_chain_valid"])
+        print("UQL events:", result["integrity"]["event_count"])
 
     return 0
 
