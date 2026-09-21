@@ -1,4 +1,4 @@
-
+"""Scenario package for UFCPS simulations."""
 
 from .autonomous_experiment import (
     AutonomousExperimentPlan,
@@ -56,6 +56,11 @@ from .recursion_stress import (
     RecursionStressResult,
     run_recursion_stress,
 )
+from .repeated_carrier_replacement import (
+    ReplacementRecord,
+    RepeatedCarrierReplacementResult,
+    run_repeated_carrier_replacement,
+)
 from .stateless_delegation_control import (
     DelegationConditionResult,
     StatelessDelegationResult,
@@ -83,6 +88,8 @@ __all__ = [
     "NegativeResultScenario",
     "ParallelScenarioResult",
     "RecursionStressResult",
+    "ReplacementRecord",
+    "RepeatedCarrierReplacementResult",
     "ScalingRun",
     "ScenarioResult",
     "StatelessDelegationResult",
@@ -102,6 +109,7 @@ __all__ = [
     "run_negative_result",
     "run_parallel_resolution",
     "run_recursion_stress",
+    "run_repeated_carrier_replacement",
     "run_stateless_delegation_control",
     "run_swarm_scaling",
 ]
