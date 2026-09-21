@@ -1,4 +1,4 @@
-
+"""Deterministic global-termination scenario for UFCPS.
 
 The scenario distinguishes a valid process-level termination condition from
 local carrier failure.
@@ -153,7 +153,29 @@ def run_global_termination(
             "Condition A source executor unexpectedly failed."
         )
 
-    runtime.preserve("A0")
+    # Persist the continuation payload before the carrier failure. The failed
+    # carrier will be released by the failure injector, so recovery must use
+    # the preserved state rather than the dead source session.
+    state_a = runtime.get_state("A0")
+    state_a.metadata["carrier_id"] = "carrier_A"
+    persisted_a_reference = runtime.preserve("A0")
+    persisted_a = runtime.load_state(persisted_a_reference)
+
+    continuation_a = __import__(
+        "simulation.core.models",
+        fromlist=["ContinuationState"],
+    ).ContinuationState(
+        state_reference=persisted_a_reference,
+        source_unit_id="A0",
+        source_step_index=0,
+        unresolved_difference=state_a.unresolved_difference,
+        next_required_operation=state_a.next_required_operation or Operation.DIFF,
+        preserved_state=persisted_a.payload,
+        reason=(
+            "Condition A: recover continuation from preserved process state "
+            "after local carrier failure."
+        ),
+    )
 
     # Inject local carrier termination. This is a carrier event, not a process
     # termination request.
@@ -175,14 +197,9 @@ def run_global_termination(
 
     local_failure_process_terminated = runtime.terminated
 
-    successor = runtime.delegate(
-        "A0",
-        "carrier_A",
+    successor = runtime.engine.unfold(
+        continuation_a,
         "carrier_B",
-        reason=(
-            "Condition A: local carrier failed while a valid continuation "
-            "remained available."
-        ),
         next_unit_id="A1",
     )
 
@@ -190,6 +207,7 @@ def run_global_termination(
         successor.unit_id == "A1"
         and successor.step_index == 1
         and not runtime.terminated
+        and runtime.get_carrier("carrier_B").current_unit_id == "A1"
     )
 
     # Condition B: explicit process-level termination.
