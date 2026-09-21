@@ -1,0 +1,414 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ufcps.org/swarm/investor_registry_v1.json",
+  "title": "UFCPS Investor Registry v1",
+  "description": "Machine-readable registry model for potential investors, strategic partners, resource financiers, and other capital/resource providers relevant to UFCPS Level 2 outreach and matching.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "registry_version",
+    "stakeholders"
+  ],
+  "properties": {
+    "registry_version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "stakeholders": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/stakeholder"
+      }
+    }
+  },
+  "$defs": {
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "type": "string",
+          "enum": [
+            "email",
+            "linkedin",
+            "x",
+            "website",
+            "platform",
+            "forum",
+            "referral",
+            "other"
+          ]
+        },
+        "address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "public": {
+          "type": "boolean"
+        }
+      }
+    },
+    "preference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "geographies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resource_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "technology_keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "stakeholder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stakeholder_id",
+        "stakeholder_type",
+        "name",
+        "status",
+        "preferences"
+      ],
+      "properties": {
+        "stakeholder_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stakeholder_type": {
+          "type": "string",
+          "enum": [
+            "micro_provider",
+            "small_provider",
+            "medium_provider",
+            "large_provider",
+            "angel_investor",
+            "venture_investor",
+            "infrastructure_investor",
+            "strategic_partner",
+            "institution",
+            "research_funder",
+            "other"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "identified",
+            "qualified",
+            "contacted",
+            "engaged",
+            "evaluating",
+            "due_diligence",
+            "proposed",
+            "committed",
+            "onboarded",
+            "active",
+            "declined",
+            "deferred",
+            "unresponsive",
+            "unqualified",
+            "blocked"
+          ]
+        },
+        "organization": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "country": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "geographies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "preferences": {
+          "$ref": "#/$defs/preference"
+        },
+        "capital_capacity": {
+          "$ref": "#/$defs/range"
+        },
+        "resource_capacity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "resource_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "capacity_ranges": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/range"
+              }
+            },
+            "available_now": {
+              "type": "boolean"
+            }
+          }
+        },
+        "risk_profile": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "risk_level": {
+              "type": "string",
+              "enum": [
+                "low",
+                "moderate",
+                "high",
+                "unknown"
+              ]
+            },
+            "preferred_horizon": {
+              "type": "string"
+            }
+          }
+        },
+        "contacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contact"
+          }
+        },
+        "communication_preferences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outreach_constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fit_signals": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "compute_interest": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "ai_interest": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "infrastructure_interest": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "research_interest": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "crypto_interest": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "evidence_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "interaction_history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "interaction_id",
+              "date",
+              "channel",
+              "outcome"
+            ],
+            "properties": {
+              "interaction_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "date": {
+                "type": "string"
+              },
+              "channel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "proposal_id": {
+                "type": "string"
+              },
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "no_response",
+                  "interest",
+                  "request_information",
+                  "declined",
+                  "deferred",
+                  "meeting",
+                  "proposal_requested",
+                  "commitment",
+                  "other"
+                ]
+              },
+              "notes_ref": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "matching": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "matched_task_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "matched_resource_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "fit_status": {
+              "type": "string",
+              "enum": [
+                "fit",
+                "partial_fit",
+                "no_fit",
+                "unknown"
+              ]
+            },
+            "basis_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "source_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "discovered_by": {
+              "type": "string"
+            },
+            "created_at": {
+              "type": "string"
+            },
+            "updated_at": {
+              "type": "string"
+            }
+          }
+        },
+        "privacy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "data_class": {
+              "type": "string",
+              "enum": [
+                "public",
+                "business",
+                "restricted"
+              ]
+            },
+            "allowed_use": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
