@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 
 """Unified runner for UFCPS simulation scenarios.
 
@@ -305,6 +305,47 @@ def scenario_passed(result: dict[str, Any]) -> bool:
                     "unresolved_difference_preserved"
                 ) is not True:
                     return False
+
+    # Process identity requires continuity to survive every carrier change.
+    if "identity_transitions" in result:
+        transitions = result.get("identity_transitions")
+        configured_steps = result.get("configured_steps")
+
+        if not isinstance(transitions, list):
+            return False
+        if not isinstance(configured_steps, int):
+            return False
+        if len(transitions) != max(configured_steps - 1, 0):
+            return False
+
+        for index, transition in enumerate(transitions):
+            if not isinstance(transition, dict):
+                return False
+            if transition.get("carrier_identity_changed") is not True:
+                return False
+            if transition.get("process_step_continued") is not True:
+                return False
+            if transition.get("continuation_state_preserved") is not True:
+                return False
+            if transition.get("source_agent_id") == transition.get(
+                "destination_agent_id"
+            ):
+                return False
+            if transition.get("source_step_index") != index:
+                return False
+            if transition.get("destination_step_index") != index + 1:
+                return False
+
+        metrics = result.get("metrics")
+        if not isinstance(metrics, dict):
+            return False
+        expected_transitions = max(configured_steps - 1, 0)
+        if metrics.get("transitions") != expected_transitions:
+            return False
+        if metrics.get("carrier_handoffs") != expected_transitions:
+            return False
+        if metrics.get("valid_step_transitions") != expected_transitions:
+            return False
 
     return True
 
