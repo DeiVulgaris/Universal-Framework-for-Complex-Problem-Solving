@@ -1,0 +1,415 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ufcps.org/swarm/proposal_v1.json",
+  "title": "UFCPS Proposal v1",
+  "description": "Machine-readable proposal exchanged by UFCPS agents with researchers, resource providers, investors, and strategic partners. A proposal describes a specific opportunity, request, evidence, economics, risks, and required action without implying guaranteed outcomes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proposal_id",
+    "proposal_type",
+    "status",
+    "issuer",
+    "recipient",
+    "objective",
+    "evidence"
+  ],
+  "properties": {
+    "proposal_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proposal_type": {
+      "type": "string",
+      "enum": [
+        "research",
+        "compute_resource",
+        "physical_resource",
+        "investment",
+        "strategic_partnership",
+        "validation",
+        "mixed",
+        "other"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "prepared",
+        "submitted",
+        "viewed",
+        "engaged",
+        "negotiating",
+        "accepted",
+        "declined",
+        "expired",
+        "withdrawn"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "issuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent_id"
+      ],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "organization": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "identity_disclosure": {
+          "type": "string"
+        }
+      }
+    },
+    "recipient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stakeholder_id",
+        "role"
+      ],
+      "properties": {
+        "stakeholder_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string"
+        },
+        "contact_ref": {
+          "type": "string"
+        }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "question_id": {
+          "type": "string"
+        },
+        "task_prospect_id": {
+          "type": "string"
+        },
+        "resource_gap_id": {
+          "type": "string"
+        },
+        "related_process_id": {
+          "type": "string"
+        }
+      }
+    },
+    "objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement"
+      ],
+      "properties": {
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requested_action": {
+          "type": "string"
+        },
+        "requested_deadline": {
+          "type": "string"
+        },
+        "success_condition": {
+          "type": "string"
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "resource_type",
+              "quantity",
+              "unit"
+            ],
+            "properties": {
+              "resource_type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "quantity": {
+                "type": "number",
+                "minimum": 0
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "duration": {
+                "type": "string"
+              },
+              "constraints": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "capital": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "amount_min": {
+              "type": "number",
+              "minimum": 0
+            },
+            "amount_target": {
+              "type": "number",
+              "minimum": 0
+            },
+            "amount_max": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string"
+            },
+            "use": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "economics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "compensation_model": {
+          "type": "string"
+        },
+        "compute_unit": {
+          "type": "string"
+        },
+        "compute_rate": {
+          "type": "number",
+          "minimum": 0
+        },
+        "compute_rate_currency": {
+          "type": "string"
+        },
+        "transaction_fee_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "author_royalty_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1e-05
+        },
+        "other_costs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "economic_assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "refs"
+      ],
+      "properties": {
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "summary": {
+          "type": "string"
+        },
+        "benchmark_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "risk"
+        ],
+        "properties": {
+          "risk": {
+            "type": "string",
+            "minLength": 1
+          },
+          "impact": {
+            "type": "string"
+          },
+          "mitigation": {
+            "type": "string"
+          },
+          "uncertainty": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "assumptions"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "base",
+              "upside",
+              "downside",
+              "stress",
+              "custom"
+            ]
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "terms": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expiration": {
+          "type": "string"
+        },
+        "non_binding": {
+          "type": "boolean"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message_format": {
+          "type": "string"
+        },
+        "personalization_basis": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "follow_up": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "next_action": {
+          "type": "string"
+        },
+        "follow_up_after": {
+          "type": "string"
+        },
+        "owner_agent_id": {
+          "type": "string"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
