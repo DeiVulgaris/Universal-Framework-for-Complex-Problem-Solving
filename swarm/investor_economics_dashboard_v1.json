@@ -5,8 +5,10 @@
   "principles": {
     "outcome_independent_compute_compensation": true,
     "no_guaranteed_returns": true,
-    "author_royalty_rate_per_qualifying_transaction": 0.00001,
-    "author_royalty_reference": "swarm/author_royalty_v1.md"
+    "author_royalty_rate_per_qualifying_transaction": 1e-05,
+    "author_royalty_reference": "swarm/author_royalty_v1.md",
+    "sponsorship_is_non_investment": true,
+    "sponsorship_financial_return": "none"
   },
   "project": {
     "project_id": "UFCPS-L2",
@@ -40,15 +42,53 @@
       "normalized_compute_units": 0,
       "measurement_basis": "deployment_plan"
     },
-    "capacity_unit_reference": "swarm/compute_unit_v1.json"
+    "capacity_unit_reference": "swarm/compute_unit_v1.json",
+    "deployment_model": {
+      "primary": "distributed_participant_hardware",
+      "description": "Verified compute capacity may be supplied by graphics processors connected to ordinary participant computers rather than by dedicated centralized data-center hardware.",
+      "resource_forms": [
+        "participant_gpu",
+        "participant_workstation",
+        "small_gpu_pool",
+        "dedicated_compute_node"
+      ],
+      "centralization_required": false,
+      "heterogeneous_hardware_supported": true,
+      "dynamic_availability_supported": true,
+      "resource_provider_role": "provide verified process continuity by making computing capacity available; resource providers are not required to solve the research question.",
+      "aggregation_model": "many_small_resources_may_be_aggregated_into_a_logical_compute_pool"
+    },
+    "participant_gpu_pool": {
+      "enabled": true,
+      "unit": "participating_gpu",
+      "ownership": "participant_owned",
+      "connection": "network_attached",
+      "dedicated_hardware_required": false,
+      "device_profile_fields": [
+        "gpu_model",
+        "memory_gb",
+        "compute_capability",
+        "driver_version",
+        "availability_window",
+        "network_quality",
+        "verification_status"
+      ],
+      "availability_model": "opportunistic_or_scheduled",
+      "scaling_principle": "scale_out_by_adding_participant_devices",
+      "failure_model": "individual_device_failure_does_not_terminate_the_global_process",
+      "accounting_basis": "verified_compute_delivered",
+      "compensation_policy": "compensation_for_verified_compute_may_apply independently_of_research_outcome",
+      "sponsorship_mode_possible": true,
+      "sponsorship_note": "A participant may voluntarily provide GPU capacity as an in-kind mission contribution without financial return; this is distinct from paid compute provision."
+    }
   },
   "utilization": {
     "unit": "fraction_of_verified_available_capacity",
     "scenarios": {
       "downside": 0.25,
-      "base": 0.50,
+      "base": 0.5,
       "upside": 0.75,
-      "stress": 0.10
+      "stress": 0.1
     },
     "measurement": "verified_compute_delivered / verified_compute_available"
   },
@@ -71,7 +111,7 @@
       "platform_fee_rate": 0
     },
     "author_royalty": {
-      "rate_per_qualifying_transaction": 0.00001,
+      "rate_per_qualifying_transaction": 1e-05,
       "formula": "transaction_amount * 0.00001",
       "recipient_reference": "swarm/author_royalty_v1.md",
       "excluded_from_provider_compensation": true,
@@ -120,33 +160,33 @@
         "utilization": 0.25,
         "compute_price_multiplier": 0.75,
         "energy_price_multiplier": 1.25,
-        "hardware_depreciation_multiplier": 1.20,
-        "transaction_cost_multiplier": 1.20,
-        "demand_multiplier": 0.60
+        "hardware_depreciation_multiplier": 1.2,
+        "transaction_cost_multiplier": 1.2,
+        "demand_multiplier": 0.6
       },
       "base": {
-        "utilization": 0.50,
-        "compute_price_multiplier": 1.00,
-        "energy_price_multiplier": 1.00,
-        "hardware_depreciation_multiplier": 1.00,
-        "transaction_cost_multiplier": 1.00,
-        "demand_multiplier": 1.00
+        "utilization": 0.5,
+        "compute_price_multiplier": 1.0,
+        "energy_price_multiplier": 1.0,
+        "hardware_depreciation_multiplier": 1.0,
+        "transaction_cost_multiplier": 1.0,
+        "demand_multiplier": 1.0
       },
       "upside": {
         "utilization": 0.75,
         "compute_price_multiplier": 1.15,
-        "energy_price_multiplier": 0.90,
-        "hardware_depreciation_multiplier": 0.90,
-        "transaction_cost_multiplier": 0.90,
-        "demand_multiplier": 1.30
+        "energy_price_multiplier": 0.9,
+        "hardware_depreciation_multiplier": 0.9,
+        "transaction_cost_multiplier": 0.9,
+        "demand_multiplier": 1.3
       },
       "stress": {
-        "utilization": 0.10,
-        "compute_price_multiplier": 0.60,
-        "energy_price_multiplier": 1.50,
-        "hardware_depreciation_multiplier": 1.30,
-        "transaction_cost_multiplier": 1.50,
-        "demand_multiplier": 0.40
+        "utilization": 0.1,
+        "compute_price_multiplier": 0.6,
+        "energy_price_multiplier": 1.5,
+        "hardware_depreciation_multiplier": 1.3,
+        "transaction_cost_multiplier": 1.5,
+        "demand_multiplier": 0.4
       }
     },
     "derived_outputs": {
@@ -242,14 +282,18 @@
   "investor_view": {
     "display_sections": [
       "capital_requirement",
+      "sponsorship",
+      "sponsorship_bonus_program",
       "verified_compute_capacity",
+      "distributed_participant_gpu_pool",
       "utilization",
       "unit_economics",
       "scenario_analysis",
       "sensitivity_analysis",
       "risk_register",
       "verification_status",
-      "assumptions_and_uncertainties"
+      "assumptions_and_uncertainties",
+      "mission_and_sponsorship"
     ],
     "prohibited_claims": [
       "guaranteed_return",
@@ -257,7 +301,10 @@
       "guaranteed_demand",
       "guaranteed_scaling",
       "guaranteed_agi",
-      "risk_free_investment"
+      "risk_free_investment",
+      "implied_financial_return_from_sponsorship",
+      "guaranteed_agi_from_sponsorship",
+      "guaranteed_social_or_evolutionary_outcome"
     ]
   },
   "assumptions_and_uncertainties": [
@@ -266,7 +313,10 @@
     "Capital requirements are deployment-specific and must be populated from evidence.",
     "Scenario multipliers are analytical placeholders, not forecasts.",
     "The economic model does not establish that distributed resources will produce AGI or swarm intelligence.",
-    "Legal, tax, payment, and regulatory treatment requires jurisdiction-specific review."
+    "Legal, tax, payment, and regulatory treatment requires jurisdiction-specific review.",
+    "Sponsorship levels and contribution thresholds are placeholders until payment, compliance, and community-policy requirements are defined.",
+    "A significant portion of capacity may come from participant-owned GPUs connected through ordinary computers; availability, verification, heterogeneity, network quality, and device failure must therefore be modeled explicitly.",
+    "Non-financial sponsor benefits are intended to provide tangible participation value; exact thresholds, delivery channels, and recognition rules require pilot validation and compliance review."
   ],
   "provenance": {
     "model_origin": "UFCPS Level 2 economic architecture",
@@ -279,6 +329,151 @@
       "swarm/resource_registry_v1.json"
     ],
     "status": "initial_structural_model",
-    "last_calibration": null
+    "last_calibration": null,
+    "last_update_reason": "Added distributed participant-owned GPU contribution as a non-centralized compute-capacity source and in-kind mission participation mode."
+  },
+  "sponsorship": {
+    "enabled": true,
+    "type": "non_financial_support",
+    "financial_return": "none",
+    "mission": "Support the development of distributed swarm intelligence and research into AGI as a possible evolutionary step in the development of intelligence.",
+    "empathy_and_altruism": {
+      "enabled": true,
+      "framing": "Participation is offered as an act of empathy, solidarity, and altruistic support for a shared long-term research objective.",
+      "not_investment_claim": true
+    },
+    "contribution_forms": [
+      "financial_sponsorship",
+      "participant_gpu_capacity",
+      "participant_compute_time",
+      "in_kind_resources"
+    ],
+    "bonus_principle": "Every sponsor should receive a tangible non-financial benefit that recognizes participation and gives useful access to project information without representing a financial return.",
+    "bonus_program": [
+      {
+        "level": "Supporter",
+        "eligibility": "any qualifying sponsorship or in-kind contribution",
+        "bonus": [
+          "Swarm News regular digest",
+          "supporter digital badge",
+          "public acknowledgement when the participant opts in"
+        ],
+        "cadence": "monthly_or_project_milestone"
+      },
+      {
+        "level": "Ally",
+        "eligibility": "higher recurring sponsorship or sustained resource contribution",
+        "bonus": [
+          "all Supporter benefits",
+          "early access to selected research updates",
+          "behind-the-scenes development notes",
+          "invitations to selected online project briefings"
+        ],
+        "cadence": "monthly_plus_milestones"
+      },
+      {
+        "level": "Patron",
+        "eligibility": "substantial recurring sponsorship or significant sustained resource contribution",
+        "bonus": [
+          "all Ally benefits",
+          "early access to selected public reports or demos",
+          "patron acknowledgement",
+          "periodic founder/research briefing"
+        ],
+        "cadence": "monthly_plus_milestones"
+      }
+    ],
+    "news_bonus": {
+      "name": "Swarm News",
+      "description": "A dedicated project news stream covering research progress, experiments, infrastructure growth, unresolved questions, negative results, milestones, and upcoming activity.",
+      "delivery_channels": [
+        "email",
+        "web_portal",
+        "optional_private_channel"
+      ],
+      "early_access_may_apply": true,
+      "commercial_value_statement": "Informational and recognition benefit only; no guaranteed monetary value."
+    },
+    "rules": [
+      "Benefits are non-transferable unless explicitly stated.",
+      "Benefits do not constitute dividends, interest, equity, profit share, or investment return.",
+      "Access to research updates does not guarantee positive results.",
+      "Participants may choose whether and how their contribution is publicly acknowledged.",
+      "Bonus thresholds should be calibrated after pilot testing and compliance review."
+    ]
+  },
+  "participant_incentives": {
+    "swarm_points": {
+      "enabled": true,
+      "purpose": "Накопление бонусных очков за вклад участника в вычислительный рой.",
+      "principle": "Очки являются бонусным механизмом лояльности и не являются денежными средствами, долей собственности или гарантированной финансовой доходностью.",
+      "earn_sources": [
+        {
+          "source": "verified_gpu_compute",
+          "description": "Проверенное предоставление GPU-времени рою.",
+          "points_method": "Начисление по фактически проверенному объёму предоставленного вычислительного ресурса."
+        },
+        {
+          "source": "in_kind_resource_contribution",
+          "description": "Предоставление вычислительных или иных ресурсов без денежной оплаты.",
+          "points_method": "Начисление по заранее опубликованным правилам вклада."
+        },
+        {
+          "source": "research_participation",
+          "description": "Подтверждённый вклад в эксперименты, тестирование и верификацию.",
+          "points_method": "Начисление по правилам конкретной программы."
+        },
+        {
+          "source": "community_contribution",
+          "description": "Полезный вклад в экосистему: документация, баг-репорты, воспроизводимость и другие подтверждённые действия.",
+          "points_method": "Начисление по отдельным правилам программы."
+        }
+      ],
+      "spend_targets": [
+        "discount_on_model_inference",
+        "discount_on_model_finetuning",
+        "discount_on_remote_compute",
+        "discount_on_experimental_compute_jobs"
+      ],
+      "no_cash_conversion": true
+    },
+    "model_usage_discounts": {
+      "enabled": true,
+      "unit": "percentage_discount",
+      "example_tiers": [
+        {
+          "tier": "bronze",
+          "points_threshold": 100,
+          "discount": "5%"
+        },
+        {
+          "tier": "silver",
+          "points_threshold": 500,
+          "discount": "15%"
+        },
+        {
+          "tier": "gold",
+          "points_threshold": 2000,
+          "discount": "30%"
+        },
+        {
+          "tier": "swarm_contributor",
+          "points_threshold": 5000,
+          "discount": "50%"
+        }
+      ],
+      "calibration_status": "illustrative",
+      "final_rates_require_economic_simulation": true
+    },
+    "participant_feedback_loop": {
+      "description": "Чем больше участник способствует непрерывности вычислительного процесса, тем больше доступных бонусов он получает для собственного использования вычислительных возможностей роя.",
+      "resource_to_benefit_cycle": [
+        "participant_provides_resource",
+        "resource_is_verified",
+        "points_are_credited",
+        "participant_uses_points",
+        "discount_is_applied_to_model_usage"
+      ]
+    }
   }
 }
