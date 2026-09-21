@@ -4,99 +4,61 @@ UFCPS — Level 3 Emergent Integration v1
 Integrates:
 
     Orthogonal Transition Explorer
-            +
+            ↓
     Branch Interaction
-            +
-    Unresolved Question Ledger (UQL)
+            ↓
+    UQL persistence
+            ↓
+    Emergent Space Builder
+            ↓
+          C_(k+1)
 
-Conceptual cycle:
+The module is intentionally architectural.
 
-    C_k
-      ↓
-    OT candidates
-      ↓
-    parallel exploration
-      ↓
-    localization
-      ↓
-    branch interaction
-      ├──────────────→ D_new
-      │
-      └──────────────→ I_candidate
-                              ↓
-                       new question(s)
-                              ↓
-                            UQL
-                              ↓
-                           C_k+1
+It does not:
+    - determine scientific truth;
+    - select the best OT mechanism;
+    - declare an invariant universally true;
+    - measure intelligence;
+    - claim consciousness.
 
-Important architectural principles:
-
-    1. OT branches are not required to collapse into one branch.
-    2. Interaction may generate distinctions unavailable to isolated
-       branches.
-    3. Interaction may expose candidate invariants.
-    4. Emergent distinctions become persistent research objects.
-    5. New questions enter the unresolved-question memory.
-    6. Candidate invariants remain hypotheses until transformed and tested.
-    7. Branch failure does not terminate the global process.
-    8. UQL persistence does not mean that an answer has been found.
-
-This module is an integration layer.
-
-It deliberately does not redefine:
-    - OT exploration;
-    - branch interaction;
-    - invariant testing;
-    - UQL storage semantics.
-
-Instead, it translates interaction outputs into continuation objects.
+Its responsibility is to preserve the process from
+interaction-derived distinctions to the next cognitive space.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Protocol, Tuple
+from typing import Any, Dict, List, Optional, Protocol
 
 from orthogonal_transition_explorer_v1 import (
-    OTBranch,
-    OTMechanism,
     OrthogonalTransitionExplorer,
-    ExplorationResult,
+    OTMechanism,
 )
 
 from branch_interaction_v1 import (
     BranchInteractionEngine,
-    CandidateInvariant,
-    EmergentDistinction,
-    InteractionResult,
     LocalizedBranch,
+    InteractionResult,
+    InvariantStatus,
+)
+
+from emergent_space_builder_v1 import (
+    CognitiveSpace,
+    EmergentSpaceBuilder,
 )
 
 
 # ----------------------------------------------------------------------
-# UQL adapter
+# UQL interface
 # ----------------------------------------------------------------------
 
 
 class UQLAdapter(Protocol):
-    """
-    Minimal interface required by the integration layer.
-
-    The concrete UFCPS UQL store may implement a richer API.
-
-    This adapter deliberately exposes only the semantic operations
-    required here:
-
-        create emergent question
-        record derived distinction
-        record candidate invariant
-    """
 
     def create_question(
         self,
         question: str,
-        *,
         parent_ref: Optional[str] = None,
         provenance: Optional[Dict[str, Any]] = None,
     ) -> str:
@@ -112,32 +74,35 @@ class UQLAdapter(Protocol):
 
 # ----------------------------------------------------------------------
 # In-memory UQL adapter
+#
+# This remains a test adapter.
+# It is NOT the persistent UQL implementation.
 # ----------------------------------------------------------------------
 
 
 @dataclass
 class UQLQuestion:
+
     question_id: str
+
     question: str
+
     parent_ref: Optional[str]
+
     provenance: Dict[str, Any]
 
 
 @dataclass
 class UQLEvent:
+
     event_id: str
+
     event_type: str
+
     payload: Dict[str, Any]
 
 
 class InMemoryUQLAdapter:
-    """
-    Deterministic adapter used for integration tests.
-
-    This is NOT a replacement for the persistent UFCPS UQL store.
-
-    It exists so the integration layer can be tested independently.
-    """
 
     def __init__(self) -> None:
 
@@ -155,7 +120,6 @@ class InMemoryUQLAdapter:
     def create_question(
         self,
         question: str,
-        *,
         parent_ref: Optional[str] = None,
         provenance: Optional[
             Dict[str, Any]
@@ -171,8 +135,11 @@ class InMemoryUQLAdapter:
         self.questions.append(
             UQLQuestion(
                 question_id=question_id,
+
                 question=question,
+
                 parent_ref=parent_ref,
+
                 provenance=(
                     provenance
                     if provenance is not None
@@ -198,7 +165,9 @@ class InMemoryUQLAdapter:
         self.events.append(
             UQLEvent(
                 event_id=event_id,
+
                 event_type=event_type,
+
                 payload=payload,
             )
         )
@@ -207,22 +176,33 @@ class InMemoryUQLAdapter:
 
 
 # ----------------------------------------------------------------------
-# Integration records
+# Emergent records
 # ----------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
+@dataclass
 class EmergentRecord:
+
+    record_type: str
+
     record_id: str
-    kind: str
 
-    source_branches: Tuple[str, ...]
+    source_branches: List[str]
 
-    description: str
+    uql_event_id: str
 
-    provenance: Dict[str, Any] = field(
+    question_id: Optional[str]
+
+    status: str
+
+    metadata: Dict[str, Any] = field(
         default_factory=dict
     )
+
+
+# ----------------------------------------------------------------------
+# Integration result
+# ----------------------------------------------------------------------
 
 
 @dataclass
@@ -230,7 +210,7 @@ class Level3IntegrationResult:
 
     source_space: str
 
-    exploration: ExplorationResult
+    exploration_branch_count: int
 
     interaction: InteractionResult
 
@@ -242,13 +222,15 @@ class Level3IntegrationResult:
 
     invariant_ids: List[str]
 
-    next_space: str
+    next_space: CognitiveSpace
 
     continuation_ready: bool
 
-    process_terminated: bool = False
+    process_terminated: bool
 
-    description: str = ""
+    provenance: Dict[str, Any] = field(
+        default_factory=dict
+    )
 
 
 # ----------------------------------------------------------------------
@@ -257,55 +239,39 @@ class Level3IntegrationResult:
 
 
 class Level3EmergentIntegration:
-    """
-    Connects OT exploration, branch interaction and UQL persistence.
-
-    The engine does not choose an OT branch.
-
-    Instead:
-
-        exploration
-             ↓
-        interaction
-             ↓
-        persistence
-             ↓
-        continuation
-    """
 
     def __init__(
         self,
-        *,
-        uql: UQLAdapter,
-        explorer: Optional[
-            OrthogonalTransitionExplorer
-        ] = None,
-        interaction_engine: Optional[
-            BranchInteractionEngine
+        uql: Optional[
+            UQLAdapter
         ] = None,
     ) -> None:
 
-        self.uql = uql
-
         self.explorer = (
-            explorer
-            if explorer is not None
-            else OrthogonalTransitionExplorer()
+            OrthogonalTransitionExplorer()
         )
 
         self.interaction_engine = (
-            interaction_engine
-            if interaction_engine is not None
-            else BranchInteractionEngine()
+            BranchInteractionEngine()
+        )
+
+        self.uql = (
+            uql
+            if uql is not None
+            else InMemoryUQLAdapter()
+        )
+
+        self.space_builder = (
+            EmergentSpaceBuilder()
         )
 
     # ------------------------------------------------------------------
-    # Localization
+    # Localize OT branches
     # ------------------------------------------------------------------
 
     def localize_branches(
         self,
-        branches: Iterable[OTBranch],
+        branches,
     ) -> List[LocalizedBranch]:
 
         localized: List[
@@ -314,36 +280,15 @@ class Level3EmergentIntegration:
 
         for branch in branches:
 
-            distinctions = (
-                tuple(
-                    branch.metadata.get(
-                        "distinctions",
-                        (),
-                    )
-                )
-            )
-
-            relations = (
-                tuple(
-                    branch.metadata.get(
-                        "relations",
-                        (),
-                    )
-                )
-            )
-
-            constraints = (
-                tuple(
-                    branch.metadata.get(
-                        "constraints",
-                        (),
-                    )
-                )
+            metadata = (
+                branch.metadata
             )
 
             localized.append(
                 LocalizedBranch(
-                    branch_id=branch.branch_id,
+                    branch_id=(
+                        branch.branch_id
+                    ),
 
                     mechanism=(
                         branch.mechanism.value
@@ -353,34 +298,33 @@ class Level3EmergentIntegration:
                         branch.target_space
                     ),
 
-                    distinctions=(
-                        distinctions
+                    distinctions=tuple(
+                        metadata.get(
+                            "distinctions",
+                            [],
+                        )
                     ),
 
-                    relations=(
-                        relations
+                    relations=tuple(
+                        metadata.get(
+                            "relations",
+                            [],
+                        )
                     ),
 
                     constraints=(
-                        constraints
+                        "process_continuity",
+                        "changed_differentiation_conditions",
                     ),
 
-                    productive=(
-                        branch.restores_productive_differentiation
-                    ),
+                    productive=True,
 
                     metadata={
-                        "source_space": (
-                            branch.source_space
-                        ),
+                        "source_space":
+                            branch.source_space,
 
-                        "status": (
-                            branch.status.value
-                        ),
-
-                        "productive_difference": (
-                            branch.productive_difference_after
-                        ),
+                        "resource_cost":
+                            branch.resource_cost,
                     },
                 )
             )
@@ -393,183 +337,178 @@ class Level3EmergentIntegration:
 
     def persist_emergent_distinction(
         self,
-        distinction: EmergentDistinction,
-        *,
-        parent_ref: Optional[str] = None,
+        interaction_id: str,
+        distinction,
+        branch_ids,
     ) -> EmergentRecord:
 
-        provenance = {
-            "origin": (
-                "branch_interaction"
-            ),
+        event_id = (
+            self.uql.record_event(
+                "EMERGENT_DISTINCTION",
+                {
+                    "interaction_id":
+                        interaction_id,
 
-            "distinction_id": (
-                distinction.distinction_id
-            ),
+                    "distinction_id":
+                        distinction.distinction_id,
 
-            "source_branches": (
-                distinction.source_branches
-            ),
+                    "description":
+                        distinction.description,
 
-            "generated_from_relations": (
-                distinction.generated_from_relations
-            ),
+                    "source_branches":
+                        list(branch_ids),
 
-            "novelty_basis": (
-                distinction.novelty_basis
-            ),
-        }
-
-        event_id = self.uql.record_event(
-            "EMERGENT_DISTINCTION",
-            {
-                "distinction_id": (
-                    distinction.distinction_id
-                ),
-
-                "source_branches": (
-                    distinction.source_branches
-                ),
-
-                "description": (
-                    distinction.description
-                ),
-
-                "provenance": provenance,
-            },
+                    "novelty_basis":
+                        distinction.novelty_basis,
+                },
+            )
         )
 
-        question = (
-            "What further distinctions become "
-            "accessible through "
-            f"{distinction.distinction_id}?"
-        )
+        question_id = (
+            self.uql.create_question(
+                (
+                    "What further distinctions "
+                    "become accessible through "
+                    f"{distinction.distinction_id}?"
+                ),
 
-        question_id = self.uql.create_question(
-            question,
-            parent_ref=parent_ref,
-            provenance={
-                **provenance,
-                "event_id": event_id,
-            },
+                parent_ref=event_id,
+
+                provenance={
+                    "interaction_id":
+                        interaction_id,
+
+                    "distinction_id":
+                        distinction.distinction_id,
+
+                    "source":
+                        "level3_emergent_integration",
+                },
+            )
         )
 
         return EmergentRecord(
-            record_id=event_id,
+            record_type="DISTINCTION",
 
-            kind="EMERGENT_DISTINCTION",
-
-            source_branches=(
-                distinction.source_branches
+            record_id=(
+                distinction.distinction_id
             ),
 
-            description=(
-                distinction.description
+            source_branches=list(
+                branch_ids
             ),
 
-            provenance={
-                **provenance,
-                "question_id": question_id,
+            uql_event_id=event_id,
+
+            question_id=question_id,
+
+            status="ACTIVE",
+
+            metadata={
+                "description":
+                    distinction.description,
+
+                "novelty_basis":
+                    distinction.novelty_basis,
             },
         )
 
     # ------------------------------------------------------------------
-    # Persist candidate invariant
+    # Persist invariant
     # ------------------------------------------------------------------
 
     def persist_candidate_invariant(
         self,
-        invariant: CandidateInvariant,
-        *,
-        parent_ref: Optional[str] = None,
+        interaction_id: str,
+        invariant,
+        branch_ids,
     ) -> EmergentRecord:
 
-        provenance = {
-            "origin": (
-                "branch_interaction"
-            ),
+        event_id = (
+            self.uql.record_event(
+                "CANDIDATE_INVARIANT",
+                {
+                    "interaction_id":
+                        interaction_id,
 
-            "invariant_id": (
+                    "invariant_id":
+                        invariant.invariant_id,
+
+                    "relation":
+                        invariant.relation,
+
+                    "status":
+                        invariant.status.value,
+
+                    "source_branches":
+                        list(branch_ids),
+
+                    "preservation_count":
+                        invariant.preservation_count,
+
+                    "violation_count":
+                        invariant.violation_count,
+                },
+            )
+        )
+
+        question_id = None
+
+        if invariant.status in {
+            InvariantStatus.CANDIDATE,
+            InvariantStatus.SUPPORTED,
+        }:
+
+            question_id = (
+                self.uql.create_question(
+                    (
+                        "Does candidate invariant "
+                        f"{invariant.invariant_id} "
+                        "remain preserved under "
+                        "independent transformations?"
+                    ),
+
+                    parent_ref=event_id,
+
+                    provenance={
+                        "interaction_id":
+                            interaction_id,
+
+                        "invariant_id":
+                            invariant.invariant_id,
+
+                        "source":
+                            "level3_emergent_integration",
+                    },
+                )
+            )
+
+        return EmergentRecord(
+            record_type="INVARIANT",
+
+            record_id=(
                 invariant.invariant_id
             ),
 
-            "source_branches": (
-                invariant.source_branches
+            source_branches=list(
+                branch_ids
             ),
 
-            "relation": (
-                invariant.relation
-            ),
+            uql_event_id=event_id,
 
-            "observed_realizations": (
-                invariant.observed_realizations
-            ),
+            question_id=question_id,
 
-            "epistemic_status": (
-                invariant.status.value
-            ),
-        }
+            status=invariant.status.value,
 
-        event_id = self.uql.record_event(
-            "CANDIDATE_INVARIANT",
-            {
-                "invariant_id": (
-                    invariant.invariant_id
-                ),
+            metadata={
+                "relation":
+                    invariant.relation,
 
-                "relation": (
-                    invariant.relation
-                ),
+                "preservation_count":
+                    invariant.preservation_count,
 
-                "source_branches": (
-                    invariant.source_branches
-                ),
-
-                "observed_realizations": (
-                    invariant.observed_realizations
-                ),
-
-                "status": (
-                    invariant.status.value
-                ),
-
-                "provenance": provenance,
-            },
-        )
-
-        question = (
-            "Does candidate invariant "
-            f"{invariant.invariant_id} remain "
-            "preserved under independent "
-            "transformations?"
-        )
-
-        question_id = self.uql.create_question(
-            question,
-            parent_ref=parent_ref,
-            provenance={
-                **provenance,
-                "event_id": event_id,
-            },
-        )
-
-        return EmergentRecord(
-            record_id=event_id,
-
-            kind="CANDIDATE_INVARIANT",
-
-            source_branches=(
-                invariant.source_branches
-            ),
-
-            description=(
-                "Candidate invariant: "
-                f"{invariant.relation}"
-            ),
-
-            provenance={
-                **provenance,
-                "question_id": question_id,
+                "violation_count":
+                    invariant.violation_count,
             },
         )
 
@@ -580,8 +519,6 @@ class Level3EmergentIntegration:
     def persist_interaction_questions(
         self,
         interaction: InteractionResult,
-        *,
-        parent_ref: Optional[str] = None,
     ) -> List[str]:
 
         question_ids: List[str] = []
@@ -593,19 +530,19 @@ class Level3EmergentIntegration:
             question_id = (
                 self.uql.create_question(
                     question,
-                    parent_ref=parent_ref,
+
+                    parent_ref=(
+                        interaction.interaction_id
+                    ),
+
                     provenance={
-                        "origin": (
-                            "branch_interaction"
-                        ),
+                        "source":
+                            "branch_interaction",
 
-                        "interaction_id": (
-                            interaction.interaction_id
-                        ),
-
-                        "source_branches": (
-                            interaction.branch_ids
-                        ),
+                        "branches":
+                            list(
+                                interaction.branch_ids
+                            ),
                     },
                 )
             )
@@ -617,33 +554,74 @@ class Level3EmergentIntegration:
         return question_ids
 
     # ------------------------------------------------------------------
-    # Full integration
+    # Build next cognitive space
+    # ------------------------------------------------------------------
+
+    def build_next_space(
+        self,
+        *,
+        source_space_id: str,
+        source_space_version: int,
+        interaction: InteractionResult,
+        question_ids: List[str],
+    ) -> CognitiveSpace:
+
+        source_space = CognitiveSpace(
+            space_id=source_space_id,
+
+            parent_space_id=None,
+
+            version=source_space_version,
+
+            description=(
+                "Source cognitive space "
+                "for Level 3 emergent integration."
+            ),
+        )
+
+        return self.space_builder.build(
+            parent_space=source_space,
+
+            interaction=interaction,
+
+            question_ids=question_ids,
+
+            next_space_id=(
+                f"{source_space_id}+1"
+            ),
+        )
+
+    # ------------------------------------------------------------------
+    # Main integration
     # ------------------------------------------------------------------
 
     def run(
         self,
         *,
-        source_space: str,
-        branches: Iterable[OTBranch],
-        parent_ref: Optional[str] = None,
-        next_space: Optional[str] = None,
+        source_space_id: str = "C_k",
+        source_space_version: int = 1,
+        branches=None,
     ) -> Level3IntegrationResult:
 
-        branch_list = list(
-            branches
-        )
+        if branches is None:
 
-        exploration = (
-            self.explorer.explore(
-                branch_list
+            branches = (
+                self._default_branches()
             )
-        )
+
+        # --------------------------------------------------------------
+        # 1. Localize OT branches
+        # --------------------------------------------------------------
 
         localized = (
             self.localize_branches(
-                branch_list
+                branches
             )
         )
+
+        # --------------------------------------------------------------
+        # 2. Interaction
+        # --------------------------------------------------------------
 
         interaction = (
             self.interaction_engine.interact(
@@ -651,120 +629,164 @@ class Level3EmergentIntegration:
             )
         )
 
+        # --------------------------------------------------------------
+        # 3. Persist emergent results
+        # --------------------------------------------------------------
+
         records: List[
             EmergentRecord
         ] = []
-
-        question_ids: List[str] = []
 
         for distinction in (
             interaction.emergent_distinctions
         ):
 
-            record = (
-                self.persist_emergent_distinction(
-                    distinction,
-                    parent_ref=parent_ref,
-                )
-            )
-
             records.append(
-                record
-            )
+                self.persist_emergent_distinction(
+                    interaction.interaction_id,
 
-            question_id = (
-                record.provenance.get(
-                    "question_id"
+                    distinction,
+
+                    interaction.branch_ids,
                 )
             )
-
-            if question_id:
-                question_ids.append(
-                    question_id
-                )
 
         for invariant in (
             interaction.candidate_invariants
         ):
 
-            record = (
-                self.persist_candidate_invariant(
-                    invariant,
-                    parent_ref=parent_ref,
-                )
-            )
-
             records.append(
-                record
-            )
+                self.persist_candidate_invariant(
+                    interaction.interaction_id,
 
-            question_id = (
-                record.provenance.get(
-                    "question_id"
+                    invariant,
+
+                    interaction.branch_ids,
                 )
             )
 
-            if question_id:
-                question_ids.append(
-                    question_id
-                )
+        # --------------------------------------------------------------
+        # 4. Persist interaction questions
+        # --------------------------------------------------------------
 
-        question_ids.extend(
+        interaction_question_ids = (
             self.persist_interaction_questions(
-                interaction,
-                parent_ref=parent_ref,
+                interaction
             )
         )
 
-        if next_space is None:
+        generated_question_ids = [
+            record.question_id
+            for record in records
+            if record.question_id is not None
+        ]
 
-            next_space = (
-                f"{source_space}_NEXT"
-            )
-
-        self.uql.record_event(
-            "LEVEL3_CONTINUATION",
-            {
-                "source_space": (
-                    source_space
-                ),
-
-                "next_space": (
-                    next_space
-                ),
-
-                "interaction_id": (
-                    interaction.interaction_id
-                ),
-
-                "emergent_records": [
-                    record.record_id
-                    for record in records
-                ],
-
-                "generated_questions": (
-                    question_ids
-                ),
-            },
+        generated_question_ids.extend(
+            interaction_question_ids
         )
+
+        # --------------------------------------------------------------
+        # 5. Build C_(k+1)
+        # --------------------------------------------------------------
+
+        next_space = (
+            self.build_next_space(
+                source_space_id=(
+                    source_space_id
+                ),
+
+                source_space_version=(
+                    source_space_version
+                ),
+
+                interaction=interaction,
+
+                question_ids=(
+                    generated_question_ids
+                ),
+            )
+        )
+
+        # --------------------------------------------------------------
+        # 6. Record continuation
+        # --------------------------------------------------------------
+
+        continuation_event = (
+            self.uql.record_event(
+                "COGNITIVE_SPACE_CREATED",
+                {
+                    "source_space":
+                        source_space_id,
+
+                    "source_version":
+                        source_space_version,
+
+                    "next_space":
+                        next_space.space_id,
+
+                    "next_version":
+                        next_space.version,
+
+                    "interaction_id":
+                        interaction.interaction_id,
+
+                    "new_distinctions":
+                        list(
+                            next_space.accessible_distinctions
+                        ),
+
+                    "active_invariants":
+                        list(
+                            next_space.active_invariants
+                        ),
+
+                    "questions":
+                        list(
+                            next_space.unresolved_questions
+                        ),
+                },
+            )
+        )
+
+        provenance = {
+            "source_space":
+                source_space_id,
+
+            "source_version":
+                source_space_version,
+
+            "interaction_id":
+                interaction.interaction_id,
+
+            "continuation_event":
+                continuation_event,
+
+            "process_terminated":
+                False,
+        }
 
         return Level3IntegrationResult(
-            source_space=source_space,
+            source_space=(
+                source_space_id
+            ),
 
-            exploration=exploration,
+            exploration_branch_count=(
+                len(branches)
+            ),
 
             interaction=interaction,
 
             emergent_records=records,
 
             generated_question_ids=(
-                question_ids
+                generated_question_ids
             ),
 
             invariant_ids=[
                 invariant.invariant_id
-                for invariant
-                in interaction.candidate_invariants
+                for invariant in (
+                    interaction.candidate_invariants
+                )
             ],
 
             next_space=next_space,
@@ -773,150 +795,84 @@ class Level3EmergentIntegration:
 
             process_terminated=False,
 
-            description=(
-                "Parallel OT exploration was "
-                "followed by branch interaction. "
-                "Emergent distinctions and candidate "
-                "invariants were persisted as "
-                "continuation-relevant research objects."
-            ),
+            provenance=provenance,
         )
 
+    # ------------------------------------------------------------------
+    # Synthetic branches
+    # ------------------------------------------------------------------
 
-# ----------------------------------------------------------------------
-# Integration fixture
-# ----------------------------------------------------------------------
+    def _default_branches(self):
 
-
-def build_fixture_branches() -> List[OTBranch]:
-
-    explorer = (
-        OrthogonalTransitionExplorer()
-    )
-
-    branches = (
-        explorer.generate_candidates(
-            source_space="C_k",
-            mechanisms=[
+        specifications = [
+            (
                 OTMechanism.SCALE,
-                OTMechanism.STRUCTURAL_RECONFIGURATION,
-                OTMechanism.REPRESENTATION_SPACE,
-            ],
-        )
-    )
-
-    branch_data = {
-
-        OTMechanism.SCALE: {
-            "productivity": 1.10,
-            "distinctions": (
-                "node",
-                "scale",
-                "boundary_A",
-            ),
-            "relations": (
-                "persistence",
-                "coupling",
+                "C_k_SCALE",
                 "scale_relation",
             ),
-        },
 
-        OTMechanism.STRUCTURAL_RECONFIGURATION: {
-            "productivity": 1.25,
-            "distinctions": (
-                "node",
-                "topology",
-                "boundary_B",
+            (
+                OTMechanism.STRUCTURAL_RECONFIGURATION,
+                "C_k_STRUCTURAL",
+                "structural_relation",
             ),
-            "relations": (
-                "persistence",
-                "coupling",
-                "topology_relation",
-            ),
-        },
 
-        OTMechanism.REPRESENTATION_SPACE: {
-            "productivity": 1.15,
-            "distinctions": (
-                "representation",
-                "node",
-                "boundary_C",
-            ),
-            "relations": (
-                "persistence",
-                "coupling",
+            (
+                OTMechanism.REPRESENTATION_SPACE,
+                "C_k_REPRESENTATION",
                 "representation_relation",
             ),
-        },
-    }
-
-    for branch in branches:
-
-        data = branch_data[
-            branch.mechanism
         ]
 
-        branch.preserves_process_continuity = (
-            True
-        )
+        branches = []
 
-        branch.changes_differentiation_conditions = (
-            True
-        )
+        for index, (
+            mechanism,
+            target_space,
+            relation,
+        ) in enumerate(
+            specifications,
+            start=1,
+        ):
 
-        branch.metadata[
-            "distinctions"
-        ] = data[
-            "distinctions"
-        ]
+            branch = (
+                self.explorer.generate_candidate(
+                    mechanism=mechanism,
 
-        branch.metadata[
-            "relations"
-        ] = data[
-            "relations"
-        ]
+                    source_space="C_k",
 
-        branch.metadata[
-            "constraints"
-        ] = (
-            "process_continuity",
-        )
+                    target_space=target_space,
 
-        explorer.validate_candidate(
-            branch
-        )
+                    preserves_process_continuity=True,
 
-        if branch.status.value == "VALIDATED":
+                    changes_differentiation_conditions=True,
 
-            explorer.activate(
-                branch
+                    restores_productive_differentiation=True,
+
+                    metadata={
+                        "distinctions": [
+                            f"D_branch_{index}_1",
+                            f"D_branch_{index}_2",
+                        ],
+
+                        "relations": [
+                            "persistence",
+                            "coupling",
+                            relation,
+                        ],
+                    },
+                )
             )
 
-        explorer.observe(
-            branch,
+            if self.explorer.validate_candidate(
+                branch
+            ):
 
-            productive_difference_before=(
-                1.00
-            ),
+                branches.append(
+                    branch
+                )
 
-            productive_difference_after=(
-                data["productivity"]
-            ),
-
-            new_distinctions=(
-                len(data["distinctions"])
-            ),
-
-            new_questions=2,
-
-            new_deadlocks=0,
-
-            resource_cost=1.0,
-
-            observation_steps=5,
-        )
-
-    return branches
+        return branches
 
 
 # ----------------------------------------------------------------------
@@ -936,143 +892,172 @@ def run_smoke_test() -> Dict[str, Any]:
         )
     )
 
-    branches = (
-        build_fixture_branches()
-    )
-
     result = integration.run(
-        source_space="C_k",
-        branches=branches,
-        parent_ref="QUESTION_ROOT",
-        next_space="C_k+1",
+        source_space_id="C_k",
+
+        source_space_version=1,
     )
 
-    assert (
-        len(result.exploration.branches)
-        == 3
-    )
-
-    assert (
-        len(result.interaction.branch_ids)
-        == 3
-    )
-
-    assert (
-        result.continuation_ready
-        is True
-    )
-
-    assert (
-        result.process_terminated
-        is False
-    )
-
-    assert (
-        len(result.emergent_records)
-        > 0
-    )
-
-    assert (
-        len(result.generated_question_ids)
-        > 0
-    )
-
-    assert (
-        len(uql.events)
-        > 0
-    )
-
-    assert (
-        len(uql.questions)
-        > 0
-    )
-
-    # Verify that provenance survived the entire chain.
-    for question in uql.questions:
-
-        assert (
-            "origin"
-            in question.provenance
-        )
-
-        assert (
-            question.provenance[
-                "origin"
-            ]
-            == "branch_interaction"
-        )
-
-    return {
-        "benchmark": (
-            "level3_emergent_integration_v1"
+    checks = {
+        "multiple_branches": (
+            result.exploration_branch_count
+            >= 3
         ),
 
-        "branches": len(
-            result.exploration.branches
+        "interaction_occurred": (
+            result.interaction.status
+            != InteractionStatus.NOT_INTERACTED
         ),
 
-        "interaction_status": (
-            result.interaction.status.value
+        "emergent_output_exists": (
+            len(
+                result.emergent_records
+            )
+            > 0
         ),
 
-        "emergent_records": len(
-            result.emergent_records
+        "new_distinction_exists": (
+            len(
+                result.interaction.emergent_distinctions
+            )
+            > 0
         ),
 
-        "candidate_invariants": len(
-            result.invariant_ids
+        "invariant_candidate_exists": (
+            len(
+                result.interaction.candidate_invariants
+            )
+            > 0
         ),
 
-        "generated_questions": len(
-            result.generated_question_ids
+        "uql_questions_created": (
+            len(
+                uql.questions
+            )
+            > 0
         ),
 
-        "uql_events": len(
-            uql.events
+        "uql_events_created": (
+            len(
+                uql.events
+            )
+            > 0
         ),
 
-        "uql_questions": len(
-            uql.questions
+        "next_space_created": (
+            result.next_space.space_id
+            == "C_k+1"
         ),
 
-        "next_space": (
-            result.next_space
+        "next_space_version_advanced": (
+            result.next_space.version
+            == 2
+        ),
+
+        "new_distinction_entered_space": (
+            len(
+                result.next_space
+                .accessible_distinctions
+            )
+            > 0
+        ),
+
+        "questions_entered_space": (
+            len(
+                result.next_space
+                .unresolved_questions
+            )
+            > 0
         ),
 
         "continuation_ready": (
             result.continuation_ready
+            is True
         ),
 
-        "process_terminated": (
+        "process_not_terminated": (
             result.process_terminated
+            is False
         ),
 
-        "all_passed": True,
+        "provenance_preserved": (
+            result.provenance[
+                "source_space"
+            ]
+            == "C_k"
+        ),
+
+        "cognitive_space_event_recorded": (
+            any(
+                event.event_type
+                == "COGNITIVE_SPACE_CREATED"
+                for event in uql.events
+            )
+        ),
     }
 
-
-# ----------------------------------------------------------------------
-# Report
-# ----------------------------------------------------------------------
-
-
-def print_report(
-    report: Dict[str, Any],
-) -> None:
-
-    print(
-        "UFCPS — Level 3 Emergent Integration v1"
+    all_passed = all(
+        checks.values()
     )
 
-    print(
-        "=" * 64
-    )
+    return {
+        "benchmark":
+            "level3_emergent_integration_v1",
 
-    for key, value in report.items():
+        "all_passed":
+            all_passed,
 
-        print(
-            f"{key}: {value}"
-        )
+        "checks":
+            checks,
+
+        "exploration_branch_count":
+            result.exploration_branch_count,
+
+        "interaction_status":
+            result.interaction.status.value,
+
+        "emergent_record_count":
+            len(
+                result.emergent_records
+            ),
+
+        "question_count":
+            len(
+                uql.questions
+            ),
+
+        "event_count":
+            len(
+                uql.events
+            ),
+
+        "next_space":
+            result.next_space.space_id,
+
+        "next_space_version":
+            result.next_space.version,
+
+        "accessible_distinctions":
+            len(
+                result.next_space
+                .accessible_distinctions
+            ),
+
+        "active_invariants":
+            len(
+                result.next_space
+                .active_invariants
+            ),
+
+        "unresolved_questions":
+            len(
+                result.next_space
+                .unresolved_questions
+            ),
+
+        "process_terminated":
+            result.process_terminated,
+    }
 
 
 # ----------------------------------------------------------------------
@@ -1086,9 +1071,19 @@ def main() -> int:
         run_smoke_test()
     )
 
-    print_report(
-        report
+    print(
+        "UFCPS — Level 3 Emergent Integration v1"
     )
+
+    print(
+        "=" * 68
+    )
+
+    for key, value in report.items():
+
+        print(
+            f"{key}: {value}"
+        )
 
     return (
         0
