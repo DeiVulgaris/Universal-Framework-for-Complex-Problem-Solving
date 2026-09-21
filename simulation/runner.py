@@ -21,11 +21,14 @@ from .scenarios import (
     run_autonomous_experiment,
     run_basic_handoff,
     run_carrier_substitution,
+    run_communication_interruption,
     run_composition,
     run_contradictory_branches,
     run_forced_deadlock,
+    run_global_termination,
     run_negative_result,
     run_parallel_resolution,
+    run_recursion_stress,
     run_stateless_delegation_control,
 )
 
@@ -37,11 +40,14 @@ SCENARIOS: dict[str, ScenarioCallable] = {
     "basic_handoff": run_basic_handoff,
     "forced_deadlock": run_forced_deadlock,
     "carrier_substitution": run_carrier_substitution,
+    "communication_interruption": run_communication_interruption,
     "stateless_delegation_control": run_stateless_delegation_control,
     "parallel_resolution": run_parallel_resolution,
     "contradictory_branches": run_contradictory_branches,
     "composition": run_composition,
     "negative_result": run_negative_result,
+    "recursion_stress": run_recursion_stress,
+    "global_termination": run_global_termination,
     "autonomous_experiment": run_autonomous_experiment,
 }
 
@@ -96,10 +102,17 @@ def scenario_passed(result: dict[str, Any]) -> bool:
     continuity = result.get("continuity_valid", False)
     terminated = result.get("process_terminated", False)
 
+    # Global termination is intentionally a valid scenario outcome. The
+    # scenario itself must expose an explicit termination test and therefore
+    # overrides the generic "must not be terminated" rule below.
+    is_global_termination_test = (
+        "explicit_termination_process_terminated" in result
+    )
+
     if continuity is not True:
         return False
 
-    if terminated is True:
+    if terminated is True and not is_global_termination_test:
         return False
 
     if "handoff_performed" in result:
@@ -216,6 +229,65 @@ def scenario_passed(result: dict[str, Any]) -> bool:
 
     if "continuation_ready" in result:
         if result.get("continuation_ready") is not True:
+            return False
+
+    if "state_persisted_before_interruption" in result:
+        if result.get("state_persisted_before_interruption") is not True:
+            return False
+
+    if "communication_lost" in result:
+        if result.get("communication_lost") is not True:
+            return False
+
+    if "source_channel_restored" in result:
+        if result.get("source_channel_restored") is True:
+            return False
+
+    if "successor_recovered_from_shared_state" in result:
+        if result.get("successor_recovered_from_shared_state") is not True:
+            return False
+
+    if "overflow_reached" in result:
+        if result.get("overflow_reached") is not True:
+            return False
+
+    if "overflow_action" in result:
+        if result.get("overflow_action") not in {
+            "delegate",
+            "branch",
+            "pause",
+            "terminate",
+        }:
+            return False
+
+    if "explicit_control_event_recorded" in result:
+        if result.get("explicit_control_event_recorded") is not True:
+            return False
+
+    if "unbounded_growth_prevented" in result:
+        if result.get("unbounded_growth_prevented") is not True:
+            return False
+
+    if "local_failure_process_terminated" in result:
+        if result.get("local_failure_process_terminated") is not False:
+            return False
+
+    if "local_failure_successor_created" in result:
+        if result.get("local_failure_successor_created") is not True:
+            return False
+
+    if "explicit_termination_process_terminated" in result:
+        if result.get("explicit_termination_process_terminated") is not True:
+            return False
+
+    if "termination_reason_recorded" in result:
+        if result.get("termination_reason_recorded") is not True:
+            return False
+
+    if "local_failure_distinct_from_global_termination" in result:
+        if result.get(
+            "local_failure_distinct_from_global_termination"
+        ) is not True:
             return False
 
     return True
