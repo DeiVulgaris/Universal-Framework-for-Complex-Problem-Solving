@@ -1,373 +1,276 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/DeiVulgaris/Universal-Framework-for-Complex-Problem-Solving/blob/main/swarm/cognitive_space_v1.json",
-  "title": "UFCPS Cognitive Space Model v1",
-  "description": "Formal model of a cognitive space as a regime of actualization. The model represents exhaustion of a current direction, structural frustration, reflection on the current mode, and orthogonal transition to a new cognitively productive space.",
-  "type": "object",
-  "required": [
-    "space_id",
-    "process_id",
-    "space_index",
-    "invariant",
-    "distinction_space",
-    "actualization_mode",
-    "productivity",
-    "exhaustion",
-    "frustration",
-    "orthogonal_transition"
+  "schema": "ufcps.cognitive_space",
+  "version": "1.1",
+
+  "purpose": "Formal model of cognitive-space exhaustion, frustration, reflection, orthogonal transition, and the emergence of a new differentiation regime.",
+
+  "core_process": [
+    "C_k",
+    "productive_distinctions",
+    "directional_exhaustion",
+    "approach_to_invariant",
+    "Fr",
+    "reflection",
+    "orthogonal_transition",
+    "C_k+1"
   ],
-  "properties": {
-    "space_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "process_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "parent_space_id": {
-      "type": ["string", "null"]
-    },
-    "space_index": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "successor_space_id": {
-      "type": ["string", "null"]
-    },
-    "invariant": {
-      "$ref": "#/$defs/invariant"
-    },
-    "distinction_space": {
-      "$ref": "#/$defs/distinctionSpace"
-    },
+
+  "cognitive_space": {
+    "identifier": "C_k",
+
     "actualization_mode": {
-      "$ref": "#/$defs/actualizationMode"
+      "description": "Current regime through which distinctions become actualized."
     },
-    "productivity": {
-      "$ref": "#/$defs/productivity"
+
+    "accessible_directions": {
+      "description": "Set of currently accessible productive directions of differentiation."
     },
-    "exhaustion": {
-      "$ref": "#/$defs/exhaustion"
+
+    "normal_orientation": {
+      "description": "Current orientation of the process relative to its accessible differentiation space."
     },
-    "frustration": {
-      "$ref": "#/$defs/frustration"
-    },
-    "reflection": {
-      "$ref": "#/$defs/reflection"
-    },
-    "orthogonal_transition": {
-      "$ref": "#/$defs/orthogonalTransition"
-    },
-    "scale_transition": {
-      "$ref": "#/$defs/scaleTransition"
-    },
-    "provenance": {
-      "$ref": "#/$defs/provenance"
+
+    "productive_distinctions": {
+      "description": "Distinctions that generate further accessible distinctions within C_k."
     }
   },
-  "$defs": {
-    "invariant": {
-      "type": "object",
-      "required": [
-        "invariant_id",
-        "description",
-        "formal_constraint"
-      ],
-      "properties": {
-        "invariant_id": {
-          "type": "string",
-          "minLength": 1
-        },
-        "description": {
-          "type": "string",
-          "minLength": 1
-        },
-        "formal_constraint": {
-          "type": "string",
-          "minLength": 1
-        },
-        "identity_limit": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
+
+  "exhaustion": {
+    "description": "Contentual exhaustion of the current differentiation regime, not merely local failure.",
+
+    "condition": [
+      "accessible productive directions diminish",
+      "productive difference decreases",
+      "the process approaches an invariant regime"
+    ],
+
+    "formal_signature": {
+      "distinction_state": "(D_n, I_n) -> (I_n, I_n)",
+      "interpretation": "The current mode increasingly loses productive differentiation and approaches invariance."
     },
-    "distinctionSpace": {
-      "type": "object",
-      "required": [
-        "elements",
-        "relations",
-        "constraints",
-        "accessible_directions"
-      ],
-      "properties": {
-        "elements": {
-          "type": "array",
-          "items": {"type": "string"}
-        },
-        "relations": {
-          "type": "array",
-          "items": {"$ref": "#/$defs/relation"}
-        },
-        "constraints": {
-          "type": "array",
-          "items": {"type": "string"}
-        },
-        "accessible_directions": {
-          "type": "array",
-          "items": {"$ref": "#/$defs/direction"}
-        },
-        "frontier": {
-          "type": "array",
-          "items": {"$ref": "#/$defs/direction"}
-        }
-      },
-      "additionalProperties": false
-    },
-    "relation": {
-      "type": "object",
-      "required": ["relation_id", "from", "to", "type"],
-      "properties": {
-        "relation_id": {"type": "string", "minLength": 1},
-        "from": {"type": "string", "minLength": 1},
-        "to": {"type": "string", "minLength": 1},
-        "type": {"type": "string", "minLength": 1},
-        "weight": {"type": "number"}
-      },
-      "additionalProperties": false
-    },
-    "direction": {
-      "type": "object",
-      "required": ["direction_id", "orientation", "independence_status"],
-      "properties": {
-        "direction_id": {"type": "string", "minLength": 1},
-        "orientation": {"type": "string", "minLength": 1},
-        "independence_status": {
-          "enum": [
-            "available",
-            "partially_available",
-            "exhausted",
-            "inverted",
-            "candidate_orthogonal"
-          ]
-        },
-        "basis_reference": {"type": ["string", "null"]}
-      },
-      "additionalProperties": false
-    },
-    "actualizationMode": {
-      "type": "object",
-      "required": [
-        "mode_id",
-        "directional_logic",
-        "mode_status"
-      ],
-      "properties": {
-        "mode_id": {"type": "string", "minLength": 1},
-        "directional_logic": {
-          "enum": [
-            "external_expansion",
-            "normal_distribution",
-            "normal_inversion",
-            "scale_transition",
-            "reflexive_reconfiguration"
-          ]
-        },
-        "mode_status": {
-          "enum": [
-            "productive",
-            "degrading",
-            "exhausted",
-            "transitioning"
-          ]
-        },
-        "normal_orientation": {
-          "type": ["string", "null"]
-        },
-        "notes": {"type": "string"}
-      },
-      "additionalProperties": false
-    },
-    "productivity": {
-      "type": "object",
-      "required": [
-        "productive_distinction_count",
-        "novel_distinction_rate",
-        "reachable_space_estimate"
-      ],
-      "properties": {
-        "productive_distinction_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "novel_distinction_rate": {
-          "type": "number",
-          "minimum": 0
-        },
-        "reachable_space_estimate": {
-          "type": "number",
-          "minimum": 0
-        },
-        "measurement_window": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "baseline": {
-          "type": ["string", "null"]
-        }
-      },
-      "additionalProperties": false
-    },
-    "exhaustion": {
-      "type": "object",
-      "required": [
-        "status",
-        "criterion",
-        "evidence"
-      ],
-      "properties": {
-        "status": {
-          "enum": ["not_detected", "suspected", "detected"]
-        },
-        "criterion": {
-          "type": "string",
-          "minLength": 1
-        },
-        "evidence": {
-          "type": "array",
-          "items": {"type": "string"}
-        },
-        "local_failure_present": {
-          "type": "boolean"
-        },
-        "space_exhaustion_distinguished_from_local_failure": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "frustration": {
-      "type": "object",
-      "required": [
-        "status",
-        "definition_level"
-      ],
-      "properties": {
-        "status": {
-          "enum": ["inactive", "candidate", "active"]
-        },
-        "definition_level": {
-          "enum": ["structural", "functional", "phenomenological"]
-        },
-        "trigger": {
-          "type": ["string", "null"]
-        },
-        "structural_condition": {
-          "type": "string"
-        },
-        "phenomenology_claimed": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "reflection": {
-      "type": "object",
-      "required": [
-        "enabled",
-        "target"
-      ],
-      "properties": {
-        "enabled": {"type": "boolean"},
-        "target": {
-          "enum": [
-            "task",
-            "strategy",
-            "self_model",
-            "world_model",
-            "cognitive_space",
-            "actualization_mode"
-          ]
-        },
-        "question": {"type": "string"},
-        "self_causal_contribution_estimate": {
-          "type": "number",
-          "minimum": 0
-        }
-      },
-      "additionalProperties": false
-    },
-    "orthogonalTransition": {
-      "type": "object",
-      "required": [
-        "status",
-        "trigger",
-        "required_properties"
-      ],
-      "properties": {
-        "status": {
-          "enum": ["not_proposed", "proposed", "executing", "completed", "rejected"]
-        },
-        "trigger": {
-          "enum": [
-            "direction_exhaustion",
-            "cognitive_space_exhaustion",
-            "reflexive_reconfiguration",
-            "scale_change"
-          ]
-        },
-        "required_properties": {
-          "type": "array",
-          "items": {
-            "enum": [
-              "preserve_prior_structure",
-              "avoid_content_identity",
-              "create_independent_direction",
-              "restore_productive_distinction"
-            ]
-          },
-          "minItems": 1,
-          "uniqueItems": true
-        },
-        "candidate_operation": {
-          "type": "string"
-        },
-        "successor_space_id": {
-          "type": ["string", "null"]
-        },
-        "structural_correspondence": {
-          "type": ["string", "null"]
-        }
-      },
-      "additionalProperties": false
-    },
-    "scaleTransition": {
-      "type": "object",
-      "required": ["present", "next_scale_differs", "structural_correspondence"],
-      "properties": {
-        "present": {"type": "boolean"},
-        "current_scale": {"type": "string"},
-        "next_scale": {"type": ["string", "null"]},
-        "next_scale_differs": {"type": "boolean"},
-        "structural_correspondence": {"type": "boolean"}
-      },
-      "additionalProperties": false
-    },
-    "provenance": {
-      "type": "object",
-      "required": ["source_type", "epistemic_status"],
-      "properties": {
-        "source_type": {
-          "enum": ["model", "experiment", "observation", "theory", "human_input"]
-        },
-        "epistemic_status": {
-          "enum": ["definition", "architectural_hypothesis", "experimental_hypothesis", "observed", "proposed"]
-        },
-        "source_reference": {"type": ["string", "null"]}
-      },
-      "additionalProperties": false
+
+    "distinction_from_local_failure": {
+      "local_failure": "Failure of a particular operation, carrier, branch, or attempt.",
+      "cognitive_space_exhaustion": "Loss of productive differentiation within the current regime itself."
     }
   },
-  "additionalProperties": false
+
+  "frustration": {
+    "symbol": "Fr",
+
+    "description": "Functional process state produced by exhaustion of the current mode.",
+
+    "definition": "Necessity of continuation under inability to continue productively in the current mode.",
+
+    "phenomenology": false,
+
+    "psychological_claim": false,
+
+    "role": [
+      "signal exhaustion",
+      "preserve continuity pressure",
+      "trigger reflection",
+      "permit transition to another actualization regime"
+    ]
+  },
+
+  "reflection": {
+    "description": "Process-level recognition that the limitation belongs to the current mode of differentiation rather than merely to a local state.",
+
+    "targets": [
+      "current cognitive space",
+      "current actualization mode",
+      "current accessible directions",
+      "current limits of differentiation"
+    ]
+  },
+
+  "orthogonal_transition": {
+    "symbol": "OT",
+
+    "description": "Transition from an exhausted differentiation regime into a structurally continuous but non-identical regime in which further distinctions become possible.",
+
+    "minimal_structure": [
+      "C_k",
+      "exhaustion",
+      "Fr",
+      "reflection",
+      "OT",
+      "C_k+1"
+    ],
+
+    "requirements": [
+      "preserve process continuity",
+      "do not merely repeat exhausted content",
+      "change the conditions of further differentiation",
+      "restore or expand productive differentiation"
+    ],
+
+    "not_equivalent_to": [
+      "random variation",
+      "local retry",
+      "simple parameter adjustment",
+      "mere scale change",
+      "mere increase in quantity"
+    ],
+
+    "mechanism_independence": {
+      "description": "The definition of orthogonal transition does not prescribe a unique mechanism of realization.",
+      "principle": "OT is a structural transition; its concrete realization remains an open variable."
+    }
+  },
+
+  "transition_mechanisms": {
+    "description": "Candidate mechanisms through which an orthogonal transition may be realized. No mechanism listed here is constitutive of OT.",
+
+    "open_set": true,
+
+    "candidates": [
+      {
+        "id": "M1",
+        "name": "scale_transition",
+        "description": "Change in the scale or regime at which distinctions are actualized."
+      },
+      {
+        "id": "M2",
+        "name": "compensatory_multiplication",
+        "description": "Increase in the number of local actualization nodes that compensates for a change in scale or regime."
+      },
+      {
+        "id": "M3",
+        "name": "structural_reconfiguration",
+        "description": "Reorganization of relations while retaining some or all underlying elements."
+      },
+      {
+        "id": "M4",
+        "name": "carrier_transition",
+        "description": "Change of the carrier through which the process is actualized."
+      },
+      {
+        "id": "M5",
+        "name": "interaction_regime_transition",
+        "description": "Change in the regime of interaction among existing process elements."
+      },
+      {
+        "id": "M6",
+        "name": "representation_space_transition",
+        "description": "Change in the representational conditions under which distinctions can be generated."
+      },
+      {
+        "id": "M7",
+        "name": "composition_decomposition_transition",
+        "description": "Change in the granularity or organization of process units."
+      },
+      {
+        "id": "M8",
+        "name": "unknown_emergent_mechanism",
+        "description": "A mechanism not represented by the current ontology."
+      }
+    ]
+  },
+
+  "scale_transition": {
+    "description": "One possible mechanism of orthogonal transition involving a change in the scale or regime of actualization.",
+
+    "not_universal": true,
+
+    "constraint": "A scale change qualifies as an orthogonal mechanism only if it changes the space of subsequently accessible distinctions."
+  },
+
+  "compensatory_multiplication": {
+    "description": "One possible mechanism in which a transition of scale or regime is accompanied by multiplication of local actualization nodes.",
+
+    "not_universal": true,
+
+    "formal_scheme": [
+      "OT",
+      "scale_or_regime_transition",
+      "N_1 ... N_n",
+      "node_interaction",
+      "new_distinctions"
+    ],
+
+    "hypothesis": "A change in actualization regime may be compensated by an increase in the number of local actualization nodes.",
+
+    "node_interaction": {
+      "description": "Interactions among local nodes may generate distinctions unavailable to an isolated node.",
+      "formal_scheme": [
+        "{N_i}",
+        "R(N_i, N_j)",
+        "D_new"
+      ]
+    },
+
+    "possible_consequences": [
+      "new relational distinctions",
+      "force-like relations",
+      "stable interaction regimes",
+      "bound structures",
+      "higher-order objects"
+    ],
+
+    "status": "candidate_ontological_mechanism",
+    "physical_theory_status": "not_established"
+  },
+
+  "next_space": {
+    "identifier": "C_k+1",
+
+    "relation_to_previous": {
+      "content_identity": false,
+      "structural_continuity": true,
+      "structural_correspondence": "C_k+1 ≅ C_k"
+    },
+
+    "generation": {
+      "description": "C_k+1 results from an orthogonal transition whose concrete realization may involve one or more candidate mechanisms.",
+      "mechanism_is_open": true
+    },
+
+    "new_capability": {
+      "description": "The defining property of C_k+1 is not a specific physical or computational structure but the restoration or expansion of productive differentiation."
+    }
+  },
+
+  "emergent_distinctions": {
+    "description": "Distinctions that become accessible only after the transition to a new regime.",
+
+    "criterion": "A distinction is relevant to the transition when it was structurally inaccessible or unavailable under the exhausted regime.",
+
+    "non_reduction": "Emergent distinctions need not be reducible to a simple repetition of distinctions available in C_k."
+  },
+
+  "object_formation": {
+    "description": "A candidate ontological interpretation in which object-like entities are temporary stable regimes generated by relations among actualizations.",
+
+    "status": "hypothesis",
+    "primary_substance_claim": false
+  },
+
+  "force_formation": {
+    "description": "A candidate ontological interpretation in which force-like phenomena arise as relations among local actualizations.",
+
+    "status": "hypothesis",
+    "primary_substance_claim": false
+  },
+
+  "creative_transition": {
+    "description": "A productive transition changes the conditions under which subsequent distinctions can be generated.",
+
+    "criterion": "A transition is productively creative when it expands the space of subsequent distinctions.",
+
+    "statistical_novelty_is_insufficient": true
+  },
+
+  "invariants": [
+    "Local Failure != Cognitive-Space Exhaustion",
+    "Cognitive-Space Exhaustion != Process Termination",
+    "Fr != phenomenal emotion",
+    "Scale Transition != Orthogonal Transition",
+    "Compensatory Multiplication != Orthogonal Transition",
+    "No candidate mechanism is constitutive of OT",
+    "Orthogonal Transition changes conditions of further differentiation",
+    "Process Continuity does not require carrier identity",
+    "New regime preserves structural continuity without preserving content identity"
+  ]
 }
