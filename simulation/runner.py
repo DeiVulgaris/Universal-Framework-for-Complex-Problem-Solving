@@ -237,7 +237,19 @@ def scenario_passed(result: dict[str, Any]) -> bool:
         ):
             return False
 
+    # Scenarios that model explicit interruptions report carrier_changes as
+    # the number of recovered interruptions. Repeated-replacement benchmarks
+    # instead expect one carrier change between every adjacent step.
     if (
+        "carrier_changes" in result
+        and "interruptions_injected" in result
+        and "interruptions_recovered" in result
+    ):
+        if result.get("carrier_changes") != result.get(
+            "interruptions_recovered"
+        ):
+            return False
+    elif (
         "carrier_changes" in result
         and "configured_steps" in result
     ):
