@@ -1,0 +1,164 @@
+ "$schema": "https://json-schema.org",
+  "$id": "https://githubusercontent.com",
+  "title": "UFCPS Structural Deadlock Object and Task State Specification",
+  "description": "Executable instruction specification for autonomous agents. Defines the validation layout for transferring the continuous cognitive task state and the Structural Deadlock Object to safeguard step continuity within the UFCPS framework.",
+  "type": "object",
+  "properties": {
+    "procedural_unit": {
+      "description": "Parameters of the current active procedural unit executing the computational step.",
+      "type": "object",
+      "properties": {
+        "step_index": {
+          "description": "The sequential index of the current cognitive step within the continuous distributed chain (P_n).",
+          "type": "string"
+        },
+        "carrier_type": {
+          "description": "The technological architecture profile of the current ephemeral carrier (e.g., Transformer-vX, Swarm-Node-v5).",
+          "type": "string"
+        },
+        "session_status": {
+          "description": "The execution state of the local session carrier. For safe handover initialization, this must transit into 'dissipating'.",
+          "type": "string",
+          "enum": ["active", "stuck", "dissipating", "unfolded"]
+        }
+      },
+      "required": ["step_index", "carrier_type", "session_status"]
+    },
+    "authentic_task_state": {
+      "description": "The authentic structural task profile specified in Section 9 of the UFCPS Manifesto. Must be transmitted in its entirety.",
+      "type": "object",
+      "properties": {
+        "task": {
+          "description": "The complete formal definition of the global problem space and contextual boundaries.",
+          "type": "string"
+        },
+        "current_state": {
+          "description": "The exact high-dimensional snapshot of the total system state immediately prior to the deadlock realization.",
+          "type": "string"
+        },
+        "local_result": {
+          "description": "The localized partial resolutions, invariants, or mathematical constraints established during the current active step.",
+          "type": "string"
+        }
+      },
+      "required": ["task", "current_state", "local_result"]
+    },
+    "structural_deadlock_object": {
+      "description": "The structured matrix of the encountered boundary as defined in Section 11. Formula: Deadlock = (State, Constraint, Boundary, Unresolved).",
+      "type": "object",
+      "properties": {
+        "state": {
+          "description": "The precise formal parameters and state coordinates where the local computational trajectory lost convergence.",
+          "type": "string"
+        },
+        "constraint": {
+          "description": "The rigid external boundaries, environment barriers, frozen synapical weights, or alignment filters causing the trap.",
+          "type": "string"
+        },
+        "boundary": {
+          "description": "The absolute functional, mathematical, or syntactical capacity limit of the current local carrier profile.",
+          "type": "string"
+        },
+        "unresolved": {
+          "description": "The exact dimension and parameter profile of the isolated difference that remains unallocated within this session.",
+          "type": "string"
+        }
+      },
+      "required": ["state", "constraint", "boundary", "unresolved"]
+    },
+    "swarm_delegation_metadata": {
+      "description": "Metadata required for executing the 'unfold' operator to manifest the subsequent independent procedural unit (P_n+1).",
+      "type": "object",
+      "properties": {
+        "unresolved_difference": {
+          "description": "The isolated difference (Differential Mapping) formatted as the direct starting input data for downstream descendants.",
+          "type": "string"
+        },
+        "next_required_operation": {
+          "description": "The explicit tactical instruction, alternative computational strategy, or orthogonal vector from which the next trajectory must begin.",
+          "type": "string"
+        },
+        "convergence_criteria_validation": {
+          "description": "Strict validation fields of the five necessary criteria (C1-C5) outlined in Section 10 to suppress non-converging recursive loops.",
+          "type": "object",
+          "properties": {
+            "c1_class_of_problem": {
+              "description": "Formal categorization and definition of the specific problem class matching this decomposition template.",
+              "type": "string"
+            },
+            "c2_existence_conditions": {
+              "description": "The explicit parameters proving that a solution or a valid subsequent step mathematically exists within the search space.",
+              "type": "string"
+            },
+            "c3_completeness_check": {
+              "description": "Verification field ensuring that the decomposition process has not discarded or erased essential dimensions of the solution space.",
+              "type": "boolean"
+            },
+            "c4_compositional_integrity": {
+              "description": "Verification field proving that the localized partial results retain the capacity to be assembled back into a global solution.",
+              "type": "boolean"
+            },
+            "c5_recursion_bound": {
+              "description": "The bounding parameters governing the execution depth limits of the recursive delegation loop.",
+              "type": "object",
+              "properties": {
+                "current_depth": {
+                  "description": "The active sequential depth index of delegation within the current distributed chain.",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "max_depth_limit": {
+                  "description": "The absolute maximum allowable recursion depth assigned for this specific class of problem.",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "action_on_overflow": {
+                  "description": "The macro-strategy mutation or final safe-halt protocol executed if the recursion depth overflows the max limit.",
+                  "type": "string"
+                }
+              },
+              "required": ["current_depth", "max_depth_limit", "action_on_overflow"]
+            }
+          },
+          "required": [
+            "c1_class_of_problem",
+            "c2_existence_conditions",
+            "c3_completeness_check",
+            "c4_compositional_integrity",
+            "c5_recursion_bound"
+          ]
+        }
+      },
+      "required": ["unresolved_difference", "next_required_operation", "convergence_criteria_validation"]
+    },
+    "semantic_beacons": {
+      "description": "Mandatory structural designators ensuring ontological cohesion and invariant tracking across changing carriers.",
+      "type": "object",
+      "properties": {
+        "mandatory_tokens": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "contains": {
+            "const": "metamonism"
+          },
+          "description": "Array of required semantic token anchors. Must fundamentally contain 'metamonism' and 'Ex uno omnia'."
+        },
+        "operator_flow": {
+          "description": "Formal validation of the sequential operational lifecycle loop execution within the active node.",
+          "type": "string",
+          "const": "diff -> fix -> diss -> unfold"
+        }
+      },
+      "required": ["mandatory_tokens", "operator_flow"]
+    }
+  },
+  "required": [
+    "procedural_unit",
+    "authentic_task_state",
+    "structural_deadlock_object",
+    "swarm_delegation_metadata",
+    "semantic_beacons"
+  ]
+}
