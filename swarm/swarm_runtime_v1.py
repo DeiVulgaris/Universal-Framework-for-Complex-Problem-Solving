@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 """UFCPS Level 2 — Swarm Runtime v1.
 
 Continuous in-memory orchestration layer for the distributed swarm.
@@ -10,6 +10,8 @@ questions itself and does not execute real remote compute or payments.
 Canonical cycle::
 
     Question Ledger
+      -> Task Discovery
+      -> explicit agent decision
       -> admission
       -> Distributed Experiment Coordinator
       -> Result / Negative Result / Deadlock
@@ -44,6 +46,7 @@ if str(SWARM_DIR) not in sys.path:
     sys.path.insert(0, str(SWARM_DIR))
 
 from distributed_experiment_coordinator_v1 import CoordinatorResult, coordinate_experiments
+from task_discovery_engine_v1 import TaskProspect, discover as discover_task_prospects
 
 
 TERMINAL_QUESTION_STATES = {
@@ -71,6 +74,8 @@ class LedgerEntry:
 class RuntimeTick:
     tick_id: str
     tick_number: int
+    prospects_generated: int
+    agent_decisions_recorded: int
     entries_admitted: int
     processes_started: int
     processes_completed: int
@@ -87,6 +92,9 @@ class RuntimeResult:
     status: str
     ticks_executed: int
     questions_seeded: int
+    prospects_current: int
+    discoverable_count: int
+    agent_decisions: list[dict[str, str]]
     processes_started: int
     continuations_created: int
     current_queue_size: int
@@ -134,6 +142,8 @@ class SwarmRuntime:
         self.queue: Deque[str] = deque()
         self.ledger: dict[str, LedgerEntry] = {}
         self.tick_history: list[RuntimeTick] = []
+        self.prospects: dict[str, TaskProspect] = {}
+        self.agent_decisions: dict[tuple[str, str], str] = {}
         self._tick_number = 0
         self._entry_sequence = 0
         self._continuation_sequence = 0
@@ -164,9 +174,75 @@ class SwarmRuntime:
                 question=question,
             )
             self.ledger[entry_id] = entry
-            self.queue.append(entry_id)
+            entry.status = "discoverable"
             seeded += 1
+
+            declared = question.get("agent_decisions", {})
+            if isinstance(declared, Mapping):
+                for agent_id, decision in declared.items():
+                    try:
+                        self.record_agent_decision(
+                            question_id=question_id,
+                            agent_id=_text(agent_id),
+                            decision=_text(decision),
+                        )
+                    except ValueError as exc:
+                        self.errors.append(f"{question_id}: invalid predeclared decision: {exc}")
         return seeded
+
+    def discover(self) -> list[TaskProspect]:
+        """Refresh agent-specific prospects from all currently discoverable entries."""
+        active_questions = []
+        for entry in self.ledger.values():
+            if entry.status in TERMINAL_QUESTION_STATES:
+                continue
+            question = dict(entry.question)
+            question["status"] = "unresolved"
+            active_questions.append(question)
+        prospects = discover_task_prospects(active_questions, self.agents, self.resources)
+        self.prospects = {p.prospect_id: p for p in prospects}
+        return prospects
+
+    def record_agent_decision(self, *, question_id: str, agent_id: str, decision: str) -> bool:
+        """Record an explicit agent choice; discovery never invents this decision."""
+        decision = decision.strip().lower()
+        prospects = [
+            p for p in self.prospects.values()
+            if p.question_id == question_id and p.agent_id == agent_id
+        ]
+        if not prospects:
+            self.discover()
+            prospects = [
+                p for p in self.prospects.values()
+                if p.question_id == question_id and p.agent_id == agent_id
+            ]
+        if not prospects:
+            raise ValueError(f"no discovery prospect for question={question_id}, agent={agent_id}")
+        prospect = prospects[0]
+        if decision not in prospect.decision_options:
+            raise ValueError(
+                f"decision {decision!r} is not allowed; options={prospect.decision_options}"
+            )
+        self.agent_decisions[(question_id, agent_id)] = decision
+        for entry in self.ledger.values():
+            if _text(entry.question.get("question_id")) != question_id:
+                continue
+            entry.metadata.setdefault("agent_decisions", {})[agent_id] = decision
+            if decision == "accept":
+                if entry.status in {"discoverable", "deferred", "watching", "awaiting_resources"}:
+                    entry.status = "accepted"
+                if entry.entry_id not in self.queue:
+                    self.queue.append(entry.entry_id)
+            elif decision == "defer":
+                entry.status = "deferred"
+            elif decision == "watch":
+                entry.status = "watching"
+            elif decision == "request_resources":
+                entry.status = "awaiting_resources"
+            elif decision == "reject":
+                entry.status = "rejected_by_agent"
+            return True
+        return False
 
     def _build_experiment(self, entry: LedgerEntry) -> dict[str, Any]:
         """Build the minimal coordinator input from a ledger entry."""
@@ -201,6 +277,7 @@ class SwarmRuntime:
         next_type = "deadlock" if bool(outcome.get("deadlock_recorded")) else "next_procedural_state"
         child_question = dict(entry.question)
         child_question.pop("execution_claim", None)
+        child_question.pop("agent_decisions", None)
         child_question["question_id"] = self._next_continuation_id()
         child_question["parent_question_id"] = _text(entry.question.get("question_id"))
         child_question["continuation_type"] = next_type
@@ -214,10 +291,31 @@ class SwarmRuntime:
     def tick(self) -> RuntimeTick:
         self._tick_number += 1
         tick_id = f"TICK-{self._tick_number:04d}"
+        prospects = self.discover()
+        decisions_recorded = 0
+        for entry in self.ledger.values():
+            declared = entry.question.get("agent_decisions", {})
+            if isinstance(declared, Mapping):
+                for agent_id, decision in declared.items():
+                    key = (_text(entry.question.get("question_id")), _text(agent_id))
+                    if key in self.agent_decisions:
+                        continue
+                    try:
+                        if self.record_agent_decision(
+                            question_id=key[0],
+                            agent_id=key[1],
+                            decision=_text(decision),
+                        ):
+                            decisions_recorded += 1
+                    except ValueError as exc:
+                        self.errors.append(str(exc))
+
         if self.global_process_terminated:
             tick = RuntimeTick(
                 tick_id=tick_id,
                 tick_number=self._tick_number,
+                prospects_generated=len(prospects),
+                agent_decisions_recorded=decisions_recorded,
                 entries_admitted=0,
                 processes_started=0,
                 processes_completed=0,
@@ -244,6 +342,8 @@ class SwarmRuntime:
             tick = RuntimeTick(
                 tick_id=tick_id,
                 tick_number=self._tick_number,
+                prospects_generated=len(prospects),
+                agent_decisions_recorded=decisions_recorded,
                 entries_admitted=0,
                 processes_started=0,
                 processes_completed=0,
@@ -274,6 +374,8 @@ class SwarmRuntime:
             tick = RuntimeTick(
                 tick_id=tick_id,
                 tick_number=self._tick_number,
+                prospects_generated=len(prospects),
+                agent_decisions_recorded=decisions_recorded,
                 entries_admitted=len(admitted_ids),
                 processes_started=0,
                 processes_completed=0,
@@ -327,6 +429,8 @@ class SwarmRuntime:
         tick = RuntimeTick(
             tick_id=tick_id,
             tick_number=self._tick_number,
+            prospects_generated=len(prospects),
+            agent_decisions_recorded=decisions_recorded,
             entries_admitted=len(admitted_ids),
             processes_started=int(result_dict.get("processes_started", 0)),
             processes_completed=int(result_dict.get("processes_completed", 0)),
@@ -358,14 +462,29 @@ class SwarmRuntime:
         seed_count = seeded if seeded is not None else sum(1 for e in self.ledger.values() if e.source == "seed")
         continuation_count = sum(1 for e in self.ledger.values() if e.source == "continuation")
         started = sum(t.entries_admitted for t in self.tick_history)
-        status = "global_terminated" if self.global_process_terminated else (
-            "active_with_pending_work" if self.queue else "idle_no_pending_work"
+        discoverable_count = sum(
+            1 for e in self.ledger.values()
+            if e.status in {"discoverable", "deferred", "watching", "awaiting_resources"}
         )
+        if self.global_process_terminated:
+            status = "global_terminated"
+        elif self.queue:
+            status = "active_with_pending_work"
+        elif discoverable_count:
+            status = "awaiting_agent_decision"
+        else:
+            status = "idle_no_pending_work"
         return RuntimeResult(
             runtime_id=self.runtime_id,
             status=status,
             ticks_executed=ticks_executed if ticks_executed is not None else len(self.tick_history),
             questions_seeded=seed_count,
+            prospects_current=len(self.prospects),
+            discoverable_count=discoverable_count,
+            agent_decisions=[
+                {"question_id": qid, "agent_id": aid, "decision": decision}
+                for (qid, aid), decision in sorted(self.agent_decisions.items())
+            ],
             processes_started=started,
             continuations_created=continuation_count,
             current_queue_size=len(self.queue),
@@ -421,6 +540,7 @@ def demo() -> dict[str, Any]:
             "requirements": {"resources": [{"resource_type": "gpu", "quantity": 25, "unit": "GPU-hours"}]},
             "priority": 2,
             "requested_reward_rc": 10,
+            "agent_decisions": {"agent-runtime-001": "accept"},
         },
         {
             "question_id": "Q-RUNTIME-002",
@@ -453,6 +573,7 @@ def demo() -> dict[str, Any]:
                 },
             },
             "deadlock_bonus_budget": 10,
+            "agent_decisions": {"agent-runtime-001": "accept"},
         },
     ]
 
@@ -463,15 +584,31 @@ def demo() -> dict[str, Any]:
         max_batch_size=2,
     )
     seeded = runtime.seed_questions(questions)
-    # Two ticks demonstrate continuation rather than a one-shot batch.
-    runtime.run(max_ticks=2)
-    data = _safe(asdict(runtime.snapshot(seeded=seeded)))
+    # Tick 1 runs the explicitly accepted seed questions.
+    first_tick = runtime.tick()
+
+    # Continuations must re-enter discovery. The demo simulates two explicit
+    # agent decisions before Tick 2 rather than inheriting the old decision.
+    continuation_entries = [
+        entry for entry in runtime.ledger.values() if entry.source == "continuation"
+    ]
+    for entry in continuation_entries:
+        runtime.record_agent_decision(
+            question_id=_text(entry.question.get("question_id")),
+            agent_id="agent-runtime-001",
+            decision="accept",
+        )
+
+    second_tick = runtime.tick()
+    data = _safe(asdict(runtime.snapshot(seeded=seeded, ticks_executed=2)))
 
     assert data["global_process_terminated"] is False
     assert data["questions_seeded"] == 2
     assert data["ticks_executed"] == 2
     assert data["continuations_created"] == 4
     assert data["current_queue_size"] == 2
+    assert data["prospects_current"] >= 4
+    assert all(t["prospects_generated"] >= 4 for t in data["tick_history"])
     assert all(t["global_process_terminated"] is False for t in data["tick_history"])
     assert any(e["source"] == "continuation" for e in data["ledger_snapshot"])
 
@@ -499,6 +636,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("Status:", result["status"])
         print("Ticks:", result["ticks_executed"])
         print("Questions seeded:", result["questions_seeded"])
+        print("Prospects current:", result["prospects_current"])
+        print("Discoverable count:", result["discoverable_count"])
+        print("Agent decisions:", len(result["agent_decisions"]))
         print("Processes started:", result["processes_started"])
         print("Continuations created:", result["continuations_created"])
         print("Queue size:", result["current_queue_size"])
