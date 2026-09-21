@@ -1,25 +1,18 @@
 #!/usr/bin/env python3
 
-"""Unified runner for the initial UFCPS simulation scenarios.
+"""Unified runner for the UFCPS simulation scenarios.
 
 The runner executes deterministic reference scenarios and normalizes their
 outputs into one machine-readable report.
 
-Scenarios currently included:
-
-- basic_handoff
-- parallel_resolution
-- autonomous_experiment
-
-The runner does not assign quality rankings to scenarios. It reports whether
-each scenario completed its own structural acceptance checks.
+The runner intentionally reports observed scenario status and does not assign
+a quality ranking to one architectural condition against another.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import sys
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -27,7 +20,13 @@ from typing import Any, Callable
 from .scenarios import (
     run_autonomous_experiment,
     run_basic_handoff,
+    run_carrier_substitution,
+    run_composition,
+    run_contradictory_branches,
+    run_forced_deadlock,
+    run_negative_result,
     run_parallel_resolution,
+    run_stateless_delegation_control,
 )
 
 
@@ -36,7 +35,13 @@ ScenarioCallable = Callable[[], Any]
 
 SCENARIOS: dict[str, ScenarioCallable] = {
     "basic_handoff": run_basic_handoff,
+    "forced_deadlock": run_forced_deadlock,
+    "carrier_substitution": run_carrier_substitution,
+    "stateless_delegation_control": run_stateless_delegation_control,
     "parallel_resolution": run_parallel_resolution,
+    "contradictory_branches": run_contradictory_branches,
+    "composition": run_composition,
+    "negative_result": run_negative_result,
     "autonomous_experiment": run_autonomous_experiment,
 }
 
@@ -81,7 +86,13 @@ def _json_safe(value: Any) -> Any:
 
 
 def scenario_passed(result: dict[str, Any]) -> bool:
-    """Evaluate the scenario's own explicit acceptance fields."""
+    """
+    Evaluate the scenario's own explicit acceptance fields.
+
+    The runner does not invent a universal success criterion. It only checks
+    fields that the individual scenario exposes as explicit acceptance
+    conditions.
+    """
     continuity = result.get("continuity_valid", False)
     terminated = result.get("process_terminated", False)
 
@@ -91,7 +102,6 @@ def scenario_passed(result: dict[str, Any]) -> bool:
     if terminated is True:
         return False
 
-    # Scenario-specific structural acceptance checks.
     if "handoff_performed" in result:
         if result.get("handoff_performed") is not True:
             return False
@@ -120,6 +130,90 @@ def scenario_passed(result: dict[str, Any]) -> bool:
         if result.get("composition_inputs_ready") is not True:
             return False
 
+    if "composition_relation" in result:
+        if not str(result.get("composition_relation")):
+            return False
+
+    if "composed_state_stored" in result:
+        if result.get("composed_state_stored") is not True:
+            return False
+
+    if "successor_ready" in result:
+        if result.get("successor_ready") is not True:
+            return False
+
+    if "deadlock_created" in result:
+        if result.get("deadlock_created") is not True:
+            return False
+
+    if "deadlock_not_terminal" in result:
+        if result.get("deadlock_not_terminal") is not True:
+            return False
+
+    if "unresolved_difference_preserved" in result:
+        if result.get("unresolved_difference_preserved") is not True:
+            return False
+
+    if "successor_created" in result:
+        if result.get("successor_created") is not True:
+            return False
+
+    if "successor_completed" in result:
+        if result.get("successor_completed") is not True:
+            return False
+
+    if "capability_was_unavailable_locally" in result:
+        if result.get("capability_was_unavailable_locally") is not True:
+            return False
+
+    if "carrier_type_changed" in result:
+        if result.get("carrier_type_changed") is not True:
+            return False
+
+    if "stateful_completion" in result:
+        if result.get("stateful_completion") is not True:
+            return False
+
+    if "stateless_completion" in result:
+        if result.get("stateless_completion") is not True:
+            return False
+
+    if "continuation_state_difference_observed" in result:
+        if result.get("continuation_state_difference_observed") is not True:
+            return False
+
+    if "contradiction_detected" in result:
+        if result.get("contradiction_detected") is not True:
+            return False
+
+    if "contradiction_preserved" in result:
+        if result.get("contradiction_preserved") is not True:
+            return False
+
+    if "unresolved_difference_created" in result:
+        if result.get("unresolved_difference_created") is not True:
+            return False
+
+    if "successor_question_ready" in result:
+        if result.get("successor_question_ready") is not True:
+            return False
+
+    if "negative_result_recorded" in result:
+        if result.get("negative_result_recorded") is not True:
+            return False
+
+    if "rejected_path_preserved" in result:
+        if result.get("rejected_path_preserved") is not True:
+            return False
+
+    if "successor_received_negative_result" in result:
+        if result.get("successor_received_negative_result") is not True:
+            return False
+
+    if "repeated_invalidated_path" in result:
+        if result.get("repeated_invalidated_path") is True:
+            return False
+
     if "continuation_ready" in result:
         if result.get("continuation_ready") is not True:
             return False
@@ -145,7 +239,7 @@ def run_scenario(
             "error": None,
         }
 
-    except Exception as exc:  # pragma: no cover - defensive runtime boundary
+    except Exception as exc:
         return {
             "scenario": name,
             "status": "error",
