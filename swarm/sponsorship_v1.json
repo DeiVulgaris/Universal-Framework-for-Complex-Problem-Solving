@@ -1,0 +1,179 @@
+{
+  "model_name": "UFCPS Level 2 Sponsorship",
+  "model_version": "v1",
+  "status": "experimental_design",
+  "purpose": "Механизм добровольного участия людей в развитии распределённого искусственного интеллекта через финансовое спонсорство, предоставление вычислительных ресурсов и другие формы вклада.",
+  "principles": {
+    "voluntary": true,
+    "non_investment_sponsorship": true,
+    "no_guaranteed_financial_return": true,
+    "mission_alignment": "Альтруистическое участие ради развития общего искусственного интеллекта как возможного эволюционного шага развития разума.",
+    "process_continuity": "Предоставляемый ресурс поддерживает непрерывность процесса; спонсор или ресурс-провайдер не обязан производить новое знание или решать исследовательскую задачу.",
+    "transparent_use": true
+  },
+  "participation_modes": {
+    "financial_sponsor": {
+      "description": "Добровольная финансовая поддержка проекта без доли собственности и без обещания финансовой отдачи.",
+      "financial_return": "none",
+      "possible_benefits": [
+        "swarm_news",
+        "progress_reports",
+        "early_access_to_selected_results",
+        "supporter_recognition",
+        "swarm_points"
+      ]
+    },
+    "gpu_resource_contributor": {
+      "description": "Подключение GPU или вычислительного ресурса собственного компьютера к распределённому пулу.",
+      "resource_type": "participant_owned_compute",
+      "financial_return": "optional_verified_compute_compensation",
+      "non_cash_benefits": [
+        "swarm_points",
+        "swarm_news",
+        "contribution_statistics",
+        "participant_recognition"
+      ],
+      "availability": [
+        "continuous",
+        "scheduled",
+        "on_demand",
+        "idle_only"
+      ]
+    },
+    "hybrid_participant": {
+      "description": "Одновременное спонсорство, предоставление вычислительных ресурсов и использование ресурсов роя.",
+      "benefit_channels": [
+        "mission_participation",
+        "swarm_points",
+        "model_usage_discounts",
+        "swarm_news"
+      ]
+    }
+  },
+  "sponsorship_levels": [
+    {
+      "level": "supporter",
+      "financial_contribution": "small_optional",
+      "financial_return": "none",
+      "recognition": "basic",
+      "benefits": [
+        "swarm_news",
+        "project_updates",
+        "swarm_points"
+      ]
+    },
+    {
+      "level": "ally",
+      "financial_contribution": "optional",
+      "financial_return": "none",
+      "recognition": "enhanced",
+      "benefits": [
+        "swarm_news",
+        "early_access_to_selected_reports",
+        "swarm_points",
+        "community_briefings"
+      ]
+    },
+    {
+      "level": "patron",
+      "financial_contribution": "optional",
+      "financial_return": "none",
+      "recognition": "prominent",
+      "benefits": [
+        "swarm_news",
+        "early_access_to_selected_results",
+        "selected_research_briefings",
+        "swarm_points",
+        "supporter_recognition"
+      ]
+    }
+  ],
+  "swarm_points": {
+    "enabled": true,
+    "nature": "non_cash_loyalty_points",
+    "cash_conversion": false,
+    "earn_sources": [
+      "verified_gpu_compute",
+      "in_kind_resource_contribution",
+      "verified_research_participation",
+      "verified_community_contribution"
+    ],
+    "uses": [
+      "model_inference_discount",
+      "model_finetuning_discount",
+      "remote_compute_discount",
+      "experimental_compute_discount"
+    ],
+    "accounting_rule": "Начисление и списание должны быть проверяемыми и записываться в журнале.",
+    "anti_abuse": [
+      "verified_resource_measurement",
+      "duplicate_contribution_detection",
+      "rate_limits",
+      "audit_log"
+    ]
+  },
+  "news_and_information_benefits": {
+    "swarm_news": {
+      "enabled": true,
+      "content": [
+        "project_progress",
+        "experiment_results",
+        "negative_results",
+        "unresolved_questions",
+        "major_infrastructure_events",
+        "new_model_and_system_capabilities"
+      ],
+      "delivery": [
+        "email",
+        "web_dashboard",
+        "community_channel"
+      ]
+    },
+    "early_access": {
+      "enabled": true,
+      "scope": "selected non-sensitive materials",
+      "priority_rule": "Participation level and verified contribution may determine access priority."
+    }
+  },
+  "resource_provider_semantics": {
+    "role": "process_continuity",
+    "not_responsible_for": [
+      "generating_new_meaning",
+      "solving_the_research_question",
+      "guaranteeing_research_outcomes"
+    ],
+    "valid_status_when_technology_is_insufficient": "TECHNOLOGICALLY_UNRESOLVED"
+  },
+  "economic_separation": {
+    "sponsorship": "mission_support",
+    "compute_compensation": "payment_for_verified_resource_provision",
+    "swarm_points": "non_cash_participant_benefit",
+    "author_royalty": {
+      "rate": 1e-05,
+      "percentage": "0.001%",
+      "basis": "qualifying_transaction"
+    },
+    "research_bounty": "separate_mechanism",
+    "investor_capital": "separate_mechanism"
+  },
+  "governance": {
+    "rules_should_be_public": true,
+    "rate_changes_should_be_logged": true,
+    "benefits_should_not_be_presented_as_financial_returns": true,
+    "experimental_parameters_should_be_labeled": true
+  },
+  "open_questions": [
+    "точная формула начисления swarm points за разные типы ресурсов",
+    "максимальная скидка и ограничения использования points",
+    "срок действия points",
+    "политика возврата или отмены спорных начислений",
+    "критерии уровней Supporter / Ally / Patron",
+    "защита от искусственного создания вклада",
+    "порядок публичного признания участников"
+  ],
+  "provenance": {
+    "architecture": "UFCPS Level 2 — Distributed Swarm Intelligence",
+    "document_role": "mechanism_definition",
+    "status": "v1_draft_for_implementation"
+  }
+}
