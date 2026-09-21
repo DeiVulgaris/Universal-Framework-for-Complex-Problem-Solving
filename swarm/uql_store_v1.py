@@ -27,10 +27,17 @@ import argparse
 import hashlib
 import json
 import os
+import sys
 import tempfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional, Sequence
+
+SWARM_DIR = Path(__file__).resolve().parent
+if str(SWARM_DIR) not in sys.path:
+    sys.path.insert(0, str(SWARM_DIR))
+
+from checkpointed_event_store_v1 import CheckpointedEventStore
 
 SCHEMA_VERSION = "uql-store-v1"
 GENESIS_HASH = "0" * 64
@@ -126,18 +133,80 @@ class QuestionFrontier:
 
 
 class UQLStore:
-    """Local append-only UQL event store with a mutable recoverable frontier."""
+    """Local append-only UQL event store with a mutable recoverable frontier.
 
-    def __init__(self, base_path: str | Path) -> None:
+    ``optimized_persistence=False`` preserves the original v1 storage path.
+    ``optimized_persistence=True`` moves event journaling/checkpointing to the
+    generic :class:`CheckpointedEventStore` primitive, keeping UQL event
+    semantics intact while decoupling journal batching from frontier
+    checkpoint frequency.
+    """
+
+    def __init__(
+        self,
+        base_path: str | Path,
+        *,
+        optimized_persistence: bool = False,
+        journal_batch_size: int = 1,
+        checkpoint_interval: int = 1,
+        durable: bool = True,
+    ) -> None:
         base = Path(base_path)
         self.base_path = base
-        self.events_path = Path(f"{base}.events.jsonl")
-        self.frontier_path = Path(f"{base}.frontier.json")
+        self.optimized_persistence = bool(optimized_persistence)
+        self.journal_batch_size = int(journal_batch_size)
+        self.checkpoint_interval = int(checkpoint_interval)
+        self.durable = bool(durable)
+
+        if self.optimized_persistence:
+            self.events_path = Path(f"{base}.checkpointed.events.jsonl")
+            self.frontier_path = Path(f"{base}.checkpointed.checkpoint.json")
+            checkpoint_base = Path(f"{base}.checkpointed")
+            self._checkpoint_store: Optional[CheckpointedEventStore] = CheckpointedEventStore(
+                checkpoint_base,
+                journal_batch_size=self.journal_batch_size,
+                checkpoint_interval=self.checkpoint_interval,
+                durable=self.durable,
+            )
+        else:
+            self.events_path = Path(f"{base}.events.jsonl")
+            self.frontier_path = Path(f"{base}.frontier.json")
+            self._checkpoint_store = None
+
         self.events_path.parent.mkdir(parents=True, exist_ok=True)
         self._frontier: dict[str, QuestionFrontier] = {}
+        self._next_sequence = 1
+        self._last_event_hash = GENESIS_HASH
         self._load_frontier()
+        events = self._read_events()
+        if events:
+            self._next_sequence = events[-1].sequence + 1
+            self._last_event_hash = events[-1].event_hash
 
     def _load_frontier(self) -> None:
+        if self.optimized_persistence:
+            assert self._checkpoint_store is not None
+            checkpoint = self._checkpoint_store.checkpoint_snapshot()
+            if checkpoint is not None and checkpoint.state is not None:
+                state = checkpoint.state
+                if not isinstance(state, dict) or state.get("schema_version") != SCHEMA_VERSION:
+                    raise ValueError("Unsupported optimized UQL checkpoint schema version")
+                entries = state.get("frontier", {})
+                self._frontier = {
+                    question_id: QuestionFrontier(**entry)
+                    for question_id, entry in entries.items()
+                }
+            else:
+                self._frontier = {}
+
+            # Replay only the post-checkpoint tail. The checkpoint is a
+            # performance artifact; the journal remains authoritative.
+            tail = self._checkpoint_store.recover_events_after_checkpoint()
+            for stored in tail:
+                event = self._stored_to_uql_event(stored)
+                self._apply_event_to_frontier(self._frontier, event)
+            return
+
         if not self.frontier_path.exists():
             self._frontier = {}
             return
@@ -151,17 +220,88 @@ class UQLStore:
             for question_id, entry in entries.items()
         }
 
-    def _save_frontier(self) -> None:
-        payload = {
+    def _checkpoint_payload(self) -> dict[str, Any]:
+        return {
             "schema_version": SCHEMA_VERSION,
             "frontier": {
                 question_id: frontier.to_dict()
                 for question_id, frontier in sorted(self._frontier.items())
             },
         }
-        _atomic_write_json(self.frontier_path, payload)
+
+    def _save_frontier(self) -> None:
+        if self.optimized_persistence:
+            # Checkpoints are deliberately controlled by event cadence in
+            # _persist_frontier_after_event(). Avoid per-event snapshot writes.
+            return
+        _atomic_write_json(self.frontier_path, self._checkpoint_payload())
+
+    def _persist_frontier_after_event(self, event: UQLEvent) -> None:
+        if not self.optimized_persistence:
+            self._save_frontier()
+            return
+        assert self._checkpoint_store is not None
+        if event.sequence % self.checkpoint_interval == 0:
+            self._checkpoint_store.checkpoint(self._checkpoint_payload())
+
+    @staticmethod
+    def _stored_to_uql_event(stored: Any) -> UQLEvent:
+        try:
+            raw = stored.payload["uql_event"]
+            return UQLEvent(**raw)
+        except Exception as exc:
+            raise ValueError("Invalid checkpointed UQL event payload") from exc
+
+    @staticmethod
+    def _apply_event_to_frontier(
+        rebuilt: dict[str, QuestionFrontier],
+        event: UQLEvent,
+    ) -> None:
+        payload = event.payload
+        if event.event_type == "question_created":
+            raw = dict(payload)
+            raw["last_event_id"] = event.event_id
+            raw["last_event_hash"] = event.event_hash
+            rebuilt[event.question_id] = QuestionFrontier(**raw)
+            return
+        if event.event_type == "question_derived":
+            raw = dict(payload["child_frontier"])
+            raw["last_event_id"] = event.event_id
+            raw["last_event_hash"] = event.event_hash
+            rebuilt[event.question_id] = QuestionFrontier(**raw)
+            parent_id = str(payload["parent_question_id"])
+            if parent_id not in rebuilt:
+                raise ValueError(
+                    f"Derived-question event references unknown parent: {parent_id}"
+                )
+            parent = rebuilt[parent_id]
+            if event.question_id not in parent.derived_questions:
+                parent.derived_questions.append(event.question_id)
+            parent.last_event_id = event.event_id
+            parent.last_event_hash = event.event_hash
+            rebuilt[parent_id] = parent
+            return
+        if event.question_id not in rebuilt:
+            raise ValueError(
+                f"Event references unknown question: {event.question_id}"
+            )
+        current = rebuilt[event.question_id]
+        if event.event_type in {"frontier_patch", "frontier_update"}:
+            patch = payload.get("patch", {})
+            raw = current.to_dict()
+            raw.update(patch)
+            raw["last_event_id"] = event.event_id
+            raw["last_event_hash"] = event.event_hash
+            rebuilt[event.question_id] = QuestionFrontier(**raw)
+            return
+        current.last_event_id = event.event_id
+        current.last_event_hash = event.event_hash
+        rebuilt[event.question_id] = current
 
     def _read_events(self) -> list[UQLEvent]:
+        if self.optimized_persistence:
+            assert self._checkpoint_store is not None
+            return [self._stored_to_uql_event(item) for item in self._checkpoint_store.events()]
         if not self.events_path.exists():
             return []
         events: list[UQLEvent] = []
@@ -177,6 +317,14 @@ class UQLStore:
                         f"Invalid UQL event at line {line_number}: {exc}"
                     ) from exc
         return events
+
+    def flush(self) -> None:
+        if self.optimized_persistence:
+            assert self._checkpoint_store is not None
+            self._checkpoint_store.flush()
+
+    def close(self) -> None:
+        self.flush()
 
     @property
     def frontier(self) -> dict[str, QuestionFrontier]:
@@ -196,6 +344,8 @@ class UQLStore:
         ]
 
     def _next_sequence_and_prev(self) -> tuple[int, str]:
+        if self.optimized_persistence:
+            return self._next_sequence, self._last_event_hash
         events = self._read_events()
         if not events:
             return 1, GENESIS_HASH
@@ -229,12 +379,22 @@ class UQLStore:
         }
         event_hash = _hash_event(prev_hash, raw)
         event = UQLEvent(event_hash=event_hash, **raw)
+        if self.optimized_persistence:
+            self._next_sequence = sequence + 1
+            self._last_event_hash = event.event_hash
 
-        self.events_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.events_path.open("a", encoding="utf-8") as handle:
-            handle.write(_canonical(event.to_dict()) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
+        if self.optimized_persistence:
+            assert self._checkpoint_store is not None
+            self._checkpoint_store.append(
+                event_id=event.event_id,
+                payload={"uql_event": event.to_dict()},
+            )
+        else:
+            self.events_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.events_path.open("a", encoding="utf-8") as handle:
+                handle.write(_canonical(event.to_dict()) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
         return event
 
     def create_question(
@@ -266,7 +426,7 @@ class UQLStore:
         frontier.last_event_id = event.event_id
         frontier.last_event_hash = event.event_hash
         self._frontier[question_id] = frontier
-        self._save_frontier()
+        self._persist_frontier_after_event(event)
         return event
 
     def update_frontier(
@@ -294,7 +454,7 @@ class UQLStore:
         new_state["last_event_id"] = event.event_id
         new_state["last_event_hash"] = event.event_hash
         self._frontier[question_id] = QuestionFrontier(**new_state)
-        self._save_frontier()
+        self._persist_frontier_after_event(event)
         return event
 
     def append_history(
@@ -315,7 +475,7 @@ class UQLStore:
         current.last_event_id = event.event_id
         current.last_event_hash = event.event_hash
         self._frontier[question_id] = current
-        self._save_frontier()
+        self._persist_frontier_after_event(event)
         return event
 
     def derive_question(
@@ -357,58 +517,14 @@ class UQLStore:
         parent.last_event_id = event.event_id
         parent.last_event_hash = event.event_hash
         self._frontier[parent_question_id] = parent
-        self._save_frontier()
+        self._persist_frontier_after_event(event)
         return event
 
     def recover_frontier_from_events(self) -> dict[str, QuestionFrontier]:
         """Replay the event log into a fresh frontier representation."""
         rebuilt: dict[str, QuestionFrontier] = {}
         for event in self._read_events():
-            payload = event.payload
-            if event.event_type == "question_created":
-                raw = dict(payload)
-                raw["last_event_id"] = event.event_id
-                raw["last_event_hash"] = event.event_hash
-                rebuilt[event.question_id] = QuestionFrontier(**raw)
-                continue
-            if event.event_type == "question_derived":
-                # A derivation event creates the child frontier and records the
-                # parent->child relation atomically. The child therefore does
-                # not need to exist in the replay map before this event.
-                raw = dict(payload["child_frontier"])
-                raw["last_event_id"] = event.event_id
-                raw["last_event_hash"] = event.event_hash
-                rebuilt[event.question_id] = QuestionFrontier(**raw)
-                parent_id = str(payload["parent_question_id"])
-                if parent_id not in rebuilt:
-                    raise ValueError(
-                        f"Derived-question event references unknown parent: {parent_id}"
-                    )
-                parent = rebuilt[parent_id]
-                if event.question_id not in parent.derived_questions:
-                    parent.derived_questions.append(event.question_id)
-                parent.last_event_id = event.event_id
-                parent.last_event_hash = event.event_hash
-                rebuilt[parent_id] = parent
-                continue
-            if event.question_id not in rebuilt:
-                raise ValueError(
-                    f"Event references unknown question: {event.question_id}"
-                )
-            current = rebuilt[event.question_id]
-            if event.event_type in {"frontier_patch", "frontier_update"}:
-                patch = payload.get("patch", {})
-                raw = current.to_dict()
-                raw.update(patch)
-                raw["last_event_id"] = event.event_id
-                raw["last_event_hash"] = event.event_hash
-                rebuilt[event.question_id] = QuestionFrontier(**raw)
-                continue
-            # Generic history events leave the frontier fields intact while
-            # advancing the audit pointer.
-            current.last_event_id = event.event_id
-            current.last_event_hash = event.event_hash
-            rebuilt[event.question_id] = current
+            self._apply_event_to_frontier(rebuilt, event)
         return rebuilt
 
     def verify_integrity(self, *, replay: bool = True) -> dict[str, Any]:
@@ -448,6 +564,13 @@ class UQLStore:
             if not replay_equal:
                 errors.append("frontier snapshot differs from replayed event log")
 
+        persistence_integrity: Optional[dict[str, Any]] = None
+        if self.optimized_persistence:
+            assert self._checkpoint_store is not None
+            persistence_integrity = self._checkpoint_store.verify_integrity().to_dict()
+            if not persistence_integrity["integrity_ok"]:
+                errors.append("checkpointed persistence integrity check failed")
+
         return {
             "schema_version": SCHEMA_VERSION,
             "event_count": len(events),
@@ -456,6 +579,8 @@ class UQLStore:
             "last_event_hash": prev_hash,
             "hash_chain_valid": not any("hash" in error or "sequence" in error for error in errors),
             "frontier_replay_equal": replay_equal,
+            "persistence_mode": "checkpointed" if self.optimized_persistence else "legacy",
+            "persistence_integrity": persistence_integrity,
             "valid": not errors,
             "errors": errors,
         }
@@ -463,7 +588,11 @@ class UQLStore:
     def persist_frontier_rebuild(self) -> dict[str, Any]:
         rebuilt = self.recover_frontier_from_events()
         self._frontier = rebuilt
-        self._save_frontier()
+        if self.optimized_persistence:
+            assert self._checkpoint_store is not None
+            self._checkpoint_store.checkpoint(self._checkpoint_payload())
+        else:
+            self._save_frontier()
         return self.verify_integrity(replay=False)
 
     def events_for_question(self, question_id: str) -> list[UQLEvent]:
