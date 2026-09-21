@@ -61,6 +61,11 @@ from .repeated_carrier_replacement import (
     RepeatedCarrierReplacementResult,
     run_repeated_carrier_replacement,
 )
+from .process_identity import (
+    IdentityTransition,
+    ProcessIdentityResult,
+    run_process_identity,
+)
 from .stateless_delegation_control import (
     DelegationConditionResult,
     StatelessDelegationResult,
@@ -90,6 +95,8 @@ __all__ = [
     "RecursionStressResult",
     "ReplacementRecord",
     "RepeatedCarrierReplacementResult",
+    "IdentityTransition",
+    "ProcessIdentityResult",
     "ScalingRun",
     "ScenarioResult",
     "StatelessDelegationResult",
@@ -110,6 +117,7 @@ __all__ = [
     "run_parallel_resolution",
     "run_recursion_stress",
     "run_repeated_carrier_replacement",
+    "run_process_identity",
     "run_stateless_delegation_control",
     "run_swarm_scaling",
 ]
