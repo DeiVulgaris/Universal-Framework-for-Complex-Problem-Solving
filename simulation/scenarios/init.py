@@ -1,4 +1,4 @@
-"""Scenario package for UFCPS simulations."""
+
 
 from .autonomous_experiment import (
     AutonomousExperimentPlan,
@@ -122,3 +122,4 @@ __all__ = [
     "run_swarm_scaling",
 ]
 from .transition_validation import run_transition_validation
+from .schema_validation import run_schema_validation
