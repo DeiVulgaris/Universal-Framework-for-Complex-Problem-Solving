@@ -1,7 +1,7 @@
 {
   "model_name": "UFCPS Swarm Points Economy",
   "model_version": "v1",
-  "status": "experimental_design",
+  "status": "recommended_mechanism",
   "purpose": "Немонетарная система поощрения участников за проверенный вклад в непрерывность и развитие распределённой вычислительной инфраструктуры UFCPS.",
   "principles": {
     "non_cash": true,
@@ -285,5 +285,112 @@
     "architecture": "UFCPS Level 2 — Distributed Swarm Intelligence",
     "document_role": "points_economy_definition",
     "status": "v1_draft_for_simulation"
-  }
+  },
+  "document_role": "optional_incentive_recommendation",
+  "architectural_position": {
+    "mandatory": false,
+    "level_2_core_dependency": false,
+    "recommended_for": [
+      "participant_retention",
+      "small_gpu_contributors",
+      "mission_sponsors",
+      "repeat_resource_contribution",
+      "personal_model_usage"
+    ],
+    "activation_rule": "Вводить после стабилизации существующей верификации ресурсов и compute accounting; points не должны становиться условием работы основного роя.",
+    "design_principle": "Использовать уже существующие механизмы UFCPS вместо создания параллельной инфраструктуры."
+  },
+  "integration_with_existing_methods": {
+    "resource_registry_v1": {
+      "role": "Источник идентичности и характеристик предоставленного ресурса.",
+      "used_for": [
+        "resource_id",
+        "resource_type",
+        "provider_id",
+        "availability",
+        "verification",
+        "substitution_group"
+      ]
+    },
+    "agent_registry_v1": {
+      "role": "Источник идентичности участника или агента, связанного с ресурсом.",
+      "used_for": [
+        "agent_id",
+        "identity",
+        "status",
+        "reliability",
+        "reputation"
+      ]
+    },
+    "compute_unit_v1": {
+      "role": "Использовать уже существующую абстракцию проверенного compute; не вводить отдельный универсальный курс GPU-hours → SP.",
+      "constraint": "SP начисляются после определения verified compute quantity существующим механизмом."
+    },
+    "compute_accounting_v1": {
+      "role": "Основной источник verified contribution для начисления points.",
+      "rule": "Не создавать отдельный параллельный журнал вычислений только ради points.",
+      "recommended_event_link": "points_credit_reference"
+    },
+    "swarm_scheduler_v1": {
+      "role": "Косвенный источник сведений о фактически назначенной и выполненной вычислительной работе.",
+      "constraint": "Сам scheduler не является бухгалтерией points."
+    },
+    "verification": {
+      "role": "Обязательное условие начисления points за ресурсный вклад.",
+      "rule": "Непроверенное предоставление ресурса не создаёт points."
+    }
+  },
+  "recommended_implementation_sequence": [
+    "Сначала продолжить использовать существующий resource_registry и compute_accounting.",
+    "Добавить к verified contribution необязательный признак eligibility_for_swarm_points.",
+    "При подтверждённом событии начислять points как вторичный incentive event.",
+    "Хранить баланс и историю points рядом с существующими идентификаторами участника и ресурсными событиями.",
+    "Использовать points для скидки на собственное использование вычислительных услуг роя.",
+    "Проводить экономические эксперименты до утверждения окончательных коэффициентов."
+  ],
+  "ledger_strategy": {
+    "separate_points_ledger_now": false,
+    "recommended_now": "Использовать существующие проверенные события compute accounting как источник начисления и отдельные lightweight point events для credit/redeem.",
+    "future_separation_condition": "Выделять самостоятельный points ledger только при появлении реальной нагрузки, сложного аудита или нескольких независимых сервисов использования points."
+  },
+  "recommended_point_events": [
+    "POINTS_ELIGIBILITY_GRANTED",
+    "POINTS_EARNED",
+    "POINTS_REDEEMED",
+    "POINTS_REVERSED"
+  ],
+  "recommended_constraints": {
+    "no_effect_on_core_continuity": true,
+    "no_effect_on_task_resolution": true,
+    "no_priority_override_for_research_correctness": true,
+    "no_cash_value_assumption": true,
+    "no_guaranteed_discount": true,
+    "discount_may_be_dynamic": true,
+    "rates_are_experimental": true
+  },
+  "pilot_policy": {
+    "status": "recommendation",
+    "scope": "small participant GPU pool",
+    "initial_goal": "Проверить, повышает ли бонусная система повторное добровольное предоставление ресурсов.",
+    "do_not_optimize_for": [
+      "maximal point issuance",
+      "maximal discount",
+      "financial speculation"
+    ],
+    "measure": [
+      "repeat_contribution_rate",
+      "resource_uptime",
+      "points_redemption_rate",
+      "participant_retention",
+      "cost_of_discount",
+      "verified_compute_growth"
+    ]
+  },
+  "notes": [
+    "Swarm Points являются надстройкой мотивации, а не новым базовым ресурсом UFCPS.",
+    "Главным фактом остаётся verified resource contribution; points лишь преобразуют его в пользовательскую привилегию.",
+    "Механизм особенно подходит для множества небольших GPU участников.",
+    "Финансовое спонсорство и GPU contribution могут давать разные бонусы; автоматическое превращение денег в points не является базовым правилом.",
+    "Окончательные ставки должны определяться экспериментально."
+  ]
 }
