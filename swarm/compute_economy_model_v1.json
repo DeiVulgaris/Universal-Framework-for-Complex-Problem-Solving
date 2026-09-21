@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ufcps.org/swarm/compute_economy_model_v1.json",
   "title": "UFCPS Compute Economy Model v1 — Dual Payment Rails",
-  "description": "Machine-readable economic model for the UFCPS distributed compute economy. Supports two optional internal settlement rails: non-crypto Resource Credits for service consumption and an optional crypto asset rail for participants who prefer transferable crypto settlement. The model is experimental and is not a promise of financial return. Internal conversion between crypto and Resource Credits may be operated with zero UFCPS protocol commission and zero internal spread; any external blockchain network fee is not an UFCPS commission and must be disclosed separately. Every transaction carries the mandatory author royalty of 0.001% (0.00001 of transaction amount), regardless of payment rail.",
+  "description": "Machine-readable economic model for the UFCPS distributed compute economy. Supports two optional internal settlement rails: non-crypto Resource Credits for service consumption and an optional crypto asset rail for participants who prefer transferable crypto settlement. The model is experimental and is not a promise of financial return. Internal conversion between crypto and Resource Credits may be operated with zero UFCPS protocol commission and zero internal spread; any external blockchain network fee is not an UFCPS commission and must be disclosed separately. Every transaction carries the mandatory author royalty of 0.001% (0.00001 of transaction amount), regardless of payment rail. To prevent Bitcoin-like early issuance concentration, provider rewards and crypto/resource-credit issuance are cost-anchored: annual verified cost is computed from equipment/depreciation, energy, maintenance and applicable operating costs, and maximum profit is capped at 10 times that annual cost.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -289,6 +289,23 @@
               "type": "string"
             }
           }
+        },
+        "cost_anchored_cap": {
+          "type": "boolean",
+          "const": true
+        },
+        "profit_ceiling_reference": {
+          "type": "string",
+          "const": "cost_anchored_economics.maximum_profit_multiple_of_annual_cost"
+        },
+        "initial_issuance_protection": {
+          "type": "string",
+          "enum": [
+            "cost_anchored",
+            "gradual_release",
+            "verified_runtime",
+            "hybrid"
+          ]
         }
       }
     },
@@ -430,6 +447,14 @@
             "at_transaction_settlement",
             "atomic_with_transaction"
           ]
+        },
+        "provider_profit_cap": {
+          "type": "string",
+          "const": "10x_annual_verified_cost"
+        },
+        "cost_basis_required_for_resource_reward": {
+          "type": "boolean",
+          "const": true
         }
       }
     },
@@ -874,6 +899,110 @@
           }
         }
       }
+    },
+    "cost_anchored_economics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "cost_basis_period",
+        "annual_cost_components",
+        "maximum_profit_multiple_of_annual_cost",
+        "maximum_total_compensation_multiple_of_annual_cost",
+        "applies_to",
+        "valuation_method",
+        "anti_early_issuance"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "const": true
+        },
+        "cost_basis_period": {
+          "type": "string",
+          "const": "1_year"
+        },
+        "annual_cost_components": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "equipment_purchase_cost",
+              "one_year_equipment_depreciation",
+              "one_year_energy_cost",
+              "one_year_maintenance_cost",
+              "one_year_network_cost",
+              "one_year_storage_cost",
+              "one_year_verification_cost"
+            ]
+          }
+        },
+        "maximum_profit_multiple_of_annual_cost": {
+          "type": "number",
+          "minimum": 0,
+          "const": 10
+        },
+        "maximum_total_compensation_multiple_of_annual_cost": {
+          "type": "number",
+          "minimum": 0,
+          "const": 11
+        },
+        "applies_to": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "crypto_issuance",
+              "resource_credit_issuance",
+              "provider_reward",
+              "compute_compensation",
+              "resource_reward"
+            ]
+          }
+        },
+        "valuation_method": {
+          "type": "string",
+          "enum": [
+            "verified_annual_cost",
+            "rolling_annual_cost",
+            "hybrid"
+          ]
+        },
+        "anti_early_issuance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "hardware_age_adjustment",
+            "verified_runtime_required",
+            "issuance_cannot_exceed_cost_anchor"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "const": true
+            },
+            "hardware_age_adjustment": {
+              "type": "boolean"
+            },
+            "verified_runtime_required": {
+              "type": "boolean"
+            },
+            "issuance_cannot_exceed_cost_anchor": {
+              "type": "boolean",
+              "const": true
+            },
+            "first_year_policy": {
+              "type": "string"
+            }
+          }
+        },
+        "formula": {
+          "type": "string"
+        }
+      }
     }
   },
   "provenance_extension": {
@@ -882,6 +1011,12 @@
     "backward_compatibility": "Existing required fields remain unchanged.",
     "design_note": "Resource Credits are optimized for predictable service consumption; crypto is an optional participant-selected settlement rail. A participant may prefer either rail, and crypto can optionally be converted to Resource Credits for service use.",
     "internal_conversion_rule": "UFCPS protocol commission = 0; internal spread = 0; external network fees, when applicable, remain external and must be disclosed.",
-    "author_royalty_policy": "Universal rule: 0.001% of every transaction. No transaction-class exceptions are defined by this model."
+    "author_royalty_policy": "Universal rule: 0.001% of every transaction. No transaction-class exceptions are defined by this model.",
+    "cost_anchor_policy": {
+      "rule": "maximum_profit = 10 × verified_annual_cost",
+      "total_compensation_ceiling": "11 × verified_annual_cost",
+      "purpose": "prevent excessive early-generation rewards and concentration",
+      "not_a_market_price": true
+    }
   }
 }
