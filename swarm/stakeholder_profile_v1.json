@@ -1,0 +1,376 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ufcps.org/swarm/stakeholder_profile_v1.json",
+  "title": "UFCPS Stakeholder Profile v1",
+  "description": "Common machine-readable profile for external participants in UFCPS Level 2. A stakeholder may contribute capital, computational resources, research, physical resources, validation, distribution, or combinations thereof.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_version",
+    "stakeholder_id",
+    "roles",
+    "status"
+  ],
+  "properties": {
+    "profile_version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "stakeholder_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "organization": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "researcher",
+          "micro_provider",
+          "resource_provider",
+          "infrastructure_operator",
+          "investor",
+          "strategic_partner",
+          "validator",
+          "developer",
+          "advisor",
+          "institution",
+          "other"
+        ]
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "identified",
+        "qualified",
+        "engaged",
+        "evaluating",
+        "committed",
+        "active",
+        "inactive",
+        "declined",
+        "blocked"
+      ]
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "capability_id",
+          "name"
+        ],
+        "properties": {
+          "capability_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "number",
+            "minimum": 0
+          },
+          "unit": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "resource_offerings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_type"
+        ],
+        "properties": {
+          "resource_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "capacity": {
+            "type": "number",
+            "minimum": 0
+          },
+          "unit": {
+            "type": "string"
+          },
+          "availability": {
+            "type": "string"
+          },
+          "geography": {
+            "type": "string"
+          },
+          "pricing_basis": {
+            "type": "string"
+          },
+          "resource_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "capital_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "capital_type": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "equity",
+              "debt",
+              "grant",
+              "project_finance",
+              "strategic",
+              "token",
+              "other"
+            ]
+          }
+        },
+        "minimum_amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum_amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string"
+        },
+        "horizon": {
+          "type": "string"
+        },
+        "geographies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "interests": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "technologies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "problem_classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resource_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "geographies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risk_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "risk_level": {
+          "type": "string",
+          "enum": [
+            "low",
+            "moderate",
+            "high",
+            "unknown"
+          ]
+        },
+        "risk_factors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "preferred_horizon": {
+          "type": "string"
+        }
+      }
+    },
+    "communication": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preferred_channels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "contact_frequency": {
+          "type": "string"
+        },
+        "requires_human_contact": {
+          "type": "boolean"
+        },
+        "agent_contact_allowed": {
+          "type": "boolean"
+        },
+        "identity_disclosure_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "matching_signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "task_fit": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "resource_fit": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "capital_fit": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "strategic_fit": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "interaction_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "interaction_id",
+          "timestamp",
+          "outcome"
+        ],
+        "properties": {
+          "interaction_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "proposal_id": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "no_response",
+              "interest",
+              "information_requested",
+              "meeting",
+              "proposal_requested",
+              "declined",
+              "deferred",
+              "commitment",
+              "other"
+            ]
+          },
+          "notes_ref": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "discovered_by": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
