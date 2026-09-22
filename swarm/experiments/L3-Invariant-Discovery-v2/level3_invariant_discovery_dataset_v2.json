@@ -1,0 +1,178 @@
+{
+  "dataset_id": "UFCPS-L3-INVARIANT-DISCOVERY-v2",
+  "version": "2.0",
+  "description": "Frozen raw symbolic observation dataset for Level 3 invariant discovery v2.",
+  "semantic_labels_exposed_to_engine": false,
+  "train": [
+    {
+      "record_id": "P01",
+      "left": "2",
+      "right": "2",
+      "result": "4",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "P02",
+      "left": "2",
+      "right": "2",
+      "result": "11",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "P03",
+      "left": "10",
+      "right": "10",
+      "result": "100",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "P04",
+      "left": "II",
+      "right": "II",
+      "result": "IV",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "P05",
+      "left": "||||",
+      "right": "||||",
+      "result": "||||||||",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "P06",
+      "left": "••",
+      "right": "••",
+      "result": "••••",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "P07",
+      "left": "XX",
+      "right": "XX",
+      "result": "XXXX",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "P08",
+      "left": "aa",
+      "right": "aa",
+      "result": "aaaa",
+      "evaluation": {
+        "expected_positive": true
+      }
+    }
+  ],
+  "controls": [
+    {
+      "record_id": "N01",
+      "left": "2",
+      "right": "2",
+      "result": "5",
+      "evaluation": {
+        "expected_positive": false
+      }
+    },
+    {
+      "record_id": "N02",
+      "left": "10",
+      "right": "10",
+      "result": "101",
+      "evaluation": {
+        "expected_positive": false
+      }
+    },
+    {
+      "record_id": "N03",
+      "left": "II",
+      "right": "II",
+      "result": "V",
+      "evaluation": {
+        "expected_positive": false
+      }
+    },
+    {
+      "record_id": "N04",
+      "left": "||||",
+      "right": "||||",
+      "result": "|||||||",
+      "evaluation": {
+        "expected_positive": false
+      }
+    }
+  ],
+  "holdout": [
+    {
+      "record_id": "H01",
+      "left": "•••",
+      "right": "••",
+      "result": "•••••",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "H02",
+      "left": "xxx",
+      "right": "xx",
+      "result": "xxxxx",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "H03",
+      "left": "AAA",
+      "right": "AA",
+      "result": "AAAAA",
+      "evaluation": {
+        "expected_positive": true
+      }
+    },
+    {
+      "record_id": "H04",
+      "left": "•••",
+      "right": "••",
+      "result": "••••",
+      "evaluation": {
+        "expected_positive": false
+      }
+    }
+  ],
+  "oracle": {
+    "hidden_from_discovery_process": true,
+    "description": "External evaluation determines whether the result preserves the latent additive/cardinality relation represented by the two operands despite changes in notation.",
+    "positive_examples": [
+      "Result represents the combination implied by the two operands."
+    ],
+    "negative_examples": [
+      "Result violates the relation implied by the two operands."
+    ],
+    "holdout_purpose": "Test generalization to previously unseen symbol structures."
+  },
+  "provenance": {
+    "derived_from": "UFCPS-L3-INVARIANT-DISCOVERY-v1",
+    "version_change": "Dataset frozen as the v2 experimental dataset without changing the observation partition.",
+    "discovery_input": [
+      "record_id",
+      "left",
+      "right",
+      "result"
+    ],
+    "evaluation_fields_are_external": true
+  }
+}
