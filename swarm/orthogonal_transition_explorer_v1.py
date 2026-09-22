@@ -249,6 +249,58 @@ class OrthogonalTransitionExplorer:
         return branches
 
     # ------------------------------------------------------------------
+    # Single candidate generation
+    # ------------------------------------------------------------------
+
+    def generate_candidate(
+        self,
+        source_space: str,
+        mechanism: OTMechanism,
+        target_space: Optional[str] = None,
+        branch_id: Optional[str] = None,
+    ) -> OTBranch:
+        """
+        Generate a single OT branch.
+
+        Compatibility adapter for integration layers that need
+        one explicit candidate while the Explorer internally
+        works with multiple candidate branches.
+
+        The canonical multi-branch API remains:
+
+            generate_candidates(...)
+
+        This method does not select a winning mechanism.
+        It only constructs one explicitly requested branch.
+        """
+
+        branches = self.generate_candidates(
+            source_space=source_space,
+            target_space_prefix=(
+                target_space
+                if target_space is not None
+                else "C_next"
+            ),
+            mechanisms=[mechanism],
+        )
+
+        if not branches:
+            raise ValueError(
+                f"Unable to generate OT candidate for mechanism: "
+                f"{mechanism}"
+            )
+
+        branch = branches[0]
+
+        if target_space is not None:
+            branch.target_space = target_space
+
+        if branch_id is not None:
+            branch.branch_id = branch_id
+
+        return branch
+
+    # ------------------------------------------------------------------
     # Candidate validation
     # ------------------------------------------------------------------
 
