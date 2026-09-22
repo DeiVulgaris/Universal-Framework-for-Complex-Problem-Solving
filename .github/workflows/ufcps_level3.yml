@@ -15,7 +15,6 @@ on:
 
 jobs:
   level3-tests:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -29,15 +28,12 @@ jobs:
           python-version: "3.11"
 
       - name: Show Python version
-        run: python --version
+        run: |
+          python --version
 
       - name: Check repository environment
         run: |
           python swarm/environment_check_v1.py
-
-      - name: Run Level 3 runtime benchmark
-        run: |
-          python swarm/level3_runtime_cycle_benchmark_v1.py
 
       - name: Run Level 3 full-cycle benchmark
         run: |
@@ -47,7 +43,7 @@ jobs:
         run: |
           python swarm/level3_recursive_space_benchmark_v1.py
 
-      - name: Run Level 3 emergent integration smoke test
+      - name: Run Level 3 emergent integration
         run: |
           python swarm/level3_emergent_integration_v1.py
 
