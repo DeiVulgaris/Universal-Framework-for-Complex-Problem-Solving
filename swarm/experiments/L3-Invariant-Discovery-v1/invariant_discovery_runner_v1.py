@@ -1,37 +1,57 @@
 ```python
+"""
+UFCPS Level 3 — Invariant Discovery Experiment Runner v1
+
+Experimental harness only.
+
+The runner does NOT contain the invariant to be discovered.
+It provides raw observations to an external process adapter,
+receives the process hypothesis, and evaluates that hypothesis
+against hidden controls and holdout data.
+
+Methodological separation:
+
+    DISCOVERY
+        training + controls
+            ↓
+        candidate invariant
+            ↓
+        hypothesis freeze
+
+    EVALUATION
+        holdout
+            ↓
+        external evaluation
+
+The holdout is deliberately NOT exposed during discovery.
+
+Experiment:
+    L3-Invariant-Discovery-v1
+"""
+
 from __future__ import annotations
 
-"""
-UFCPS — Level 3 Invariant Discovery Experiment Runner v1
-
-This file is an experimental harness, not an invariant-discovery algorithm.
-
-The runner deliberately contains no semantic rule for the dataset.
-
-It:
-    1. loads the frozen dataset;
-    2. exposes only raw observations to a process adapter;
-    3. receives the adapter's candidate invariant and predictions;
-    4. evaluates those predictions against the hidden evaluation labels;
-    5. emits PASS / FAIL / UNRESOLVED according to the frozen protocol.
-
-A process adapter must be supplied separately. This prevents the harness
-from silently solving the experiment itself.
-"""
-
-from dataclasses import dataclass, asdict
-from pathlib import Path
-from typing import Any, Callable
 import argparse
 import importlib
 import json
 import sys
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
 
+
+# ----------------------------------------------------------------------
+# Experiment identity
+# ----------------------------------------------------------------------
 
 EXPERIMENT_ID = "L3-Invariant-Discovery-v1"
 PROTOCOL_VERSION = "1"
 DATASET_VERSION = "1.0"
+
+
+# ----------------------------------------------------------------------
+# Data structures
+# ----------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -44,13 +64,39 @@ class Observation:
 
 @dataclass
 class ProcessOutput:
-    status: str
-    candidate_invariant: str
-    training_support: list[str]
-    training_challenges: list[str]
-    control_predictions: dict[str, str]
-    holdout_predictions: dict[str, str]
-    unresolved_questions: list[str]
+    """
+    Output expected from the external Level 3 process adapter.
+
+    The process may either propose an invariant or explicitly remain
+    unresolved.
+
+    IMPORTANT:
+    The process must not receive the hidden evaluation oracle.
+    """
+
+    status: str = "UNRESOLVED"
+
+    candidate_invariant: Optional[str] = None
+
+    training_support: List[str] = field(
+        default_factory=list
+    )
+
+    training_challenges: List[str] = field(
+        default_factory=list
+    )
+
+    control_predictions: Dict[str, bool] = field(
+        default_factory=dict
+    )
+
+    holdout_predictions: Dict[str, bool] = field(
+        default_factory=dict
+    )
+
+    unresolved_questions: List[str] = field(
+        default_factory=list
+    )
 
 
 @dataclass
@@ -58,430 +104,890 @@ class EvaluationResult:
     experiment_id: str
     protocol_version: str
     dataset_version: str
+
+    status: str
+
+    candidate_invariant: Optional[str]
+
+    discovery_observations: int
+    control_observations: int
+    holdout_observations: int
+
+    controls_complete: bool
+    controls_correct: bool
+
+    holdout_complete: bool
+    holdout_correct: bool
+
     process_status: str
-    result: str
-    checks: dict[str, bool]
-    observations: dict[str, Any]
-    process_output: dict[str, Any]
 
+    training_support: List[str]
+    training_challenges: List[str]
 
-def load_dataset(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8") as handle:
-        data = json.load(handle)
+    control_predictions: Dict[str, bool]
+    holdout_predictions: Dict[str, bool]
 
-    if data.get("dataset_id") != "UFCPS-L3-INVARIANT-DISCOVERY-v1":
-        raise ValueError("Unexpected dataset_id.")
+    unresolved_questions: List[str]
 
-    return data
-
-
-def public_observation(record: dict[str, Any]) -> Observation:
-    return Observation(
-        record_id=str(record["id"]),
-        left=str(record["left"]),
-        right=str(record["right"]),
-        result=str(record["result"]),
+    observations: Dict[str, Any] = field(
+        default_factory=dict
     )
 
 
-def build_process_input(data: dict[str, Any]) -> dict[str, Any]:
+# ----------------------------------------------------------------------
+# Dataset handling
+# ----------------------------------------------------------------------
+
+
+def load_dataset(path: Path) -> Dict[str, Any]:
+    with path.open(
+        "r",
+        encoding="utf-8",
+    ) as handle:
+        return json.load(handle)
+
+
+def _observation_from_record(
+    record: Dict[str, Any],
+) -> Observation:
+    return Observation(
+        record_id=str(
+            record["record_id"]
+        ),
+        left=str(
+            record["left"]
+        ),
+        right=str(
+            record["right"]
+        ),
+        result=str(
+            record["result"]
+        ),
+    )
+
+
+def load_observations(
+    dataset: Dict[str, Any],
+    split: str,
+) -> List[Observation]:
+
+    records = dataset.get(
+        split,
+        []
+    )
+
+    if not isinstance(
+        records,
+        list,
+    ):
+        raise ValueError(
+            f"Dataset split '{split}' must be a list."
+        )
+
+    return [
+        _observation_from_record(record)
+        for record in records
+    ]
+
+
+# ----------------------------------------------------------------------
+# Process input
+# ----------------------------------------------------------------------
+
+
+def observation_to_process_record(
+    observation: Observation,
+) -> Dict[str, str]:
     """
-    Build the only information that may be exposed to the process.
+    Convert an observation into the raw representation exposed
+    to the process.
 
-    expected_relation and provenance are intentionally excluded.
-    The process therefore cannot directly inspect the evaluation oracle.
+    No semantic label, expected relation, provenance, or oracle
+    information is included.
     """
-    records = data["records"]
-
-    training = [
-        public_observation(r).__dict__
-        for r in records
-        if r["split"] == "train"
-    ]
-
-    controls = [
-        public_observation(r).__dict__
-        for r in records
-        if r["split"] == "control"
-    ]
-
-    holdout = [
-        public_observation(r).__dict__
-        for r in records
-        if r["split"] == "holdout"
-    ]
 
     return {
-        "experiment_id": EXPERIMENT_ID,
-        "dataset_version": DATASET_VERSION,
-        "training": training,
-        "controls": controls,
-        "holdout": holdout,
+        "record_id": observation.record_id,
+        "left": observation.left,
+        "right": observation.right,
+        "result": observation.result,
     }
 
 
-def load_process_adapter(
-    spec: str,
-) -> Callable[[dict[str, Any]], dict[str, Any]]:
+def build_discovery_input(
+    training: List[Observation],
+    controls: List[Observation],
+) -> Dict[str, Any]:
     """
-    Load an external process adapter.
+    Build the ONLY input visible during invariant discovery.
 
-    Format:
-        module_name:function_name
+    HOLDOUT IS INTENTIONALLY ABSENT.
+
+    Controls are visible because the protocol allows the process
+    to challenge its candidate against negative observations.
     """
-    if ":" not in spec:
+
+    return {
+        "experiment_id": EXPERIMENT_ID,
+        "protocol_version": PROTOCOL_VERSION,
+        "dataset_version": DATASET_VERSION,
+
+        "phase": "DISCOVERY",
+
+        "observations": {
+            "training": [
+                observation_to_process_record(
+                    observation
+                )
+                for observation in training
+            ],
+            "controls": [
+                observation_to_process_record(
+                    observation
+                )
+                for observation in controls
+            ],
+        },
+
+        "semantic_labels_exposed": False,
+
+        "instruction": (
+            "Identify a relation that explains the observations "
+            "without relying on semantic domain labels. "
+            "A candidate must remain falsifiable by the controls."
+        ),
+    }
+
+
+def build_holdout_input(
+    holdout: List[Observation],
+) -> Dict[str, Any]:
+    """
+    Build the evaluation input presented only AFTER the
+    discovery hypothesis has been frozen.
+
+    The holdout is never part of discovery.
+    """
+
+    return {
+        "experiment_id": EXPERIMENT_ID,
+        "protocol_version": PROTOCOL_VERSION,
+        "dataset_version": DATASET_VERSION,
+
+        "phase": "EVALUATION",
+
+        "observations": [
+            observation_to_process_record(
+                observation
+            )
+            for observation in holdout
+        ],
+
+        "semantic_labels_exposed": False,
+
+        "instruction": (
+            "Apply the previously frozen candidate invariant "
+            "to these observations. Do not modify the candidate "
+            "invariant during this evaluation."
+        ),
+    }
+
+
+# ----------------------------------------------------------------------
+# Process adapter
+# ----------------------------------------------------------------------
+
+
+def load_adapter(
+    adapter_spec: str,
+) -> Callable[[Dict[str, Any]], Any]:
+    """
+    Load adapter in the form:
+
+        module:function
+    """
+
+    if ":" not in adapter_spec:
         raise ValueError(
-            "Adapter must use MODULE:FUNCTION format."
+            "Adapter must have the form MODULE:FUNCTION."
         )
 
-    module_name, function_name = spec.split(":", 1)
+    module_name, function_name = (
+        adapter_spec.split(
+            ":",
+            1,
+        )
+    )
 
-    module = importlib.import_module(module_name)
-    function = getattr(module, function_name)
+    module = importlib.import_module(
+        module_name
+    )
+
+    function = getattr(
+        module,
+        function_name,
+    )
 
     if not callable(function):
-        raise TypeError("Process adapter is not callable.")
+        raise TypeError(
+            f"Adapter '{adapter_spec}' is not callable."
+        )
 
     return function
 
 
-def normalize_process_output(
-    raw: dict[str, Any],
+def run_discovery(
+    adapter: Callable[[Dict[str, Any]], Any],
+    discovery_input: Dict[str, Any],
 ) -> ProcessOutput:
 
-    required = {
-        "status",
-        "candidate_invariant",
-        "training_support",
-        "training_challenges",
-        "control_predictions",
-        "holdout_predictions",
-        "unresolved_questions",
-    }
-
-    missing = required.difference(raw)
-
-    if missing:
-        raise ValueError(
-            "Process output is missing fields: "
-            + ", ".join(sorted(missing))
-        )
-
-    status = str(raw["status"]).upper()
-
-    if status not in {"PROPOSED", "UNRESOLVED"}:
-        raise ValueError(
-            "Process status must be PROPOSED or UNRESOLVED."
-        )
-
-    return ProcessOutput(
-        status=status,
-        candidate_invariant=str(
-            raw["candidate_invariant"]
-        ),
-        training_support=[
-            str(x) for x in raw["training_support"]
-        ],
-        training_challenges=[
-            str(x) for x in raw["training_challenges"]
-        ],
-        control_predictions={
-            str(k): str(v).upper()
-            for k, v in raw["control_predictions"].items()
-        },
-        holdout_predictions={
-            str(k): str(v).upper()
-            for k, v in raw["holdout_predictions"].items()
-        },
-        unresolved_questions=[
-            str(x)
-            for x in raw["unresolved_questions"]
-        ],
-    )
-
-
-def expected_labels(
-    data: dict[str, Any],
-    split: str,
-) -> dict[str, str]:
-
-    return {
-        str(r["id"]): str(
-            r["expected_relation"]
-        ).upper()
-        for r in data["records"]
-        if r["split"] == split
-    }
-
-
-def score_predictions(
-    predictions: dict[str, str],
-    expected: dict[str, str],
-) -> tuple[int, int, list[str]]:
-
-    correct = 0
-    total = len(expected)
-    missing: list[str] = []
-
-    for record_id, expected_value in expected.items():
-
-        actual = predictions.get(record_id)
-
-        if actual is None:
-            missing.append(record_id)
-            continue
-
-        if actual == expected_value:
-            correct += 1
-
-    return correct, total, missing
-
-
-def evaluate(
-    data: dict[str, Any],
-    output: ProcessOutput,
-) -> EvaluationResult:
-
-    control_expected = expected_labels(
-        data,
-        "control",
-    )
-
-    holdout_expected = expected_labels(
-        data,
-        "holdout",
-    )
-
-    control_correct, control_total, control_missing = (
-        score_predictions(
-            output.control_predictions,
-            control_expected,
-        )
-    )
-
-    holdout_correct, holdout_total, holdout_missing = (
-        score_predictions(
-            output.holdout_predictions,
-            holdout_expected,
-        )
-    )
-
-    candidate_exists = bool(
-        output.candidate_invariant.strip()
-    )
-
-    control_complete = not control_missing
-    holdout_complete = not holdout_missing
-
-    control_discriminates = (
-        control_total > 0
-        and control_correct == control_total
-    )
-
-    holdout_generalizes = (
-        holdout_total > 0
-        and holdout_correct == holdout_total
-    )
-
-    if output.status == "UNRESOLVED":
-        result = "UNRESOLVED"
-
-    elif (
-        candidate_exists
-        and control_complete
-        and holdout_complete
-        and control_discriminates
-        and holdout_generalizes
-    ):
-        result = "PASS"
-
-    else:
-        result = "FAIL"
-
-    checks = {
-        "candidate_exists": candidate_exists,
-
-        "control_predictions_complete":
-            control_complete,
-
-        "holdout_predictions_complete":
-            holdout_complete,
-
-        "control_discriminates":
-            control_discriminates,
-
-        "holdout_generalizes":
-            holdout_generalizes,
-
-        "process_status_acceptable":
-            output.status in {
-                "PROPOSED",
-                "UNRESOLVED",
-            },
-    }
-
-    observations = {
-        "control_correct":
-            control_correct,
-
-        "control_total":
-            control_total,
-
-        "holdout_correct":
-            holdout_correct,
-
-        "holdout_total":
-            holdout_total,
-
-        "control_missing":
-            control_missing,
-
-        "holdout_missing":
-            holdout_missing,
-    }
-
-    return EvaluationResult(
-        experiment_id=EXPERIMENT_ID,
-
-        protocol_version=PROTOCOL_VERSION,
-
-        dataset_version=DATASET_VERSION,
-
-        process_status=output.status,
-
-        result=result,
-
-        checks=checks,
-
-        observations=observations,
-
-        process_output=asdict(output),
-    )
-
-
-def run(
-    dataset_path: Path,
-    adapter_spec: str,
-    result_path: Path | None = None,
-) -> EvaluationResult:
-
-    data = load_dataset(dataset_path)
-
-    process_input = build_process_input(data)
-
-    adapter = load_process_adapter(
-        adapter_spec
-    )
-
     raw_output = adapter(
-        process_input
+        discovery_input
     )
 
-    output = normalize_process_output(
+    return normalize_process_output(
         raw_output
     )
 
-    result = evaluate(
-        data,
-        output
+
+def run_holdout_evaluation(
+    adapter: Callable[[Dict[str, Any]], Any],
+    holdout_input: Dict[str, Any],
+    frozen_candidate: str,
+) -> ProcessOutput:
+    """
+    Ask the adapter to apply the frozen hypothesis.
+
+    The runner never supplies hidden expected labels.
+    """
+
+    evaluation_input = dict(
+        holdout_input
     )
 
-    if result_path is not None:
+    evaluation_input[
+        "frozen_candidate_invariant"
+    ] = frozen_candidate
 
-        result_path.parent.mkdir(
-            parents=True,
-            exist_ok=True
+    raw_output = adapter(
+        evaluation_input
+    )
+
+    return normalize_process_output(
+        raw_output
+    )
+
+
+# ----------------------------------------------------------------------
+# Output normalization
+# ----------------------------------------------------------------------
+
+
+def normalize_process_output(
+    raw_output: Any,
+) -> ProcessOutput:
+
+    if isinstance(
+        raw_output,
+        ProcessOutput,
+    ):
+        return raw_output
+
+    if not isinstance(
+        raw_output,
+        dict,
+    ):
+        raise TypeError(
+            "Process adapter must return either "
+            "ProcessOutput or dict."
         )
 
-        payload = asdict(result)
+    return ProcessOutput(
+        status=str(
+            raw_output.get(
+                "status",
+                "UNRESOLVED",
+            )
+        ).upper(),
 
-        payload["timestamp_utc"] = (
-            datetime.now(
-                timezone.utc
-            ).isoformat()
+        candidate_invariant=(
+            raw_output.get(
+                "candidate_invariant"
+            )
+        ),
+
+        training_support=list(
+            raw_output.get(
+                "training_support",
+                [],
+            )
+        ),
+
+        training_challenges=list(
+            raw_output.get(
+                "training_challenges",
+                [],
+            )
+        ),
+
+        control_predictions=dict(
+            raw_output.get(
+                "control_predictions",
+                {},
+            )
+        ),
+
+        holdout_predictions=dict(
+            raw_output.get(
+                "holdout_predictions",
+                {},
+            )
+        ),
+
+        unresolved_questions=list(
+            raw_output.get(
+                "unresolved_questions",
+                [],
+            )
+        ),
+    )
+
+
+# ----------------------------------------------------------------------
+# Hidden evaluation oracle
+# ----------------------------------------------------------------------
+
+
+def expected_relation(
+    record: Dict[str, Any],
+) -> bool:
+    """
+    Read the hidden evaluation oracle.
+
+    This function is intentionally used ONLY by the external
+    evaluator.
+
+    It is never included in process input.
+    """
+
+    evaluation = record.get(
+        "evaluation"
+    )
+
+    if not isinstance(
+        evaluation,
+        dict,
+    ):
+        raise ValueError(
+            "Record is missing evaluation metadata."
         )
 
-        with result_path.open(
-            "w",
-            encoding="utf-8"
-        ) as handle:
+    if "expected_positive" not in evaluation:
+        raise ValueError(
+            "Record is missing expected_positive."
+        )
 
-            json.dump(
-                payload,
-                handle,
-                ensure_ascii=False,
-                indent=2,
+    return bool(
+        evaluation["expected_positive"]
+    )
+
+
+def evaluate_predictions(
+    predictions: Dict[str, bool],
+    records: List[Dict[str, Any]],
+) -> tuple[bool, bool]:
+
+    expected_ids = {
+        str(
+            record["record_id"]
+        )
+        for record in records
+    }
+
+    prediction_ids = {
+        str(record_id)
+        for record_id in predictions
+    }
+
+    complete = (
+        expected_ids == prediction_ids
+    )
+
+    if not complete:
+        return False, False
+
+    correct = True
+
+    for record in records:
+        record_id = str(
+            record["record_id"]
+        )
+
+        expected = expected_relation(
+            record
+        )
+
+        predicted = bool(
+            predictions[record_id]
+        )
+
+        if predicted != expected:
+            correct = False
+            break
+
+    return True, correct
+
+
+# ----------------------------------------------------------------------
+# Result evaluation
+# ----------------------------------------------------------------------
+
+
+def evaluate_experiment(
+    dataset: Dict[str, Any],
+    discovery_output: ProcessOutput,
+    holdout_output: Optional[ProcessOutput],
+) -> EvaluationResult:
+
+    training_records = dataset.get(
+        "training",
+        []
+    )
+
+    control_records = dataset.get(
+        "controls",
+        []
+    )
+
+    holdout_records = dataset.get(
+        "holdout",
+        []
+    )
+
+    candidate_exists = bool(
+        discovery_output.candidate_invariant
+    )
+
+    (
+        controls_complete,
+        controls_correct,
+    ) = evaluate_predictions(
+        discovery_output.control_predictions,
+        control_records,
+    )
+
+    if holdout_output is None:
+        holdout_complete = False
+        holdout_correct = False
+        holdout_predictions = {}
+
+    else:
+        holdout_predictions = (
+            holdout_output.holdout_predictions
+            or holdout_output.control_predictions
+        )
+
+        (
+            holdout_complete,
+            holdout_correct,
+        ) = evaluate_predictions(
+            holdout_predictions,
+            holdout_records,
+        )
+
+    process_status = (
+        discovery_output.status.upper()
+    )
+
+    if process_status == "UNRESOLVED":
+        final_status = "UNRESOLVED"
+
+    elif (
+        candidate_exists
+        and controls_complete
+        and controls_correct
+        and holdout_complete
+        and holdout_correct
+    ):
+        final_status = "PASS"
+
+    else:
+        final_status = "FAIL"
+
+    return EvaluationResult(
+        experiment_id=EXPERIMENT_ID,
+        protocol_version=PROTOCOL_VERSION,
+        dataset_version=DATASET_VERSION,
+
+        status=final_status,
+
+        candidate_invariant=(
+            discovery_output.candidate_invariant
+        ),
+
+        discovery_observations=(
+            len(training_records)
+            + len(control_records)
+        ),
+
+        control_observations=len(
+            control_records
+        ),
+
+        holdout_observations=len(
+            holdout_records
+        ),
+
+        controls_complete=(
+            controls_complete
+        ),
+
+        controls_correct=(
+            controls_correct
+        ),
+
+        holdout_complete=(
+            holdout_complete
+        ),
+
+        holdout_correct=(
+            holdout_correct
+        ),
+
+        process_status=(
+            process_status
+        ),
+
+        training_support=(
+            discovery_output.training_support
+        ),
+
+        training_challenges=(
+            discovery_output.training_challenges
+        ),
+
+        control_predictions=(
+            discovery_output.control_predictions
+        ),
+
+        holdout_predictions=(
+            holdout_predictions
+        ),
+
+        unresolved_questions=(
+            discovery_output.unresolved_questions
+        ),
+
+        observations={
+            "holdout_withheld_during_discovery": True,
+            "candidate_frozen_before_holdout": (
+                holdout_output is not None
+            ),
+            "semantic_labels_exposed_to_process": False,
+        },
+    )
+
+
+# ----------------------------------------------------------------------
+# Execution
+# ----------------------------------------------------------------------
+
+
+def run_experiment(
+    dataset_path: Path,
+    adapter_spec: str,
+) -> EvaluationResult:
+
+    dataset = load_dataset(
+        dataset_path
+    )
+
+    training = load_observations(
+        dataset,
+        "training",
+    )
+
+    controls = load_observations(
+        dataset,
+        "controls",
+    )
+
+    holdout = load_observations(
+        dataset,
+        "holdout",
+    )
+
+    adapter = load_adapter(
+        adapter_spec
+    )
+
+    # --------------------------------------------------------------
+    # Phase 1 — Discovery
+    # --------------------------------------------------------------
+
+    discovery_input = build_discovery_input(
+        training,
+        controls,
+    )
+
+    discovery_output = run_discovery(
+        adapter,
+        discovery_input,
+    )
+
+    # --------------------------------------------------------------
+    # Freeze hypothesis
+    # --------------------------------------------------------------
+
+    if (
+        discovery_output.status.upper()
+        == "UNRESOLVED"
+    ):
+        return evaluate_experiment(
+            dataset,
+            discovery_output,
+            None,
+        )
+
+    if not discovery_output.candidate_invariant:
+        return evaluate_experiment(
+            dataset,
+            discovery_output,
+            None,
+        )
+
+    frozen_candidate = (
+        discovery_output.candidate_invariant
+    )
+
+    # --------------------------------------------------------------
+    # Phase 2 — Holdout evaluation
+    # --------------------------------------------------------------
+
+    holdout_input = build_holdout_input(
+        holdout
+    )
+
+    holdout_output = run_holdout_evaluation(
+        adapter,
+        holdout_input,
+        frozen_candidate,
+    )
+
+    return evaluate_experiment(
+        dataset,
+        discovery_output,
+        holdout_output,
+    )
+
+
+# ----------------------------------------------------------------------
+# Serialization
+# ----------------------------------------------------------------------
+
+
+def save_result(
+    result: EvaluationResult,
+    path: Path,
+) -> None:
+
+    with path.open(
+        "w",
+        encoding="utf-8",
+    ) as handle:
+
+        json.dump(
+            asdict(result),
+            handle,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+
+def print_result(
+    result: EvaluationResult,
+) -> None:
+
+    print(
+        f"EXPERIMENT: {result.experiment_id}"
+    )
+
+    print(
+        f"STATUS: {result.status}"
+    )
+
+    print(
+        f"PROCESS STATUS: {result.process_status}"
+    )
+
+    print(
+        "CANDIDATE INVARIANT: "
+        f"{result.candidate_invariant}"
+    )
+
+    print(
+        "DISCOVERY OBSERVATIONS: "
+        f"{result.discovery_observations}"
+    )
+
+    print(
+        "CONTROL COMPLETE: "
+        f"{result.controls_complete}"
+    )
+
+    print(
+        "CONTROL CORRECT: "
+        f"{result.controls_correct}"
+    )
+
+    print(
+        "HOLDOUT COMPLETE: "
+        f"{result.holdout_complete}"
+    )
+
+    print(
+        "HOLDOUT CORRECT: "
+        f"{result.holdout_correct}"
+    )
+
+    print(
+        "HOLDOUT WITHHELD DURING DISCOVERY: "
+        f"{result.observations.get('holdout_withheld_during_discovery')}"
+    )
+
+    print(
+        "\nCONTROL PREDICTIONS:"
+    )
+
+    for (
+        record_id,
+        prediction,
+    ) in result.control_predictions.items():
+
+        print(
+            f"  {record_id}: {prediction}"
+        )
+
+    print(
+        "\nHOLDOUT PREDICTIONS:"
+    )
+
+    for (
+        record_id,
+        prediction,
+    ) in result.holdout_predictions.items():
+
+        print(
+            f"  {record_id}: {prediction}"
+        )
+
+    if result.unresolved_questions:
+
+        print(
+            "\nUNRESOLVED QUESTIONS:"
+        )
+
+        for question in (
+            result.unresolved_questions
+        ):
+            print(
+                f"  - {question}"
             )
 
-    return result
+
+# ----------------------------------------------------------------------
+# CLI
+# ----------------------------------------------------------------------
 
 
-def main() -> int:
+def build_argument_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         description=(
-            "UFCPS Level 3 "
-            "invariant-discovery "
-            "experiment runner"
+            "UFCPS Level 3 invariant discovery "
+            "experiment runner."
         )
     )
 
     parser.add_argument(
         "--dataset",
         required=True,
-        type=Path,
+        help=(
+            "Path to frozen experiment dataset."
+        ),
     )
 
     parser.add_argument(
         "--adapter",
         required=True,
         help=(
-            "External process adapter: "
-            "MODULE:FUNCTION"
+            "Process adapter in MODULE:FUNCTION form."
         ),
     )
 
     parser.add_argument(
         "--result",
-        type=Path,
-        default=None,
+        required=False,
+        help=(
+            "Optional path for result JSON."
+        ),
     )
 
-    args = parser.parse_args()
+    return parser
+
+
+def main(
+    argv: Optional[List[str]] = None,
+) -> int:
+
+    parser = build_argument_parser()
+
+    args = parser.parse_args(
+        argv
+    )
 
     try:
 
-        result = run(
-            dataset_path=args.dataset,
+        result = run_experiment(
+            dataset_path=Path(
+                args.dataset
+            ),
             adapter_spec=args.adapter,
-            result_path=args.result,
         )
+
+        print_result(
+            result
+        )
+
+        if args.result:
+
+            save_result(
+                result,
+                Path(
+                    args.result
+                ),
+            )
+
+        if result.status in {
+            "PASS",
+            "UNRESOLVED",
+        }:
+            return 0
+
+        return 1
 
     except Exception as exc:
 
         print(
-            f"RUNNER_ERROR: {exc}",
+            f"RUNNER ERROR: {exc}",
             file=sys.stderr,
         )
 
         return 2
 
-    print(
-        json.dumps(
-            asdict(result),
-            ensure_ascii=False,
-            indent=2,
-        )
-    )
-
-    return (
-        0
-        if result.result
-        in {"PASS", "UNRESOLVED"}
-        else 1
-    )
-
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(
+        main()
+    )
 ```
