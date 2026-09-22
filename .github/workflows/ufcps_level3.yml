@@ -50,3 +50,7 @@ jobs:
       - name: Run Level 3 system diagnostic
         run: |
           python swarm/level3_system_diagnostic_v1.py
+
+      - name: Run L3 invariant discovery adapter
+        run: |
+          python swarm/experiments/L3-Invariant-Discovery-v1/invariant_discovery_adapter_v1.py
