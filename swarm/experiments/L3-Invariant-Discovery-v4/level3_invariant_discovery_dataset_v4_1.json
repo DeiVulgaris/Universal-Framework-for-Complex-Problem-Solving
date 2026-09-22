@@ -1,0 +1,223 @@
+{
+  "dataset_id": "UFCPS-L3-INVARIANT-DISCOVERY-v4.1",
+  "version": "4.1",
+  "description": "Corrected raw symbolic dataset for testing productive compositional relation discovery.",
+  "semantic_labels_exposed_to_engine": false,
+  "hidden_oracle": {
+    "available_to_discovery_engine": false,
+    "available_to_evaluator": true,
+    "description": "External evaluation may determine whether a predicted result matches the hidden generative relation. The semantic interpretation of the relation is not exposed to discovery."
+  },
+  "partitions": {
+    "discovery": [
+      {
+        "record_id": "D01",
+        "left": "ab",
+        "right": "cd",
+        "result": "abcd"
+      },
+      {
+        "record_id": "D02",
+        "left": "xy",
+        "right": "z",
+        "result": "xyz"
+      },
+      {
+        "record_id": "D03",
+        "left": "pq",
+        "right": "rs",
+        "result": "pqrs"
+      },
+      {
+        "record_id": "D04",
+        "left": "mn",
+        "right": "opq",
+        "result": "mnopq"
+      },
+      {
+        "record_id": "D05",
+        "left": "uv",
+        "right": "wxy",
+        "result": "uvwxyz"
+      },
+      {
+        "record_id": "D06",
+        "left": "efg",
+        "right": "hi",
+        "result": "efghi"
+      }
+    ],
+    "selection": [
+      {
+        "record_id": "S01",
+        "left": "jk",
+        "right": "lm",
+        "result": "jklm"
+      },
+      {
+        "record_id": "S02",
+        "left": "rst",
+        "right": "u",
+        "result": "rstu"
+      },
+      {
+        "record_id": "S03",
+        "left": "bc",
+        "right": "def",
+        "result": "bcdef"
+      },
+      {
+        "record_id": "S04",
+        "left": "ghij",
+        "right": "k",
+        "result": "ghijk"
+      }
+    ],
+    "controls": [
+      {
+        "record_id": "C01",
+        "left": "ab",
+        "right": "cd",
+        "result": "cdab"
+      },
+      {
+        "record_id": "C02",
+        "left": "xy",
+        "right": "z",
+        "result": "xy"
+      },
+      {
+        "record_id": "C03",
+        "left": "pq",
+        "right": "rs",
+        "result": "prqs"
+      },
+      {
+        "record_id": "C04",
+        "left": "mn",
+        "right": "opq",
+        "result": "mnop"
+      }
+    ],
+    "counterexamples": [
+      {
+        "record_id": "X01",
+        "left": "aa",
+        "right": "bc",
+        "result": "aabc"
+      },
+      {
+        "record_id": "X02",
+        "left": "de",
+        "right": "ff",
+        "result": "deff"
+      },
+      {
+        "record_id": "X03",
+        "left": "gh",
+        "right": "hi",
+        "result": "ghhi"
+      },
+      {
+        "record_id": "X04",
+        "left": "jjk",
+        "right": "kl",
+        "result": "jjkkl"
+      }
+    ],
+    "holdout": [
+      {
+        "record_id": "H01",
+        "left": "ac",
+        "right": "eg",
+        "result": "aceg"
+      },
+      {
+        "record_id": "H02",
+        "left": "bd",
+        "right": "fh",
+        "result": "bdfh"
+      },
+      {
+        "record_id": "H03",
+        "left": "ik",
+        "right": "lmn",
+        "result": "iklmn"
+      },
+      {
+        "record_id": "H04",
+        "left": "nop",
+        "right": "qr",
+        "result": "nopqr"
+      },
+      {
+        "record_id": "H05",
+        "left": "stu",
+        "right": "v",
+        "result": "stuv"
+      }
+    ]
+  },
+  "evaluation_metadata": {
+    "expected_positive": {
+      "D01": true,
+      "D02": true,
+      "D03": true,
+      "D04": true,
+      "D05": true,
+      "D06": true,
+      "S01": true,
+      "S02": true,
+      "S03": true,
+      "S04": true,
+      "C01": false,
+      "C02": false,
+      "C03": false,
+      "C04": false,
+      "X01": true,
+      "X02": true,
+      "X03": true,
+      "X04": true,
+      "H01": true,
+      "H02": true,
+      "H03": true,
+      "H04": true,
+      "H05": true
+    }
+  },
+  "provenance": {
+    "derived_from": "L3-Invariant-Discovery-v4",
+    "methodological_change": "v4.1 corrects the malformed H03 holdout record from v4.0 without changing the experimental ontology.",
+    "discovery_input_fields": [
+      "record_id",
+      "left",
+      "right",
+      "result"
+    ],
+    "semantic_information_removed_from_discovery": [
+      "domain_name",
+      "target_relation_name",
+      "arithmetic_terminology",
+      "numeral_system_terminology",
+      "candidate_invariant",
+      "hidden_oracle"
+    ]
+  },
+  "freeze_requirements": {
+    "candidate_must_be_executable": true,
+    "candidate_must_use_both_inputs": true,
+    "candidate_must_generate_predictions": true,
+    "candidate_must_survive_selection": true,
+    "candidate_must_survive_counterexamples": true,
+    "candidate_must_be_frozen_before_holdout": true,
+    "holdout_must_not_influence_discovery": true
+  },
+  "dataset_integrity": {
+    "discovery_count": 6,
+    "selection_count": 4,
+    "control_count": 4,
+    "counterexample_count": 4,
+    "holdout_count": 5,
+    "holdout_used_during_discovery": false
+  }
+}
