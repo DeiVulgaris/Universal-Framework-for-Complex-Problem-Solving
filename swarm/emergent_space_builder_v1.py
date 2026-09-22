@@ -233,6 +233,13 @@ class EmergentSpaceBuilder:
             ),
         )
 
+        # A new cognitive space is a continuation, not a reset.
+        # C_k+1 inherits C_k and then extends it with current interaction output.
+        self._inherit_parent_content(
+            parent_space=parent_space,
+            space=space,
+        )
+
         self._add_distinctions(
             space,
             interaction.emergent_distinctions,
@@ -256,6 +263,83 @@ class EmergentSpaceBuilder:
         return space
 
     # ------------------------------------------------------------------
+    # Parent-content inheritance
+    # ------------------------------------------------------------------
+
+    def _inherit_parent_content(
+        self,
+        *,
+        parent_space: CognitiveSpace,
+        space: CognitiveSpace,
+    ) -> None:
+        """
+        Carry the previous cognitive space into the next generation.
+
+        Inheritance preserves accumulated content while the new space
+        receives a new identity and version.
+        """
+
+        for element in parent_space.elements:
+            space.elements.append(
+                SpaceElement(
+                    element_id=element.element_id,
+                    element_type=element.element_type,
+                    status=element.status,
+                    description=element.description,
+                    provenance=tuple(element.provenance),
+                    metadata=dict(element.metadata),
+                )
+            )
+
+        space.accessible_distinctions.extend(
+            parent_space.accessible_distinctions
+        )
+
+        space.active_invariants.extend(
+            parent_space.active_invariants
+        )
+
+        space.unresolved_questions.extend(
+            parent_space.unresolved_questions
+        )
+
+        space.relations.extend(
+            parent_space.relations
+        )
+
+    def _unique_element_id(
+        self,
+        *,
+        space: CognitiveSpace,
+        requested_id: str,
+    ) -> str:
+        """
+        Return a collision-safe identifier inside one cognitive space.
+
+        Repeated interaction identifiers across cycles represent new
+        realizations and therefore must not overwrite inherited content.
+        """
+
+        existing_ids = {
+            element.element_id
+            for element in space.elements
+        }
+
+        if requested_id not in existing_ids:
+            return requested_id
+
+        base = f"{space.space_id}::{requested_id}"
+
+        if base not in existing_ids:
+            return base
+
+        index = 2
+        while f"{base}::{index}" in existing_ids:
+            index += 1
+
+        return f"{base}::{index}"
+
+    # ------------------------------------------------------------------
     # Distinctions
     # ------------------------------------------------------------------
 
@@ -272,10 +356,13 @@ class EmergentSpaceBuilder:
 
         for distinction in distinctions:
 
+            element_id = self._unique_element_id(
+                space=space,
+                requested_id=distinction.distinction_id,
+            )
+
             element = SpaceElement(
-                element_id=(
-                    distinction.distinction_id
-                ),
+                element_id=element_id,
 
                 element_type=(
                     SpaceElementType.DISTINCTION
@@ -301,6 +388,14 @@ class EmergentSpaceBuilder:
                     "generated_from_relations": (
                         distinction.generated_from_relations
                     ),
+
+                    "source_distinction_id": (
+                        distinction.distinction_id
+                    ),
+
+                    "generated_in_space": (
+                        space.space_id
+                    ),
                 },
             )
 
@@ -309,7 +404,7 @@ class EmergentSpaceBuilder:
             )
 
             space.accessible_distinctions.append(
-                distinction.distinction_id
+                element_id
             )
 
     # ------------------------------------------------------------------
@@ -326,6 +421,11 @@ class EmergentSpaceBuilder:
 
         for invariant in invariants:
 
+            element_id = self._unique_element_id(
+                space=space,
+                requested_id=invariant.invariant_id,
+            )
+
             if (
                 invariant.status
                 == InvariantStatus.SUPPORTED
@@ -338,8 +438,15 @@ class EmergentSpaceBuilder:
                     SpaceElementStatus.ACTIVE
                 )
 
+                # Resolve the final element id once so the inherited
+                # content and the new realization can coexist.
+                element_id = self._unique_element_id(
+                    space=space,
+                    requested_id=invariant.invariant_id,
+                )
+
                 space.active_invariants.append(
-                    invariant.invariant_id
+                    element_id
                 )
 
             elif (
@@ -362,9 +469,7 @@ class EmergentSpaceBuilder:
                 continue
 
             element = SpaceElement(
-                element_id=(
-                    invariant.invariant_id
-                ),
+                element_id=element_id,
 
                 element_type=(
                     SpaceElementType.INVARIANT
@@ -401,6 +506,14 @@ class EmergentSpaceBuilder:
                     "violation_count": (
                         invariant.violation_count
                     ),
+
+                    "source_invariant_id": (
+                        invariant.invariant_id
+                    ),
+
+                    "generated_in_space": (
+                        space.space_id
+                    ),
                 },
             )
 
@@ -435,12 +548,17 @@ class EmergentSpaceBuilder:
             start=1,
         ):
 
-            question_id = (
+            requested_question_id = (
                 ids[index - 1]
                 if index <= len(ids)
                 else (
                     f"INTERACTION_Q_{index:03d}"
                 )
+            )
+
+            question_id = self._unique_element_id(
+                space=space,
+                requested_id=requested_question_id,
             )
 
             element = SpaceElement(
@@ -553,7 +671,7 @@ class EmergentSpaceBuilder:
 
             "space_contains_new_content": (
                 len(new_space.elements)
-                > 0
+                > len(parent_space.elements)
             ),
         }
 
