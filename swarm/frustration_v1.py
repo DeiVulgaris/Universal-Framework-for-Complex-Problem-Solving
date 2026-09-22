@@ -297,5 +297,3 @@ FrustrationDetector = from_exhaustion_assessment
 
 if __name__ == "__main__":
     demo()
-
-    
