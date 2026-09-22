@@ -233,8 +233,10 @@ class EmergentSpaceBuilder:
             ),
         )
 
-        # A new cognitive space is a continuation, not a reset.
-        # C_k+1 inherits C_k and then extends it with current interaction output.
+        # Recursive continuity:
+        # C_k+1 inherits the accessible content of C_k
+        # and then adds the new content produced by the
+        # current interaction.
         self._inherit_parent_content(
             parent_space=parent_space,
             space=space,
@@ -273,10 +275,17 @@ class EmergentSpaceBuilder:
         space: CognitiveSpace,
     ) -> None:
         """
-        Carry the previous cognitive space into the next generation.
+        Preserve the accumulated content of C_k in C_k+1.
 
-        Inheritance preserves accumulated content while the new space
-        receives a new identity and version.
+        Recursive cognitive-space construction is additive:
+
+            C_k+1 = C_k + D_new + I_new + Q_new + R_new
+
+        The new space receives a new identity and version, so
+        content inheritance does not imply content identity.
+
+        Copies are made explicitly so mutable metadata and lists
+        are not shared between generations.
         """
 
         for element in parent_space.elements:
@@ -313,31 +322,35 @@ class EmergentSpaceBuilder:
         space: CognitiveSpace,
         requested_id: str,
     ) -> str:
-        """
-        Return a collision-safe identifier inside one cognitive space.
+        """Return an ID that does not collide inside the new space."""
 
-        Repeated interaction identifiers across cycles represent new
-        realizations and therefore must not overwrite inherited content.
-        """
-
-        existing_ids = {
+        existing = {
             element.element_id
             for element in space.elements
         }
 
-        if requested_id not in existing_ids:
+        if requested_id not in existing:
             return requested_id
 
-        base = f"{space.space_id}::{requested_id}"
+        base = (
+            f"{space.space_id}::{requested_id}"
+        )
 
-        if base not in existing_ids:
+        if base not in existing:
             return base
 
         index = 2
-        while f"{base}::{index}" in existing_ids:
+
+        while (
+            f"{base}::{index}"
+            in existing
+        ):
             index += 1
 
-        return f"{base}::{index}"
+        return (
+            f"{base}::{index}"
+        )
+
 
     # ------------------------------------------------------------------
     # Distinctions
@@ -358,7 +371,9 @@ class EmergentSpaceBuilder:
 
             element_id = self._unique_element_id(
                 space=space,
-                requested_id=distinction.distinction_id,
+                requested_id=(
+                    distinction.distinction_id
+                ),
             )
 
             element = SpaceElement(
@@ -423,7 +438,9 @@ class EmergentSpaceBuilder:
 
             element_id = self._unique_element_id(
                 space=space,
-                requested_id=invariant.invariant_id,
+                requested_id=(
+                    invariant.invariant_id
+                ),
             )
 
             if (
@@ -436,13 +453,6 @@ class EmergentSpaceBuilder:
 
                 status = (
                     SpaceElementStatus.ACTIVE
-                )
-
-                # Resolve the final element id once so the inherited
-                # content and the new realization can coexist.
-                element_id = self._unique_element_id(
-                    space=space,
-                    requested_id=invariant.invariant_id,
                 )
 
                 space.active_invariants.append(
