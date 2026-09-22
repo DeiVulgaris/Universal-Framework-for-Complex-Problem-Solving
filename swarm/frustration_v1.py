@@ -286,5 +286,16 @@ def demo() -> None:
     print(state.to_dict())
 
 
+# ---------------------------------------------------------------------------
+# Backward-compatible API alias
+# ---------------------------------------------------------------------------
+# Older Level 3 benchmarks use the shorter name FrustrationDetector.
+# Keep it as an alias while the canonical implementation remains
+# function-based in this module.
+FrustrationDetector = from_exhaustion_assessment
+
+
 if __name__ == "__main__":
     demo()
+
+    
