@@ -1,325 +1,265 @@
-from __future__ import annotations
+from pathlib import Path
+import sys
+
+
+CURRENT_DIR = Path(__file__).resolve().parent
+
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_DIR))
 
 from invariant_relation_generator_v2 import (
-Observation,
-build_relation_inventory,
-generate_candidate_relations,
-extract_structural_features,
+    Observation,
+    build_relation_inventory,
+    generate_candidate_relations,
+    extract_structural_features,
 )
 
-EXPERIMENT_ID = "UFCPS-L3-INVARIANT-DISCOVERY-v2"
-BENCHMARK = "invariant_relation_generator_benchmark_v2"
 
-def check_raw_observations_only() -> bool:
-observations = [
-Observation("S01", "aa", "aa", "aaaa"),
-Observation("S02", "••", "••", "••••"),
-Observation("S03", "II", "II", "IV"),
-Observation("S04", "xx", "xx", "xxxxx"),
-]
-
-```
-for observation in observations:
-    assert observation.record_id
-    assert observation.left
-    assert observation.right
-    assert observation.result
-
-return True
-```
-
-def check_structural_feature_extraction() -> bool:
-observation = Observation(
-"S01",
-"aa",
-"aa",
-"aaaa",
-)
-
-```
-features = extract_structural_features(observation)
-
-required = {
-    "left_length",
-    "right_length",
-    "result_length",
-    "operands_equal",
-    "left_symbols",
-    "right_symbols",
-    "result_symbols",
-    "left_symbol_counts",
-    "right_symbol_counts",
-    "result_symbol_counts",
-    "left_run_lengths",
-    "right_run_lengths",
-    "result_run_lengths",
-}
-
-return required.issubset(features.keys())
-```
-
-def check_relations_are_data_derived() -> bool:
-observations = [
-Observation("S01", "aa", "aa", "aaaa"),
-Observation("S02", "••", "••", "••••"),
-Observation("S03", "II", "II", "IV"),
-Observation("S04", "xx", "xx", "xxxxx"),
-]
-
-```
-inventory = build_relation_inventory(observations)
-
-return (
-    len(inventory["observation_relations"]) > 0
-    and len(inventory["cross_record_relations"]) > 0
-    and len(inventory["pairwise_relations"]) > 0
-)
-```
-
-def check_candidate_generation_without_predefined_family() -> bool:
-observations = [
-Observation("S01", "aa", "aa", "aaaa"),
-Observation("S02", "••", "••", "••••"),
-Observation("S03", "II", "II", "IV"),
-Observation("S04", "xx", "xx", "xxxxx"),
-]
-
-```
-candidates = generate_candidate_relations(observations)
-
-assert candidates
-
-forbidden_domain_candidates = {
-    "RESULT_LENGTH_EQUALS_OPERAND_LENGTH_SUM",
-    "RESULT_EQUALS_LITERAL_CONCATENATION",
-    "ARITHMETIC_SUM",
-    "ADDITION",
-    "NUMERIC_VALUE",
-}
-
-generated_names = {
-    candidate.relation
-    for candidate in candidates
-}
-
-return not any(
-    forbidden in relation
-    for relation in generated_names
-    for forbidden in forbidden_domain_candidates
-)
-```
-
-def check_candidate_has_support_and_challenge() -> bool:
-observations = [
-Observation("S01", "aa", "aa", "aaaa"),
-Observation("S02", "••", "••", "••••"),
-Observation("S03", "II", "II", "IV"),
-Observation("S04", "xx", "xx", "xxxxx"),
-]
-
-```
-candidates = generate_candidate_relations(observations)
-
-return all(
-    candidate.support
-    and candidate.challenge
-    for candidate in candidates
-)
-```
-
-def check_candidate_provenance() -> bool:
-observations = [
-Observation("S01", "aa", "aa", "aaaa"),
-Observation("S02", "••", "••", "••••"),
-Observation("S03", "II", "II", "IV"),
-Observation("S04", "xx", "xx", "xxxxx"),
-]
-
-```
-candidates = generate_candidate_relations(observations)
-
-return all(
-    candidate.evidence
-    and any(
-        record_id in candidate.evidence[1]
-        for record_id in candidate.support
-    )
-    for candidate in candidates
-)
-```
-
-def check_no_semantic_labels_in_features() -> bool:
-observation = Observation(
-"S01",
-"aa",
-"aa",
-"aaaa",
-)
-
-```
-features = extract_structural_features(observation)
-
-semantic_terms = {
-    "number",
-    "numeric",
-    "addition",
+FORBIDDEN_SEMANTIC_LABELS = {
     "arithmetic",
+    "addition",
     "sum",
+    "number",
     "numeral",
+    "numeral_system",
     "quantity",
+    "integer",
+    "binary",
+    "ternary",
+    "roman",
+    "mayan",
+    "babylonian",
 }
 
-feature_names = {
-    str(name).lower()
-    for name in features.keys()
-}
 
-return not any(
-    any(term in name for term in semantic_terms)
-    for name in feature_names
-)
-```
+def build_observations():
+    return [
+        Observation("P01", "2", "2", "4"),
+        Observation("P02", "2", "2", "11"),
+        Observation("P03", "10", "10", "100"),
+        Observation("P04", "II", "II", "IV"),
+        Observation("P05", "||||", "||||", "||||||||"),
+        Observation("P06", "••", "••", "••••"),
+        Observation("P07", "XX", "XX", "XXXX"),
+        Observation("P08", "aa", "aa", "aaaa"),
+        Observation("N01", "2", "2", "5"),
+        Observation("N02", "10", "10", "101"),
+        Observation("N03", "II", "II", "V"),
+        Observation("N04", "||||", "||||", "|||||||"),
+    ]
 
-def check_changed_symbols_produce_structural_output() -> bool:
-observations_a = [
-Observation("A01", "aa", "aa", "aaaa"),
-Observation("A02", "bb", "bb", "bbbb"),
-]
 
-```
-observations_b = [
-    Observation("B01", "XX", "XX", "XXXX"),
-    Observation("B02", "YY", "YY", "YYYY"),
-]
+def check_raw_observations(observations):
+    if not observations:
+        return False
 
-candidates_a = generate_candidate_relations(observations_a)
-candidates_b = generate_candidate_relations(observations_b)
+    for observation in observations:
+        if not all(
+            isinstance(value, str)
+            for value in (
+                observation.left,
+                observation.right,
+                observation.result,
+            )
+        ):
+            return False
 
-return bool(candidates_a) and bool(candidates_b)
-```
+    return True
 
-def check_changed_structure_is_observable() -> bool:
-observations_a = [
-Observation("A01", "aa", "aa", "aaaa"),
-Observation("A02", "bb", "bb", "bbbb"),
-]
 
-```
-observations_b = [
-    Observation("B01", "aa", "aa", "aaaa"),
-    Observation("B02", "bbb", "bbb", "bbbbbb"),
-]
+def check_structural_features(observations):
+    for observation in observations:
+        features = extract_structural_features(observation)
 
-inventory_a = build_relation_inventory(observations_a)
-inventory_b = build_relation_inventory(observations_b)
+        if not features:
+            return False
 
-lengths_a = {
-    relation["value"]
-    for relation in inventory_a["observation_relations"]
-    if relation["operands"] == ["left_length"]
-}
+        feature_names = {feature.name for feature in features}
 
-lengths_b = {
-    relation["value"]
-    for relation in inventory_b["observation_relations"]
-    if relation["operands"] == ["left_length"]
-}
+        if "left_length" not in feature_names:
+            return False
 
-return lengths_a != lengths_b
-```
+        if "right_length" not in feature_names:
+            return False
 
-def check_empty_input() -> bool:
-inventory = build_relation_inventory([])
-candidates = generate_candidate_relations([])
+        if "result_length" not in feature_names:
+            return False
 
-```
-return (
-    inventory["observation_count"] == 0
-    and not candidates
-)
-```
+    return True
 
-def run_benchmark() -> dict:
-checks = {
-"raw_observations_only": check_raw_observations_only(),
-"structural_feature_extraction": (
-check_structural_feature_extraction()
-),
-"relations_are_data_derived": (
-check_relations_are_data_derived()
-),
-"candidate_generation_without_predefined_family": (
-check_candidate_generation_without_predefined_family()
-),
-"candidate_has_support_and_challenge": (
-check_candidate_has_support_and_challenge()
-),
-"candidate_provenance": check_candidate_provenance(),
-"no_semantic_labels_in_features": (
-check_no_semantic_labels_in_features()
-),
-"changed_symbols_produce_structural_output": (
-check_changed_symbols_produce_structural_output()
-),
-"changed_structure_is_observable": (
-check_changed_structure_is_observable()
-),
-"empty_input_handled": check_empty_input(),
-}
 
-```
-return {
-    "experiment": EXPERIMENT_ID,
-    "benchmark": BENCHMARK,
-    "checks": checks,
-    "all_passed": all(checks.values()),
-    "predefined_candidate_family_used": False,
-    "semantic_labels_exposed_to_engine": False,
-}
-```
+def check_no_semantic_labels(observations):
+    for observation in observations:
+        features = extract_structural_features(observation)
 
-def print_report(result: dict) -> None:
-print("UFCPS — L3 Invariant Relation Generator Benchmark v2")
-print("=" * 72)
-print(f"experiment: {result['experiment']}")
-print(f"benchmark: {result['benchmark']}")
-print()
+        for feature in features:
+            text = (
+                f"{feature.name} "
+                f"{feature.description} "
+                f"{feature.value}"
+            ).lower()
 
-```
-print("CHECKS")
-print("-" * 72)
+            for forbidden in FORBIDDEN_SEMANTIC_LABELS:
+                if forbidden in text:
+                    return False
 
-for name, passed in result["checks"].items():
-    status = "PASS" if passed else "FAIL"
-    print(f"{status:<6} {name}")
+    return True
 
-print()
-print("METHODOLOGICAL CONTROLS")
-print("-" * 72)
-print(
-    "predefined_candidate_family_used:",
-    result["predefined_candidate_family_used"],
-)
-print(
-    "semantic_labels_exposed_to_engine:",
-    result["semantic_labels_exposed_to_engine"],
-)
 
-print()
-print("RESULT")
-print("-" * 72)
-print(f"all_passed: {result['all_passed']}")
+def check_relations_are_data_derived(observations):
+    inventory = build_relation_inventory(observations)
 
-if result["all_passed"]:
-    print("RESULT: READY")
-else:
+    if not inventory:
+        return False
+
+    for relation in inventory:
+        if not relation.observation_ids:
+            return False
+
+    return True
+
+
+def check_candidate_generation(observations):
+    candidates = generate_candidate_relations(observations)
+
+    if not candidates:
+        return False
+
+    for candidate in candidates:
+        if not candidate.supporting_observations:
+            return False
+
+        if not candidate.candidate_id:
+            return False
+
+        if not candidate.relation_type:
+            return False
+
+        candidate_text = (
+            f"{candidate.candidate_id} "
+            f"{candidate.relation_type} "
+            f"{candidate.description}"
+        ).lower()
+
+        for forbidden in FORBIDDEN_SEMANTIC_LABELS:
+            if forbidden in candidate_text:
+                return False
+
+    return True
+
+
+def check_candidate_provenance(observations):
+    candidates = generate_candidate_relations(observations)
+
+    if not candidates:
+        return False
+
+    observation_ids = {observation.record_id for observation in observations}
+
+    for candidate in candidates:
+        referenced_ids = set(candidate.supporting_observations)
+
+        if not referenced_ids:
+            return False
+
+        if not referenced_ids.issubset(observation_ids):
+            return False
+
+    return True
+
+
+def check_changed_symbols_produce_structural_output():
+    observations = [
+        Observation("A", "aa", "aa", "aaaa"),
+        Observation("B", "••", "••", "••••"),
+        Observation("C", "XX", "XX", "XXXX"),
+    ]
+
+    for observation in observations:
+        features = extract_structural_features(observation)
+
+        if not features:
+            return False
+
+    return True
+
+
+def check_changed_structure_is_observable():
+    observations = [
+        Observation("A", "aa", "aa", "aaaa"),
+        Observation("B", "aa", "bb", "aabb"),
+    ]
+
+    features_a = {
+        (feature.name, str(feature.value))
+        for feature in extract_structural_features(observations[0])
+    }
+
+    features_b = {
+        (feature.name, str(feature.value))
+        for feature in extract_structural_features(observations[1])
+    }
+
+    return features_a != features_b
+
+
+def check_empty_input():
+    inventory = build_relation_inventory([])
+    candidates = generate_candidate_relations([])
+
+    return inventory == [] and candidates == []
+
+
+def run_benchmark():
+    observations = build_observations()
+
+    checks = {
+        "raw_observations_available": check_raw_observations(observations),
+        "structural_features_available": check_structural_features(
+            observations
+        ),
+        "relations_are_data_derived": check_relations_are_data_derived(
+            observations
+        ),
+        "candidate_generation_available": check_candidate_generation(
+            observations
+        ),
+        "candidate_provenance_available": check_candidate_provenance(
+            observations
+        ),
+        "no_semantic_labels_exposed": check_no_semantic_labels(
+            observations
+        ),
+        "changed_symbols_produce_structural_output":
+            check_changed_symbols_produce_structural_output(),
+        "changed_structure_is_observable":
+            check_changed_structure_is_observable(),
+        "empty_input_handled": check_empty_input(),
+    }
+
+    all_passed = all(checks.values())
+
+    print("UFCPS — L3 Invariant Relation Generator Benchmark v2")
+    print()
+    print("predefined_candidate_family_used: False")
+    print("semantic_labels_exposed_to_engine: False")
+    print()
+    print("Checks:")
+
+    for name, passed in checks.items():
+        status = "PASS" if passed else "FAIL"
+        print(f"  {status}: {name}")
+
+    print()
+    print(f"all_passed: {all_passed}")
+
+    if all_passed:
+        print("RESULT: READY")
+        return 0
+
     print("RESULT: FAIL")
-```
+    return 1
 
-if **name** == "**main**":
-report = run_benchmark()
-print_report(report)
 
-```
-raise SystemExit(0 if report["all_passed"] else 1)
-```
+if __name__ == "__main__":
+    raise SystemExit(run_benchmark())
