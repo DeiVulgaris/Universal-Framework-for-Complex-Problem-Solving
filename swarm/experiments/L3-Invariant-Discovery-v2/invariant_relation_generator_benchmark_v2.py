@@ -1,4 +1,4 @@
-from **future** import annotations
+from __future__ import annotations
 
 from invariant_relation_generator_v2 import (
 Observation,
