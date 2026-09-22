@@ -380,5 +380,15 @@ def demo() -> None:
     print(exhausted_result)
 
 
+
+# ---------------------------------------------------------------------------
+# Backward-compatible API alias
+# ---------------------------------------------------------------------------
+# Older Level 3 benchmarks use the shorter name ExhaustionDetector.
+# Keep it as an alias while the canonical implementation keeps its
+# explicit name.
+ExhaustionDetector = CognitiveSpaceExhaustionDetector
+
+
 if __name__ == "__main__":
     demo()
