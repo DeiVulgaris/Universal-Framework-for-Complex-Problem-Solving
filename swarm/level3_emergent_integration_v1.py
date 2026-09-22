@@ -564,28 +564,50 @@ class Level3EmergentIntegration:
         source_space_version: int,
         interaction: InteractionResult,
         question_ids: List[str],
+        source_space: Optional[CognitiveSpace] = None,
     ) -> CognitiveSpace:
+        """
+        Build C_(k+1) from the actual C_k when available.
 
-        source_space = CognitiveSpace(
-            space_id=source_space_id,
+        Recursive Level 3 requires:
 
-            parent_space_id=None,
+            C_(k+1) = C_k + new_content
 
-            version=source_space_version,
+        The previous implementation reconstructed a new source
+        CognitiveSpace from only source_space_id/version. That
+        discarded the accumulated content of C_k before passing
+        it to EmergentSpaceBuilder.
 
-            description=(
-                "Source cognitive space "
-                "for Level 3 emergent integration."
-            ),
-        )
+        For backward compatibility, if source_space is omitted,
+        a minimal source shell is still constructed.
+        """
+
+        if source_space is None:
+            source_space = CognitiveSpace(
+                space_id=source_space_id,
+                parent_space_id=None,
+                version=source_space_version,
+                description=(
+                    "Source cognitive space "
+                    "for Level 3 emergent integration."
+                ),
+            )
+        else:
+            if source_space.space_id != source_space_id:
+                raise ValueError(
+                    "source_space_id does not match source_space.space_id"
+                )
+
+            if source_space.version != source_space_version:
+                raise ValueError(
+                    "source_space_version does not match "
+                    "source_space.version"
+                )
 
         return self.space_builder.build(
             parent_space=source_space,
-
             interaction=interaction,
-
             question_ids=question_ids,
-
             next_space_id=(
                 f"{source_space_id}+1"
             ),
@@ -600,8 +622,22 @@ class Level3EmergentIntegration:
         *,
         source_space_id: str = "C_k",
         source_space_version: int = 1,
+        source_space: Optional[CognitiveSpace] = None,
         branches=None,
     ) -> Level3IntegrationResult:
+
+        if source_space is not None:
+            if source_space.space_id != source_space_id:
+                raise ValueError(
+                    "source_space_id does not match "
+                    "source_space.space_id"
+                )
+
+            if source_space.version != source_space_version:
+                raise ValueError(
+                    "source_space_version does not match "
+                    "source_space.version"
+                )
 
         if branches is None:
 
@@ -698,6 +734,8 @@ class Level3EmergentIntegration:
                 source_space_version=(
                     source_space_version
                 ),
+
+                source_space=source_space,
 
                 interaction=interaction,
 
@@ -892,10 +930,34 @@ def run_smoke_test() -> Dict[str, Any]:
         )
     )
 
-    result = integration.run(
-        source_space_id="C_k",
+    source = CognitiveSpace(
+        space_id="C_k",
+        parent_space_id=None,
+        version=1,
+        accessible_distinctions=[
+            "D_existing_1",
+            "D_existing_2",
+        ],
+        active_invariants=[
+            "I_existing",
+        ],
+        unresolved_questions=[
+            "Q_existing",
+        ],
+        relations=[
+            "EXISTING_RELATION",
+        ],
+        structural_continuity=True,
+        content_identity_with_parent=False,
+        description="Seed source cognitive space.",
+    )
 
-        source_space_version=1,
+    result = integration.run(
+        source_space_id=source.space_id,
+
+        source_space_version=source.version,
+
+        source_space=source,
     )
 
     checks = {
@@ -968,6 +1030,28 @@ def run_smoke_test() -> Dict[str, Any]:
                 .unresolved_questions
             )
             > 0
+        ),
+
+        "source_content_survives": (
+            "D_existing_1"
+            in result.next_space.accessible_distinctions
+            and
+            "D_existing_2"
+            in result.next_space.accessible_distinctions
+            and
+            "I_existing"
+            in result.next_space.active_invariants
+            and
+            "Q_existing"
+            in result.next_space.unresolved_questions
+            and
+            "EXISTING_RELATION"
+            in result.next_space.relations
+        ),
+
+        "new_content_added_after_inheritance": (
+            len(result.next_space.elements)
+            > len(source.elements)
         ),
 
         "continuation_ready": (
