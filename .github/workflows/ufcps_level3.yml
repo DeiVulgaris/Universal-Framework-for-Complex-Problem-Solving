@@ -61,3 +61,6 @@ jobs:
       - name: Run L3 invariant candidate evaluator v2
         run: |
           python swarm/experiments/L3-Invariant-Discovery-v2/invariant_candidate_evaluator_v2.py
+      - name: Run L3 invariant discovery runner v2
+        run: |
+          python swarm/experiments/L3-Invariant-Discovery-v2/invariant_discovery_runner_v2.py
