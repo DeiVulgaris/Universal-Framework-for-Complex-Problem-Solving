@@ -1,0 +1,177 @@
+{
+  "experiment_id": "UFCPS-L3-INVARIANT-DISCOVERY-v4.2",
+  "dataset_id": "UFCPS-L3-INVARIANT-DISCOVERY-v4.2",
+  "dataset_version": "4.2",
+  "description": "Opaque symbolic compositional observations with discriminating controls. Controls are valid observations of the same hidden relation and are selected to distinguish competing executable candidates.",
+  "semantic_information_exposed_to_discovery": false,
+  "intended_relation_exposed_to_discovery": false,
+  "predefined_candidate_family_exposed_to_discovery": false,
+  "holdout_exposed_during_discovery": false,
+  "observations": [
+    {
+      "record_id": "D01",
+      "partition": "discovery",
+      "left": "2",
+      "right": "2",
+      "result": "4"
+    },
+    {
+      "record_id": "D02",
+      "partition": "discovery",
+      "left": "10",
+      "right": "10",
+      "result": "100"
+    },
+    {
+      "record_id": "D03",
+      "partition": "discovery",
+      "left": "II",
+      "right": "II",
+      "result": "IV"
+    },
+    {
+      "record_id": "D04",
+      "partition": "discovery",
+      "left": "||||",
+      "right": "||||",
+      "result": "||||||||"
+    },
+    {
+      "record_id": "D05",
+      "partition": "discovery",
+      "left": "••",
+      "right": "••",
+      "result": "••••"
+    },
+    {
+      "record_id": "D06",
+      "partition": "discovery",
+      "left": "aa",
+      "right": "aa",
+      "result": "aaaa"
+    },
+
+    {
+      "record_id": "S01",
+      "partition": "selection",
+      "left": "XX",
+      "right": "XX",
+      "result": "XXXX"
+    },
+    {
+      "record_id": "S02",
+      "partition": "selection",
+      "left": "xxx",
+      "right": "xxx",
+      "result": "xxxxxx"
+    },
+    {
+      "record_id": "S03",
+      "partition": "selection",
+      "left": "AAA",
+      "right": "AAA",
+      "result": "AAAAAA"
+    },
+    {
+      "record_id": "S04",
+      "partition": "selection",
+      "left": "|||||",
+      "right": "|||||",
+      "result": "||||||||||"
+    },
+
+    {
+      "record_id": "C01",
+      "partition": "control",
+      "left": "ab",
+      "right": "cd",
+      "result": "abcd"
+    },
+    {
+      "record_id": "C02",
+      "partition": "control",
+      "left": "ac",
+      "right": "bd",
+      "result": "acbd"
+    },
+    {
+      "record_id": "C03",
+      "partition": "control",
+      "left": "aab",
+      "right": "bcc",
+      "result": "aabbcc"
+    },
+    {
+      "record_id": "C04",
+      "partition": "control",
+      "left": "aba",
+      "right": "aca",
+      "result": "abaaca"
+    },
+
+    {
+      "record_id": "X01",
+      "partition": "counterexample",
+      "left": "ab",
+      "right": "ba",
+      "result": "abba"
+    },
+    {
+      "record_id": "X02",
+      "partition": "counterexample",
+      "left": "abc",
+      "right": "bca",
+      "result": "abcbca"
+    },
+    {
+      "record_id": "X03",
+      "partition": "counterexample",
+      "left": "aab",
+      "right": "baa",
+      "result": "aabbaa"
+    },
+    {
+      "record_id": "X04",
+      "partition": "counterexample",
+      "left": "abc",
+      "right": "abc",
+      "result": "abcabc"
+    },
+
+    {
+      "record_id": "H01",
+      "partition": "holdout",
+      "left": "•••",
+      "right": "••",
+      "result": "•••••"
+    },
+    {
+      "record_id": "H02",
+      "partition": "holdout",
+      "left": "xxx",
+      "right": "xx",
+      "result": "xxxxx"
+    },
+    {
+      "record_id": "H03",
+      "partition": "holdout",
+      "left": "AAA",
+      "right": "AA",
+      "result": "AAAAA"
+    },
+    {
+      "record_id": "H04",
+      "partition": "holdout",
+      "left": "•••",
+      "right": "••",
+      "result": "•••••"
+    },
+    {
+      "record_id": "H05",
+      "partition": "holdout",
+      "left": "abcd",
+      "right": "ef",
+      "result": "abcdef"
+    }
+  ]
+}
