@@ -6,8 +6,9 @@ from typing import Any
 
 from invariant_compositional_relation_generator_v4 import (
     Observation,
-    generate_candidates,
+    generate_candidate,
 )
+
 from invariant_compositional_candidate_evaluator_v4 import (
     evaluate_candidates,
     select_viable_candidates,
@@ -21,6 +22,18 @@ DATASET_VERSION = "4.2"
 BASE_DIR = Path(__file__).resolve().parent
 DATASET_PATH = BASE_DIR / "level3_invariant_discovery_dataset_v4_2.json"
 RESULT_PATH = BASE_DIR / "EXPERIMENT_RESULTS_v4_2.json"
+
+
+OPERATIONS = [
+    "CONCAT_LEFT_RIGHT",
+    "CONCAT_RIGHT_LEFT",
+    "SORT_COMBINED_SYMBOLS",
+    "REVERSE_COMBINED_SYMBOLS",
+    "INTERLEAVE_LEFT_RIGHT",
+    "INTERLEAVE_RIGHT_LEFT",
+    "COMBINED_SYMBOL_COUNTS_CANONICAL",
+    "UNIQUE_COMBINED_SYMBOLS",
+]
 
 
 def load_dataset(path: Path) -> dict[str, Any]:
@@ -50,7 +63,9 @@ def load_partition(
     return observations
 
 
-def serialize_observation(observation: Observation) -> dict[str, str]:
+def serialize_observation(
+    observation: Observation,
+) -> dict[str, str]:
     return {
         "record_id": observation.record_id,
         "left": observation.left,
@@ -59,18 +74,98 @@ def serialize_observation(observation: Observation) -> dict[str, str]:
     }
 
 
+def generate_all_candidates(
+    discovery_observations: list[Observation],
+) -> list[Any]:
+    operation_specs = [
+        (
+            "CAND_V4_0001",
+            "CONCAT_LEFT_RIGHT",
+            "left + right",
+        ),
+        (
+            "CAND_V4_0002",
+            "CONCAT_RIGHT_LEFT",
+            "right + left",
+        ),
+        (
+            "CAND_V4_0003",
+            "SORT_COMBINED_SYMBOLS",
+            "sort(left + right)",
+        ),
+        (
+            "CAND_V4_0004",
+            "REVERSE_COMBINED_SYMBOLS",
+            "reverse(left + right)",
+        ),
+        (
+            "CAND_V4_0005",
+            "INTERLEAVE_LEFT_RIGHT",
+            "interleave(left, right)",
+        ),
+        (
+            "CAND_V4_0006",
+            "INTERLEAVE_RIGHT_LEFT",
+            "interleave(right, left)",
+        ),
+        (
+            "CAND_V4_0007",
+            "COMBINED_SYMBOL_COUNTS_CANONICAL",
+            "canonical_combined_symbol_counts(left, right)",
+        ),
+        (
+            "CAND_V4_0008",
+            "UNIQUE_COMBINED_SYMBOLS",
+            "unique(left + right)",
+        ),
+    ]
+
+    candidates: list[Any] = []
+
+    for (
+        candidate_id,
+        operation_name,
+        expression,
+    ) in operation_specs:
+
+        candidate = generate_candidate(
+            candidate_id=candidate_id,
+            operation_name=operation_name,
+            expression=expression,
+            observations=discovery_observations,
+        )
+
+        candidates.append(candidate)
+
+    return candidates
+
+
 def evaluate_partition(
     candidates: list[Any],
     observations: list[Observation],
 ) -> dict[str, Any]:
-    evaluations = evaluate_candidates(candidates, observations)
 
-    viable = select_viable_candidates(evaluations)
+    if not candidates:
+        return {
+            "evaluation_count": 0,
+            "viable_candidate_ids": [],
+            "evaluations": [],
+        }
+
+    evaluations = evaluate_candidates(
+        candidates,
+        observations,
+    )
+
+    viable = select_viable_candidates(
+        evaluations
+    )
 
     return {
         "evaluation_count": len(evaluations),
         "viable_candidate_ids": [
-            evaluation.candidate_id for evaluation in viable
+            evaluation.candidate_id
+            for evaluation in viable
         ],
         "evaluations": [
             {
@@ -95,7 +190,10 @@ def evaluate_partition(
     }
 
 
-def candidate_lookup(candidates: list[Any]) -> dict[str, Any]:
+def candidate_lookup(
+    candidates: list[Any],
+) -> dict[str, Any]:
+
     return {
         candidate.candidate_id: candidate
         for candidate in candidates
@@ -106,31 +204,43 @@ def build_discrimination_report(
     selection_candidate_ids: list[str],
     control_result: dict[str, Any],
 ) -> dict[str, Any]:
+
     evaluations = control_result["evaluations"]
 
-    prediction_matrix: dict[str, dict[str, str]] = {}
+    prediction_matrix: dict[
+        str,
+        dict[str, str],
+    ] = {}
 
     for evaluation in evaluations:
+
         candidate_id = evaluation["candidate_id"]
 
         prediction_matrix[candidate_id] = {
-            prediction["record_id"]: prediction["predicted_result"]
+            prediction["record_id"]:
+                prediction["predicted_result"]
             for prediction in evaluation["predictions"]
         }
-
-    disagreements: list[dict[str, Any]] = []
 
     control_record_ids: list[str] = []
 
     for evaluation in evaluations:
+
         for prediction in evaluation["predictions"]:
-            if prediction["record_id"] not in control_record_ids:
-                control_record_ids.append(prediction["record_id"])
+
+            record_id = prediction["record_id"]
+
+            if record_id not in control_record_ids:
+                control_record_ids.append(record_id)
+
+    disagreements: list[dict[str, Any]] = []
 
     for record_id in control_record_ids:
+
         predictions_for_record = {
             candidate_id: predictions[record_id]
-            for candidate_id, predictions in prediction_matrix.items()
+            for candidate_id, predictions
+            in prediction_matrix.items()
             if record_id in predictions
         }
 
@@ -141,37 +251,45 @@ def build_discrimination_report(
         disagreements.append(
             {
                 "record_id": record_id,
-                "candidate_predictions": predictions_for_record,
-                "distinct_prediction_count": len(distinct_predictions),
-                "discriminating": len(distinct_predictions) > 1,
+                "candidate_predictions":
+                    predictions_for_record,
+                "distinct_prediction_count":
+                    len(distinct_predictions),
+                "discriminating":
+                    len(distinct_predictions) > 1,
             }
         )
 
-    surviving_selection = [
-        candidate_id
-        for candidate_id in selection_candidate_ids
-        if candidate_id in prediction_matrix
-    ]
-
     return {
-        "selection_candidate_ids": selection_candidate_ids,
+        "selection_candidate_ids":
+            selection_candidate_ids,
+
         "control_candidate_ids": [
             evaluation["candidate_id"]
             for evaluation in evaluations
         ],
-        "surviving_selection_candidate_ids": surviving_selection,
-        "control_observation_count": len(control_record_ids),
-        "discriminating_control_count": sum(
-            1
-            for item in disagreements
-            if item["discriminating"]
-        ),
-        "all_controls_discriminating": all(
-            item["discriminating"]
-            for item in disagreements
-        ) if disagreements else False,
-        "prediction_matrix": prediction_matrix,
-        "control_disagreements": disagreements,
+
+        "control_observation_count":
+            len(control_record_ids),
+
+        "discriminating_control_count":
+            sum(
+                1
+                for item in disagreements
+                if item["discriminating"]
+            ),
+
+        "all_controls_discriminating":
+            all(
+                item["discriminating"]
+                for item in disagreements
+            ) if disagreements else False,
+
+        "prediction_matrix":
+            prediction_matrix,
+
+        "control_disagreements":
+            disagreements,
     }
 
 
@@ -179,54 +297,102 @@ def freeze_candidate(
     candidates: list[Any],
     viable_candidate_ids: list[str],
 ) -> dict[str, Any] | None:
+
     if len(viable_candidate_ids) != 1:
         return None
 
     candidate_id = viable_candidate_ids[0]
+
     lookup = candidate_lookup(candidates)
+
     candidate = lookup.get(candidate_id)
 
     if candidate is None:
         return None
 
     return {
-        "candidate_id": candidate.candidate_id,
-        "operation": candidate.operation,
-        "formal_relation": getattr(
-            candidate,
-            "formal_relation",
-            candidate.operation,
-        ),
-        "provenance": getattr(
-            candidate,
-            "provenance",
-            {},
-        ),
+        "candidate_id":
+            candidate.candidate_id,
+
+        "operation":
+            candidate.operation_name,
+
+        "formal_relation":
+            getattr(
+                candidate,
+                "expression",
+                candidate.operation_name,
+            ),
+
+        "provenance": {
+            "source_record_ids":
+                getattr(
+                    candidate,
+                    "source_record_ids",
+                    [],
+                ),
+
+            "generation_trace":
+                getattr(
+                    candidate,
+                    "generation_trace",
+                    [],
+                ),
+        },
     }
 
 
 def main() -> int:
-    dataset = load_dataset(DATASET_PATH)
 
-    discovery = load_partition(dataset, "discovery")
-    selection = load_partition(dataset, "selection")
-    controls = load_partition(dataset, "control")
-    counterexamples = load_partition(dataset, "counterexample")
-    holdout = load_partition(dataset, "holdout")
+    dataset = load_dataset(
+        DATASET_PATH
+    )
 
-    candidates = generate_candidates(discovery)
+    discovery = load_partition(
+        dataset,
+        "discovery",
+    )
+
+    selection = load_partition(
+        dataset,
+        "selection",
+    )
+
+    controls = load_partition(
+        dataset,
+        "control",
+    )
+
+    counterexamples = load_partition(
+        dataset,
+        "counterexample",
+    )
+
+    holdout = load_partition(
+        dataset,
+        "holdout",
+    )
+
+    candidates = generate_all_candidates(
+        discovery
+    )
 
     selection_result = evaluate_partition(
         candidates,
         selection,
     )
 
-    selection_viable_ids = selection_result["viable_candidate_ids"]
+    selection_viable_ids = (
+        selection_result[
+            "viable_candidate_ids"
+        ]
+    )
 
     selected_candidates = [
         candidate
         for candidate in candidates
-        if candidate.candidate_id in selection_viable_ids
+        if candidate.candidate_id
+        in selection_viable_ids
     ]
 
     control_result = evaluate_partition(
@@ -234,7 +400,11 @@ def main() -> int:
         controls,
     )
 
-    control_viable_ids = control_result["viable_candidate_ids"]
+    control_viable_ids = (
+        control_result[
+            "viable_candidate_ids"
+        ]
+    )
 
     discrimination = build_discrimination_report(
         selection_viable_ids,
@@ -244,7 +414,8 @@ def main() -> int:
     counterexample_candidates = [
         candidate
         for candidate in selected_candidates
-        if candidate.candidate_id in control_viable_ids
+        if candidate.candidate_id
+        in control_viable_ids
     ]
 
     counterexample_result = evaluate_partition(
@@ -253,7 +424,9 @@ def main() -> int:
     )
 
     counterexample_viable_ids = (
-        counterexample_result["viable_candidate_ids"]
+        counterexample_result[
+            "viable_candidate_ids"
+        ]
     )
 
     frozen_candidate = freeze_candidate(
@@ -264,6 +437,7 @@ def main() -> int:
     holdout_result: dict[str, Any] | None = None
 
     if frozen_candidate is not None:
+
         frozen_candidates = [
             candidate
             for candidate in counterexample_candidates
@@ -276,110 +450,194 @@ def main() -> int:
             holdout,
         )
 
-        holdout_viable_ids = holdout_result["viable_candidate_ids"]
+        holdout_viable_ids = (
+            holdout_result[
+                "viable_candidate_ids"
+            ]
+        )
 
-        if frozen_candidate["candidate_id"] not in holdout_viable_ids:
+        if (
+            frozen_candidate["candidate_id"]
+            not in holdout_viable_ids
+        ):
             status = "FAIL"
         else:
             status = "PASS"
+
     else:
         status = "UNRESOLVED"
 
     result = {
-        "experiment_id": EXPERIMENT_ID,
-        "dataset_id": DATASET_ID,
-        "dataset_version": DATASET_VERSION,
-        "status": status,
-        "methodological_change": (
-            "Controls are valid observations selected to discriminate "
-            "between competing candidate transformations; they are not "
-            "intentional violations of the hidden relation."
-        ),
+        "experiment_id":
+            EXPERIMENT_ID,
+
+        "dataset_id":
+            DATASET_ID,
+
+        "dataset_version":
+            DATASET_VERSION,
+
+        "status":
+            status,
+
+        "methodological_change":
+            (
+                "Controls are valid observations selected "
+                "to discriminate between competing "
+                "candidate transformations; they are not "
+                "intentional violations of the hidden relation."
+            ),
+
         "independence_audit": {
-            "predefined_candidate_family_used": False,
-            "semantic_labels_exposed_to_engine": False,
-            "holdout_used_during_discovery": False,
-            "holdout_used_during_selection": False,
-            "expected_positive_labels_loaded": False,
-            "expected_positive_labels_used": False,
-            "observed_result_used_for_prediction": False,
+            "predefined_candidate_family_used":
+                False,
+
+            "semantic_labels_exposed_to_engine":
+                False,
+
+            "holdout_used_during_discovery":
+                False,
+
+            "holdout_used_during_selection":
+                False,
+
+            "expected_positive_labels_loaded":
+                False,
+
+            "expected_positive_labels_used":
+                False,
+
+            "observed_result_used_for_prediction":
+                False,
         },
+
+        "candidate_operations":
+            OPERATIONS,
+
         "partition_counts": {
-            "discovery": len(discovery),
-            "selection": len(selection),
-            "control": len(controls),
-            "counterexample": len(counterexamples),
-            "holdout": len(holdout),
+            "discovery":
+                len(discovery),
+
+            "selection":
+                len(selection),
+
+            "control":
+                len(controls),
+
+            "counterexample":
+                len(counterexamples),
+
+            "holdout":
+                len(holdout),
         },
-        "generated_candidate_count": len(candidates),
+
+        "generated_candidate_count":
+            len(candidates),
+
         "generated_candidate_ids": [
             candidate.candidate_id
             for candidate in candidates
         ],
-        "selection": selection_result,
-        "control": control_result,
-        "control_discrimination": discrimination,
-        "counterexample": counterexample_result,
-        "frozen_candidate": frozen_candidate,
-        "holdout": holdout_result,
+
+        "selection":
+            selection_result,
+
+        "control":
+            control_result,
+
+        "control_discrimination":
+            discrimination,
+
+        "counterexample":
+            counterexample_result,
+
+        "frozen_candidate":
+            frozen_candidate,
+
+        "holdout":
+            holdout_result,
+
         "protocol_checks": {
-            "candidate_generation_completed": len(candidates) > 0,
-            "selection_completed": True,
-            "control_evaluation_completed": True,
-            "control_discrimination_observed": (
-                discrimination["discriminating_control_count"] > 0
-            ),
-            "counterexample_evaluation_completed": True,
-            "candidate_frozen_before_holdout": (
-                frozen_candidate is not None
-            ),
-            "holdout_accessed_only_after_freeze": (
-                holdout_result is None
-                or frozen_candidate is not None
-            ),
+            "candidate_generation_completed":
+                len(candidates) > 0,
+
+            "selection_completed":
+                True,
+
+            "control_evaluation_completed":
+                True,
+
+            "control_discrimination_observed":
+                (
+                    discrimination[
+                        "discriminating_control_count"
+                    ] > 0
+                ),
+
+            "counterexample_evaluation_completed":
+                True,
+
+            "candidate_frozen_before_holdout":
+                frozen_candidate is not None,
+
+            "holdout_accessed_only_after_freeze":
+                (
+                    holdout_result is None
+                    or frozen_candidate is not None
+                ),
         },
+
         "dataset_integrity": {
-            "all_records_have_required_fields": all(
+            "all_records_have_required_fields":
                 all(
-                    field in record
-                    for field in (
-                        "record_id",
-                        "partition",
-                        "left",
-                        "right",
-                        "result",
+                    all(
+                        field in record
+                        for field in (
+                            "record_id",
+                            "partition",
+                            "left",
+                            "right",
+                            "result",
+                        )
                     )
-                )
-                for record in dataset["observations"]
-            ),
-            "partitions_are_nonempty": all(
-                count > 0
-                for count in (
-                    len(discovery),
-                    len(selection),
-                    len(controls),
-                    len(counterexamples),
-                    len(holdout),
-                )
-            ),
+                    for record
+                    in dataset["observations"]
+                ),
+
+            "partitions_are_nonempty":
+                all(
+                    count > 0
+                    for count in (
+                        len(discovery),
+                        len(selection),
+                        len(controls),
+                        len(counterexamples),
+                        len(holdout),
+                    )
+                ),
         },
+
         "observations": {
             "discovery": [
                 serialize_observation(item)
                 for item in discovery
             ],
+
             "selection": [
                 serialize_observation(item)
                 for item in selection
             ],
+
             "control": [
                 serialize_observation(item)
                 for item in controls
             ],
+
             "counterexample": [
                 serialize_observation(item)
                 for item in counterexamples
             ],
+
             "holdout": [
                 serialize_observation(item)
                 for item in holdout
@@ -387,7 +645,11 @@ def main() -> int:
         },
     }
 
-    with RESULT_PATH.open("w", encoding="utf-8") as handle:
+    with RESULT_PATH.open(
+        "w",
+        encoding="utf-8",
+    ) as handle:
+
         json.dump(
             result,
             handle,
@@ -395,58 +657,111 @@ def main() -> int:
             indent=2,
         )
 
-    print("UFCPS — L3 Invariant Discovery Runner v4.2")
-    print(f"experiment: {EXPERIMENT_ID}")
-    print(f"dataset: {DATASET_ID}")
-    print(f"dataset_version: {DATASET_VERSION}")
+    print(
+        "UFCPS — L3 Invariant Discovery Runner v4.2"
+    )
+
+    print(
+        f"experiment: {EXPERIMENT_ID}"
+    )
+
+    print(
+        f"dataset: {DATASET_ID}"
+    )
+
+    print(
+        f"dataset_version: {DATASET_VERSION}"
+    )
+
     print()
+
     print(
         "predefined_candidate_family_used: False"
     )
+
     print(
         "semantic_labels_exposed_to_engine: False"
     )
+
     print(
         "holdout_used_during_discovery: False"
     )
+
     print()
-    print(f"discovery observations: {len(discovery)}")
-    print(f"selection observations: {len(selection)}")
-    print(f"controls: {len(controls)}")
-    print(f"counterexamples: {len(counterexamples)}")
-    print(f"holdout observations: {len(holdout)}")
+
+    print(
+        f"discovery observations: {len(discovery)}"
+    )
+
+    print(
+        f"selection observations: {len(selection)}"
+    )
+
+    print(
+        f"controls: {len(controls)}"
+    )
+
+    print(
+        f"counterexamples: {len(counterexamples)}"
+    )
+
+    print(
+        f"holdout observations: {len(holdout)}"
+    )
+
     print()
-    print(f"generated candidates: {len(candidates)}")
+
+    print(
+        f"generated candidates: {len(candidates)}"
+    )
+
     print(
         "selection viable candidates: "
         f"{len(selection_viable_ids)}"
     )
+
     print(
         "control viable candidates: "
         f"{len(control_viable_ids)}"
     )
+
     print(
         "discriminating controls: "
         f"{discrimination['discriminating_control_count']}"
         f"/{discrimination['control_observation_count']}"
     )
+
     print(
         "viable candidates after counterexamples: "
         f"{len(counterexample_viable_ids)}"
     )
 
     if frozen_candidate is None:
-        print("frozen candidate: NONE")
+
+        print(
+            "frozen candidate: NONE"
+        )
+
     else:
+
         print(
             "frozen candidate: "
             f"{frozen_candidate['candidate_id']}"
         )
 
     print()
-    print(f"STATUS: {status}")
-    print(f"RESULT FILE: {RESULT_PATH}")
-    print(f"RESULT: {status}")
+
+    print(
+        f"STATUS: {status}"
+    )
+
+    print(
+        f"RESULT FILE: {RESULT_PATH}"
+    )
+
+    print(
+        f"RESULT: {status}"
+    )
 
     return 0
 
