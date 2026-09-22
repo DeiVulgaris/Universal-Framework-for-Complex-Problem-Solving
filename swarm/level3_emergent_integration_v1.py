@@ -40,6 +40,7 @@ from branch_interaction_v1 import (
     BranchInteractionEngine,
     LocalizedBranch,
     InteractionResult,
+    InteractionStatus,
     InvariantStatus,
 )
 
