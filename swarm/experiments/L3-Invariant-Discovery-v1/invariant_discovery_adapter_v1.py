@@ -1,4 +1,4 @@
-```python
+
 """
 UFCPS — Level 3 Invariant Discovery Adapter v1
 
@@ -583,4 +583,4 @@ if __name__ == "__main__":
         "level3_bridge:",
         discovery.get("level3_trace"),
     )
-```
+
