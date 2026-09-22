@@ -68,21 +68,24 @@ def check_raw_observations(observations):
 
 
 def check_structural_features(observations):
+    required_features = {
+        "left_length",
+        "right_length",
+        "result_length",
+    }
+
     for observation in observations:
         features = extract_structural_features(observation)
+
+        if not isinstance(features, dict):
+            return False
 
         if not features:
             return False
 
-        feature_names = {feature.name for feature in features}
+        feature_names = set(features.keys())
 
-        if "left_length" not in feature_names:
-            return False
-
-        if "right_length" not in feature_names:
-            return False
-
-        if "result_length" not in feature_names:
+        if not required_features.issubset(feature_names):
             return False
 
     return True
@@ -92,11 +95,13 @@ def check_no_semantic_labels(observations):
     for observation in observations:
         features = extract_structural_features(observation)
 
-        for feature in features:
+        if not isinstance(features, dict):
+            return False
+
+        for feature_name, feature_value in features.items():
             text = (
-                f"{feature.name} "
-                f"{feature.description} "
-                f"{feature.value}"
+                f"{feature_name} "
+                f"{feature_value}"
             ).lower()
 
             for forbidden in FORBIDDEN_SEMANTIC_LABELS:
@@ -109,12 +114,30 @@ def check_no_semantic_labels(observations):
 def check_relations_are_data_derived(observations):
     inventory = build_relation_inventory(observations)
 
-    if not inventory:
+    if not isinstance(inventory, dict):
         return False
 
-    for relation in inventory:
-        if not relation.observation_ids:
+    required_sections = {
+        "observation_relations",
+        "cross_record_relations",
+        "pairwise_relations",
+    }
+
+    if not required_sections.issubset(inventory.keys()):
+        return False
+
+    for section_name in required_sections:
+        relations = inventory[section_name]
+
+        if not isinstance(relations, list):
             return False
+
+        for relation in relations:
+            if not isinstance(relation, dict):
+                return False
+
+            if not relation.get("source_record_ids"):
+                return False
 
     return True
 
@@ -126,7 +149,7 @@ def check_candidate_generation(observations):
         return False
 
     for candidate in candidates:
-        if not candidate.supporting_observations:
+        if not candidate.support:
             return False
 
         if not candidate.candidate_id:
@@ -135,10 +158,13 @@ def check_candidate_generation(observations):
         if not candidate.relation_type:
             return False
 
+        if not candidate.relation:
+            return False
+
         candidate_text = (
             f"{candidate.candidate_id} "
             f"{candidate.relation_type} "
-            f"{candidate.description}"
+            f"{candidate.relation}"
         ).lower()
 
         for forbidden in FORBIDDEN_SEMANTIC_LABELS:
@@ -154,15 +180,21 @@ def check_candidate_provenance(observations):
     if not candidates:
         return False
 
-    observation_ids = {observation.record_id for observation in observations}
+    observation_ids = {
+        observation.record_id
+        for observation in observations
+    }
 
     for candidate in candidates:
-        referenced_ids = set(candidate.supporting_observations)
+        referenced_ids = set(candidate.support)
 
         if not referenced_ids:
             return False
 
         if not referenced_ids.issubset(observation_ids):
+            return False
+
+        if not candidate.evidence:
             return False
 
     return True
@@ -178,6 +210,9 @@ def check_changed_symbols_produce_structural_output():
     for observation in observations:
         features = extract_structural_features(observation)
 
+        if not isinstance(features, dict):
+            return False
+
         if not features:
             return False
 
@@ -190,15 +225,14 @@ def check_changed_structure_is_observable():
         Observation("B", "aa", "bb", "aabb"),
     ]
 
-    features_a = {
-        (feature.name, str(feature.value))
-        for feature in extract_structural_features(observations[0])
-    }
+    features_a = extract_structural_features(observations[0])
+    features_b = extract_structural_features(observations[1])
 
-    features_b = {
-        (feature.name, str(feature.value))
-        for feature in extract_structural_features(observations[1])
-    }
+    if not isinstance(features_a, dict):
+        return False
+
+    if not isinstance(features_b, dict):
+        return False
 
     return features_a != features_b
 
@@ -207,14 +241,31 @@ def check_empty_input():
     inventory = build_relation_inventory([])
     candidates = generate_candidate_relations([])
 
-    return inventory == [] and candidates == []
+    if not isinstance(inventory, dict):
+        return False
+
+    if inventory.get("observation_count") != 0:
+        return False
+
+    if inventory.get("observation_relations") != []:
+        return False
+
+    if inventory.get("cross_record_relations") != []:
+        return False
+
+    if inventory.get("pairwise_relations") != []:
+        return False
+
+    return candidates == []
 
 
 def run_benchmark():
     observations = build_observations()
 
     checks = {
-        "raw_observations_available": check_raw_observations(observations),
+        "raw_observations_available": check_raw_observations(
+            observations
+        ),
         "structural_features_available": check_structural_features(
             observations
         ),
