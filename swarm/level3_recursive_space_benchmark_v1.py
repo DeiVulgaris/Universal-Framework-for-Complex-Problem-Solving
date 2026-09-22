@@ -168,8 +168,10 @@ class RecursiveSpaceEngine:
         cycle_index: int,
     ) -> CycleResult:
 
+        # cycle_index is the logical target-space index:
+        # cycle 1 produces C_1, cycle 2 produces C_2.
         target_id = (
-            f"C_{cycle_index + 1}"
+            f"C_{cycle_index}"
         )
 
         # --------------------------------------------------------------
