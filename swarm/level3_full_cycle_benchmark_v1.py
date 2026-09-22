@@ -58,8 +58,8 @@ from cognitive_space_exhaustion_v1 import (
 
 from frustration_v1 import (
     FrustrationConfig,
-    FrustrationDetector,
     FrustrationStatus,
+    from_exhaustion_assessment,
 )
 
 from reflection_v1 import (
@@ -265,11 +265,7 @@ class Level3FullCycleBenchmark:
             )
         )
 
-        self.frustration_detector = (
-            FrustrationDetector(
-                FrustrationConfig()
-            )
-        )
+        self.frustration_config = FrustrationConfig()
 
         self.reflection_config = (
             ReflectionConfig()
@@ -314,8 +310,9 @@ class Level3FullCycleBenchmark:
         exhaustion,
     ):
 
-        return self.frustration_detector.assess(
-            exhaustion
+        return from_exhaustion_assessment(
+            exhaustion,
+            self.frustration_config,
         )
 
     # ------------------------------------------------------------------
