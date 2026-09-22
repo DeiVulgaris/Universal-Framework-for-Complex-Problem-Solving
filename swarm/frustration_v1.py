@@ -181,6 +181,11 @@ def from_exhaustion_assessment(
     if hasattr(status_value, "value"):
         status_value = status_value.value
 
+    # Normalize enum/string representations so both canonical enum values
+    # such as "EXHAUSTED" and serialized values such as "exhausted" are
+    # accepted by the functional state conversion.
+    normalized_status = str(status_value).upper()
+
     productivity_ratio = float(
         getattr(assessment, "productivity_ratio", 1.0)
     )
@@ -215,8 +220,8 @@ def from_exhaustion_assessment(
         )
     )
 
-    exhausted = status_value == "EXHAUSTED"
-    degrading = status_value == "DEGRADING"
+    exhausted = normalized_status == "EXHAUSTED"
+    degrading = normalized_status == "DEGRADING"
 
     if exhausted:
         status = FrustrationStatus.ACTIVE
