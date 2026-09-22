@@ -164,18 +164,13 @@ def evaluate_partition(
         partition_name,
     )
 
-    viable = select_viable_candidates(
+    viable_candidate_ids = select_viable_candidates(
         evaluations
     )
 
     return {
         "evaluation_count": len(evaluations),
-
-        "viable_candidate_ids": [
-            evaluation["candidate_id"]
-            for evaluation in viable
-        ],
-
+        "viable_candidate_ids": viable_candidate_ids,
         "evaluations": evaluations,
     }
 
@@ -244,13 +239,10 @@ def build_discrimination_report(
         disagreements.append(
             {
                 "record_id": record_id,
-
                 "candidate_predictions":
                     predictions_for_record,
-
                 "distinct_prediction_count":
                     len(distinct_predictions),
-
                 "discriminating":
                     len(distinct_predictions) > 1,
             }
