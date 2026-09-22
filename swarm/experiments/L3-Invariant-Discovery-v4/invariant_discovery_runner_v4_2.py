@@ -45,9 +45,11 @@ def load_partition(
     dataset: dict[str, Any],
     partition: str,
 ) -> list[Observation]:
+
     observations: list[Observation] = []
 
     for record in dataset["observations"]:
+
         if record.get("partition") != partition:
             continue
 
@@ -66,6 +68,7 @@ def load_partition(
 def serialize_observation(
     observation: Observation,
 ) -> dict[str, str]:
+
     return {
         "record_id": observation.record_id,
         "left": observation.left,
@@ -77,6 +80,7 @@ def serialize_observation(
 def generate_all_candidates(
     discovery_observations: list[Observation],
 ) -> list[Any]:
+
     operation_specs = [
         (
             "CAND_V4_0001",
@@ -143,9 +147,11 @@ def generate_all_candidates(
 def evaluate_partition(
     candidates: list[Any],
     observations: list[Observation],
+    partition_name: str,
 ) -> dict[str, Any]:
 
     if not candidates:
+
         return {
             "evaluation_count": 0,
             "viable_candidate_ids": [],
@@ -155,6 +161,7 @@ def evaluate_partition(
     evaluations = evaluate_candidates(
         candidates,
         observations,
+        partition_name,
     )
 
     viable = select_viable_candidates(
@@ -163,30 +170,13 @@ def evaluate_partition(
 
     return {
         "evaluation_count": len(evaluations),
+
         "viable_candidate_ids": [
-            evaluation.candidate_id
+            evaluation["candidate_id"]
             for evaluation in viable
         ],
-        "evaluations": [
-            {
-                "candidate_id": evaluation.candidate_id,
-                "operation": evaluation.operation,
-                "total": evaluation.total,
-                "correct": evaluation.correct,
-                "accuracy": evaluation.accuracy,
-                "viable": evaluation.viable,
-                "predictions": [
-                    {
-                        "record_id": prediction.record_id,
-                        "predicted_result": prediction.predicted_result,
-                        "observed_result": prediction.observed_result,
-                        "correct": prediction.correct,
-                    }
-                    for prediction in evaluation.predictions
-                ],
-            }
-            for evaluation in evaluations
-        ],
+
+        "evaluations": evaluations,
     }
 
 
@@ -231,7 +221,10 @@ def build_discrimination_report(
             record_id = prediction["record_id"]
 
             if record_id not in control_record_ids:
-                control_record_ids.append(record_id)
+
+                control_record_ids.append(
+                    record_id
+                )
 
     disagreements: list[dict[str, Any]] = []
 
@@ -251,10 +244,13 @@ def build_discrimination_report(
         disagreements.append(
             {
                 "record_id": record_id,
+
                 "candidate_predictions":
                     predictions_for_record,
+
                 "distinct_prediction_count":
                     len(distinct_predictions),
+
                 "discriminating":
                     len(distinct_predictions) > 1,
             }
@@ -380,6 +376,7 @@ def main() -> int:
     selection_result = evaluate_partition(
         candidates,
         selection,
+        "selection",
     )
 
     selection_viable_ids = (
@@ -398,6 +395,7 @@ def main() -> int:
     control_result = evaluate_partition(
         selected_candidates,
         controls,
+        "control",
     )
 
     control_viable_ids = (
@@ -421,6 +419,7 @@ def main() -> int:
     counterexample_result = evaluate_partition(
         counterexample_candidates,
         counterexamples,
+        "counterexample",
     )
 
     counterexample_viable_ids = (
@@ -448,6 +447,7 @@ def main() -> int:
         holdout_result = evaluate_partition(
             frozen_candidates,
             holdout,
+            "holdout",
         )
 
         holdout_viable_ids = (
@@ -460,11 +460,15 @@ def main() -> int:
             frozen_candidate["candidate_id"]
             not in holdout_viable_ids
         ):
+
             status = "FAIL"
+
         else:
+
             status = "PASS"
 
     else:
+
         status = "UNRESOLVED"
 
     result = {
