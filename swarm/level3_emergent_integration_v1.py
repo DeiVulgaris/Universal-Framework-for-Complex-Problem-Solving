@@ -266,6 +266,12 @@ class Level3EmergentIntegration:
             EmergentSpaceBuilder()
         )
 
+        # Keep actual generated cognitive spaces available for recursive
+        # continuation.  A later cycle may identify its source only by
+        # space_id/version; in that case we must not reconstruct a shell
+        # and silently discard accumulated content.
+        self._space_registry: Dict[str, CognitiveSpace] = {}
+
     # ------------------------------------------------------------------
     # Localize OT branches
     # ------------------------------------------------------------------
@@ -627,6 +633,21 @@ class Level3EmergentIntegration:
         branches=None,
     ) -> Level3IntegrationResult:
 
+        if source_space is None:
+            # Recursive continuation may provide only the identity/version
+            # of the current space.  Prefer the actual previously generated
+            # space over reconstructing a minimal shell.
+            registered = self._space_registry.get(
+                source_space_id
+            )
+            if registered is not None:
+                if registered.version != source_space_version:
+                    raise ValueError(
+                        "registered source space version does not match "
+                        "source_space_version"
+                    )
+                source_space = registered
+
         if source_space is not None:
             if source_space.space_id != source_space_id:
                 raise ValueError(
@@ -639,6 +660,8 @@ class Level3EmergentIntegration:
                     "source_space_version does not match "
                     "source_space.version"
                 )
+
+            self._space_registry[source_space.space_id] = source_space
 
         if branches is None:
 
@@ -745,6 +768,11 @@ class Level3EmergentIntegration:
                 ),
             )
         )
+
+        # Make the actual generated space available to the next recursive
+        # cycle.  This preserves accumulated distinctions/questions/
+        # relations when the next invocation supplies only id + version.
+        self._space_registry[next_space.space_id] = next_space
 
         # --------------------------------------------------------------
         # 6. Record continuation
