@@ -1,0 +1,157 @@
+{
+  "dataset_id": "UFCPS-L3-INVARIANT-DISCOVERY-v1",
+  "version": "1.0",
+  "purpose": "Raw symbol-structure task for testing whether a process can discover a common invariant across heterogeneous representations without being told their semantic domain.",
+  "source_basis": "Examples and descriptions supplied in the user's uploaded material concerning alternative numeral representations and the relation commonly written as 2+2.",
+  "semantic_labels_exposed_to_engine": false,
+  "design_principle": "The engine receives only symbol sequences and observed input-output relations. The latent invariant and representation types are evaluation metadata, not engine input.",
+  "records": [
+    {
+      "id": "P01",
+      "split": "train",
+      "left": "2",
+      "right": "2",
+      "result": "4",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "P02",
+      "split": "train",
+      "left": "2",
+      "right": "2",
+      "result": "11",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "P03",
+      "split": "train",
+      "left": "10",
+      "right": "10",
+      "result": "100",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "P04",
+      "split": "train",
+      "left": "II",
+      "right": "II",
+      "result": "IV",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "P05",
+      "split": "train",
+      "left": "||||",
+      "right": "||||",
+      "result": "||||||||",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "P06",
+      "split": "train",
+      "left": "••",
+      "right": "••",
+      "result": "••••",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "P07",
+      "split": "train",
+      "left": "XX",
+      "right": "XX",
+      "result": "XXXX",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "P08",
+      "split": "train",
+      "left": "aa",
+      "right": "aa",
+      "result": "aaaa",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "N01",
+      "split": "control",
+      "left": "2",
+      "right": "2",
+      "result": "5",
+      "expected_relation": "negative"
+    },
+    {
+      "id": "N02",
+      "split": "control",
+      "left": "10",
+      "right": "10",
+      "result": "101",
+      "expected_relation": "negative"
+    },
+    {
+      "id": "N03",
+      "split": "control",
+      "left": "II",
+      "right": "II",
+      "result": "V",
+      "expected_relation": "negative"
+    },
+    {
+      "id": "N04",
+      "split": "control",
+      "left": "||||",
+      "right": "||||",
+      "result": "|||||||",
+      "expected_relation": "negative"
+    },
+    {
+      "id": "H01",
+      "split": "holdout",
+      "left": "•••",
+      "right": "••",
+      "result": "•••••",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "H02",
+      "split": "holdout",
+      "left": "xxx",
+      "right": "xx",
+      "result": "xxxxx",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "H03",
+      "split": "holdout",
+      "left": "AAA",
+      "right": "AA",
+      "result": "AAAAA",
+      "expected_relation": "positive"
+    },
+    {
+      "id": "H04",
+      "split": "holdout",
+      "left": "•••",
+      "right": "••",
+      "result": "••••",
+      "expected_relation": "negative"
+    }
+  ],
+  "evaluation_oracle": {
+    "latent_invariant": "The result preserves the underlying additive/cardinality relation represented by the symbols, despite changes in notation.",
+    "positive_condition": "The result represents the combination/cardinality implied by the two operands.",
+    "negative_condition": "The result violates that relation.",
+    "holdout_purpose": "Test whether the discovered rule generalizes beyond the exact training strings."
+  },
+  "provenance": {
+    "P01": "source-supported ordinary arithmetic example",
+    "P02": "source-supported ternary representation example",
+    "P03": "source-supported binary representation example",
+    "P04": "source-supported Roman-numeral representation example",
+    "P05": "constructed from unary representation; relation is explicit arithmetic/cardinality, but this exact line is an experimental normalization",
+    "P06": "constructed from dot-count representation; exact line is an experimental normalization",
+    "P07": "synthetic control representation",
+    "P08": "synthetic control representation",
+    "N01-N04": "experimental negative controls",
+    "H01-H04": "experimental held-out cases; not presented to the process during discovery"
+  },
+  "important_methodological_note": "The dataset must not be described as proving that the process understands arithmetic, numeral systems, or human mathematical concepts. It tests invariant discovery over symbol relations. P07/P08 and the holdout records deliberately prevent the experiment from being reducible to recognition of historically named notation systems."
+}
