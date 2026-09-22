@@ -1,0 +1,227 @@
+{
+  "dataset_id": "UFCPS-L3-INVARIANT-DISCOVERY-v3",
+  "version": "3.0",
+  "experiment": "L3-Invariant-Discovery-v3",
+  "description": "Dataset for testing whether a candidate structural relation can demonstrate predictive productivity and survive controlled counterexamples without semantic interpretation being exposed to the discovery process.",
+  "semantic_labels_exposed_to_engine": false,
+  "oracle_accessible_to_discovery": false,
+
+  "discovery": [
+    {
+      "record_id": "D01",
+      "left": "aa",
+      "right": "bb",
+      "result": "abab"
+    },
+    {
+      "record_id": "D02",
+      "left": "ab",
+      "right": "ab",
+      "result": "aabb"
+    },
+    {
+      "record_id": "D03",
+      "left": "aaa",
+      "right": "bc",
+      "result": "abcaa"
+    },
+    {
+      "record_id": "D04",
+      "left": "xy",
+      "right": "z",
+      "result": "xyz"
+    },
+    {
+      "record_id": "D05",
+      "left": "xx",
+      "right": "yy",
+      "result": "xyxy"
+    },
+    {
+      "record_id": "D06",
+      "left": "pq",
+      "right": "p",
+      "result": "ppq"
+    }
+  ],
+
+  "selection": [
+    {
+      "record_id": "S01",
+      "left": "aaa",
+      "right": "bbb",
+      "result": "ababab"
+    },
+    {
+      "record_id": "S02",
+      "left": "ab",
+      "right": "cc",
+      "result": "acbc"
+    },
+    {
+      "record_id": "S03",
+      "left": "xx",
+      "right": "xyz",
+      "result": "xxyxz"
+    },
+    {
+      "record_id": "S04",
+      "left": "mn",
+      "right": "n",
+      "result": "mnn"
+    }
+  ],
+
+  "counterexamples": [
+    {
+      "record_id": "C01",
+      "left": "ab",
+      "right": "cd",
+      "result": "acbd"
+    },
+    {
+      "record_id": "C02",
+      "left": "aa",
+      "right": "bc",
+      "result": "abac"
+    },
+    {
+      "record_id": "C03",
+      "left": "xy",
+      "right": "xy",
+      "result": "xxyy"
+    },
+    {
+      "record_id": "C04",
+      "left": "abc",
+      "right": "d",
+      "result": "adbc"
+    }
+  ],
+
+  "holdout": [
+    {
+      "record_id": "H01",
+      "left": "abc",
+      "right": "de",
+      "result": "adbce"
+    },
+    {
+      "record_id": "H02",
+      "left": "xx",
+      "right": "yz",
+      "result": "xyxz"
+    },
+    {
+      "record_id": "H03",
+      "left": "pqrs",
+      "right": "pq",
+      "result": "ppqqrs"
+    },
+    {
+      "record_id": "H04",
+      "left": "abc",
+      "right": "de",
+      "result": "abcde"
+    },
+    {
+      "record_id": "H05",
+      "left": "mnop",
+      "right": "qr",
+      "result": "mqnrpo"
+    }
+  ],
+
+  "external_evaluation": {
+    "oracle_type": "hidden_structural_relation",
+    "oracle_description": "External evaluator checks whether the result preserves the combined symbol multiplicities of left and right operands while allowing arbitrary reordering of those symbols.",
+    "discovery_engine_access": false,
+    "selection_engine_access": false,
+    "counterexample_generation_access": false,
+    "holdout_evaluation_access": true,
+
+    "expected_positive": [
+      "D01",
+      "D02",
+      "D03",
+      "D04",
+      "D05",
+      "D06",
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "C01",
+      "C02",
+      "C03",
+      "C04",
+      "H01",
+      "H02",
+      "H03",
+      "H04",
+      "H05"
+    ],
+
+    "expected_negative": []
+  },
+
+  "controls": [
+    {
+      "record_id": "N01",
+      "left": "ab",
+      "right": "cd",
+      "result": "aacd"
+    },
+    {
+      "record_id": "N02",
+      "left": "xx",
+      "right": "yy",
+      "result": "xxyx"
+    },
+    {
+      "record_id": "N03",
+      "left": "abc",
+      "right": "d",
+      "result": "aabc"
+    },
+    {
+      "record_id": "N04",
+      "left": "pq",
+      "right": "rs",
+      "result": "pprq"
+    }
+  ],
+
+  "partition_rules": {
+    "discovery": "Available for candidate generation.",
+    "selection": "Unavailable during initial candidate generation; used only for predictive testing after candidates are generated.",
+    "counterexamples": "Unavailable during candidate generation; used only to discriminate candidates that remain viable after selection testing.",
+    "holdout": "Unavailable until candidate freeze.",
+    "controls": "Available only as neutral structural observations for candidate discrimination; no semantic labels are exposed."
+  },
+
+  "design_constraints": {
+    "surface_concatenation_is_not_reliable": true,
+    "surface_order_is_not_reliable": true,
+    "length_alone_is_not_sufficient": true,
+    "symbol_identity_is_not_semantically_interpreted": true,
+    "multiple_symbol_representations_are_used": true,
+    "candidate_must_predict_unseen_configurations": true,
+    "counterexamples_must_discriminate_competing_relations": true
+  },
+
+  "hidden_evaluation_notes": {
+    "intended_relation": "The result preserves the combined multiplicity of symbols appearing in the two operands, independently of their order.",
+    "important_limitation": "This relation is a structural property of the dataset, not evidence of arithmetic or semantic understanding.",
+    "oracle_is_not_part_of_discovery": true
+  },
+
+  "provenance": {
+    "derived_from": "L3-Invariant-Discovery-v2",
+    "partition_structure_changed": true,
+    "dataset_version": "3.0",
+    "protocol_version": "3.0",
+    "candidate_family_supplied": false,
+    "semantic_interpretation_supplied": false
+  }
+}
