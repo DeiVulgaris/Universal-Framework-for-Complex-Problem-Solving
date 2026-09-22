@@ -255,7 +255,10 @@ def evaluate_reflection(
         )
 
     if (
-        target == "COGNITIVE_SPACE"
+        target in {
+            "COGNITIVE_SPACE",
+            "SELF_WORLD_RELATION",
+        }
         and transition_candidate
         and pressure >= config.minimum_pressure_for_ot_candidate
     ):
@@ -272,7 +275,7 @@ def evaluate_reflection(
             method_limitation_detected=True,
             cognitive_space_limitation_detected=True,
             reasons=[
-                "current_cognitive_space_is_target_of_reflection",
+                "reflection_identifies_a_structural_limit_relevant_to_transition",
                 "structural_pressure_is_high",
                 "orthogonal_transition_candidate_is_permitted",
                 "transition_mechanism_remains_open",
