@@ -312,6 +312,53 @@ def decide(
     ).to_dict()
 
 
+# ---------------------------------------------------------------------------
+# Backward-compatible class API
+# ---------------------------------------------------------------------------
+# The canonical implementation above is functional. Older Level 3
+# benchmarks import ReflexiveTransitionPolicy as a class. This adapter
+# exposes the existing policy without duplicating or changing its logic.
+class ReflexiveTransitionPolicy:
+    """
+    Compatibility adapter for the functional reflexive transition policy.
+
+    The adapter does not add policy logic. It delegates to the canonical
+    evaluate_reflection() and decide() functions above.
+    """
+
+    def __init__(
+        self,
+        config: ReflexiveTransitionPolicyConfig = (
+            ReflexiveTransitionPolicyConfig()
+        ),
+    ) -> None:
+        self.config = config
+
+    def evaluate_reflection(
+        self,
+        reflection: Any,
+    ) -> ReflectionDecision:
+        return evaluate_reflection(
+            reflection,
+            self.config,
+        )
+
+    def decide(
+        self,
+        reflection: Any,
+    ) -> Dict[str, Any]:
+        return decide(
+            reflection,
+            self.config,
+        )
+
+    def evaluate(
+        self,
+        reflection: Any,
+    ) -> ReflectionDecision:
+        return self.evaluate_reflection(reflection)
+
+
 def demo() -> None:
     """
     Demonstrate the three policy paths.
