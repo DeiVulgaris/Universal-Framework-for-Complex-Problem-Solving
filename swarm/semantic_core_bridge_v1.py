@@ -278,6 +278,9 @@ def import_task_tree(
                     patch={
                         "active_constraints": _strings(node.get("constraints")),
                         "evidence_references": _strings(node.get("evidence_refs")),
+                        "required_capabilities": _strings(node.get("required_capabilities")),
+                        "required_resources": node.get("required_resources", [])
+                            if isinstance(node.get("required_resources", []), list) else [],
                         "next_required_operation": _text(node.get("next_required_operation")).lower(),
                         "metadata": {
                             **dict(_mapping(node.get("provenance"))),
@@ -309,13 +312,42 @@ def import_task_tree(
     }
 
 
+def _discovery_question(frontier: Mapping[str, Any]) -> dict[str, Any]:
+    """Map UQL frontier field names to Task Discovery Engine vocabulary."""
+    metadata = _mapping(frontier.get("metadata"))
+    return {
+        "question_id": _text(frontier.get("question_id")),
+        "formulation": _text(frontier.get("formulation")),
+        "status": _text(frontier.get("status", "unresolved")).lower() or "unresolved",
+        "current_state": json.dumps(
+            _mapping(frontier.get("current_state")), ensure_ascii=False, sort_keys=True
+        ) if isinstance(frontier.get("current_state"), Mapping) else _text(frontier.get("current_state")),
+        "current_frontier": _text(frontier.get("current_state")),
+        "unresolved_difference": _text(frontier.get("unresolved_difference")),
+        "known_constraints": list(frontier.get("active_constraints", [])),
+        "previous_attempts": list(frontier.get("attempted_operations", [])),
+        "evidence_references": list(frontier.get("evidence_references", [])),
+        "required_capabilities": list(frontier.get("required_capabilities", [])),
+        "requirements": {"resources": list(frontier.get("required_resources", []))},
+        "next_required_operation": _text(frontier.get("next_required_operation")),
+        "prospect_signals": metadata.get("prospect_signals", {}),
+        "continuation": {
+            "required": True,
+            "unresolved_difference": _text(frontier.get("unresolved_difference")),
+            "next_required_operation": _text(frontier.get("next_required_operation")),
+        },
+        "provenance": metadata.get("provenance", {}),
+        "task_id": metadata.get("task_id"),
+    }
+
+
 def discover_imported_tasks(
     store: UQLStore,
     *,
     agents: Iterable[Mapping[str, Any]],
     resources: Iterable[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
-    questions = [frontier.to_dict() for frontier in store.list_active()]
+    questions = [_discovery_question(frontier) for frontier in store.list_active()]
     prospects = discover(questions, agents, resources)
     return [prospect.to_dict() for prospect in prospects]
 
@@ -348,7 +380,24 @@ def apply_execution_result(
         "contradictions", "uncertainty", "evidence_references",
         "next_required_operation", "metadata",
     }
+    current = store.get_frontier(question_id).to_dict()
     filtered = {key: value for key, value in patch.items() if key in allowed}
+
+    if "attempted_operations" in filtered:
+        filtered["attempted_operations"] = list(dict.fromkeys(
+            list(current.get("attempted_operations", [])) + list(filtered["attempted_operations"])
+        ))
+    for field in ("evidence_references", "results", "negative_results", "contradictions", "observations"):
+        if field in filtered:
+            filtered[field] = list(dict.fromkeys(
+                list(current.get(field, [])) + list(filtered[field])
+            ))
+    if "metadata" in filtered:
+        filtered["metadata"] = {
+            **dict(current.get("metadata", {})),
+            **dict(filtered["metadata"]),
+        }
+
     store.update_frontier(
         question_id=question_id,
         event_type="execution_result_frontier_update",
