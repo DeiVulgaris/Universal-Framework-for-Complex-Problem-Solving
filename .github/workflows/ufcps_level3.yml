@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "swarm/**"
+      - "protocols/**"
       - ".github/workflows/ufcps_level3.yml"
 
   pull_request:
@@ -70,3 +71,10 @@ jobs:
       - name: Run Stage 59 information provider demo
         run: |
           python swarm/information_provider_runtime_v1.py --demo
+
+      - name: Run Stage 61 invariant replay frontier bridge
+        run: |
+          python swarm/invariant_replay_frontier_bridge_test_v1.py
+      - name: Run Stage 61 bridge demo
+        run: |
+          python swarm/invariant_replay_frontier_bridge_v1.py --demo
