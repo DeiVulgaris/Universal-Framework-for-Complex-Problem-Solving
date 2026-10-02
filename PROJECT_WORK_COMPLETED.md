@@ -1286,3 +1286,119 @@ This gives the project a stronger baseline for the next independent problem:
 
 No Stage 62 was created for this validation.
 
+---
+
+## 37. Research Loop v0 — first operational autonomy layer
+
+The next step after the frozen Stage 61 continuity baseline was implemented as a separate stage: **Research Loop v0**.
+
+The boundary is explicit:
+
+> **Policy = transition chooser, not meaning author.**
+
+The loop consumes the localized frontier plus classification state and returns a deterministic process transition:
+
+`Localized Frontier
+→ Next-Operation Policy
+→ optional Derived Question
+→ Task formation (55–56)
+→ … (58–61)`
+
+### 37.1 Rights and prohibitions
+
+The policy may select a process operation and may emit a derived question with provenance.
+
+It does not:
+- write ontology registries;
+- elevate classifications into claims;
+- infer an affected reasoning step from free text;
+- rewrite or delete reasoning history;
+- terminate because retrieval failed once.
+
+The policy module itself is pure. UQL persistence remains an external boundary; the emitted derived question is UQL-ready rather than a hidden second UQL implementation.
+
+### 37.2 Deterministic operations
+
+The allowed operation vocabulary is:
+
+`diff | fix | diss | unfold | delegate | compose | terminate`
+
+R0 currently selects `diff`, `fix`, `delegate`, or `terminate`. The remaining operations are retained as part of the controlled operation vocabulary for later rules.
+
+The policy is deterministic and uses machine-checkable rationale codes rather than a free-text assessment of what is "smart".
+
+### 37.3 Rule table
+
+| Condition | Selected operation | Derived question |
+|---|---|---|
+| explicit budget exhausted | `terminate` | no |
+| `CONTRADICTION_FOUND` | `diff` | yes |
+| `EVIDENCE_FOUND` | `fix` | no |
+| `METHOD_FOUND` | `fix` | no |
+| `SOLUTION_FOUND` | `fix` | no |
+| `INFORMATION_GAP` | `diff` | yes |
+| `NO_ADEQUATE_INFO` | `diff` | yes |
+| `RETRIEVAL_FAILURE` | `delegate` | no |
+| default | `diff` | no |
+
+Budget exhaustion is treated as a global guard so that R0-07 has unambiguous semantics. A single negative or retrieval failure does not imply termination.
+
+Stage 61's `next_required_operation_hint` remains advisory and cannot override the deterministic v0 rule table.
+
+### 37.4 Derived question
+
+A derived question is an open process object carrying:
+
+`parent_question
+→ derived_from_step
+→ trigger
+→ unresolved_difference
+→ derivation_basis
+→ inherited constraints`
+
+Its identifier is deterministic:
+
+`q:derived:{parent_slug}:{anchor_step_id}:{trigger_slug}`
+
+The core invariant is:
+
+> **Emitting a derived question does not assert the truth of the parent hypothesis or of the information result.**
+
+### 37.5 Validation
+
+The R0 suite contains seven test vectors aligned with E2E-01…E2E-06 plus explicit budget exhaustion:
+
+- R0-01 contradiction → `diff` + derived question;
+- R0-02 evidence → `fix`;
+- R0-03 method → `fix`, including tail-fallback input;
+- R0-04 information gap → `diff` + derived question;
+- R0-05 retrieval failure → `delegate`, not termination;
+- R0-06 solution found → `fix`, no claim elevation;
+- R0-07 exhausted budget → `terminate`.
+
+The automated suite passed in GitHub Actions.
+
+The suite also verifies:
+- `question_id` preservation;
+- operation membership in the allowed vocabulary;
+- schema conformance;
+- `ontology_write=false`;
+- `claim_elevate=false`;
+- no automatic semantic claim from `SOLUTION_FOUND`;
+- no registry mutation;
+- deterministic repeatability for identical input.
+
+### 37.6 Relation to the autonomy ladder
+
+The documented ladder is now:
+
+`E2E 61` — continue the process  
+`R0` — select admissible next operation (+ optional derived question)  
+`R1` — multi-step derived questions + UQL branch identity  
+`R2` — branching frontier / compose  
+Later — general research agent? **not claimed**  
+AGI — **UNRESOLVED by design**
+
+R0 is therefore the first operational autonomy layer in the architecture, but it is deliberately not presented as AGI or as a general autonomous researcher.
+
+No ontology expansion is part of this stage.
