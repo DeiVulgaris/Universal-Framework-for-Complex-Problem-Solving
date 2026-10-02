@@ -1,0 +1,22 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://github.com/Deivulgaris/Universal-Framework-for-Complex-Problem-Solving/blob/main/protocols/invariant_replay_frontier_schema_v1.json",
+  "title":"Invariant Replay Localized Frontier v1",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["frontier_id","question_id","root_invariant_id","trace_id","anchor_step_id","impact_mode","reasoning_prefix","affected_step","downstream_steps","information_result","next_required_operation","provenance"],
+  "properties":{
+    "frontier_id":{"type":"string","minLength":1},
+    "question_id":{"type":"string","minLength":1},
+    "root_invariant_id":{"type":"string","minLength":1},
+    "trace_id":{"type":"string","minLength":1},
+    "anchor_step_id":{"type":"string","minLength":1},
+    "impact_mode":{"type":"string","enum":["EXPLICIT_STEP_REFERENCE","TAIL_FALLBACK"]},
+    "reasoning_prefix":{"type":"array","minItems":1,"items":{"type":"string","minLength":1}},
+    "affected_step":{"type":"object","additionalProperties":true},
+    "downstream_steps":{"type":"array","items":{"type":"object","additionalProperties":true}},
+    "information_result":{"type":"object","additionalProperties":true},
+    "next_required_operation":{"type":"string","minLength":1},
+    "provenance":{"type":"object","additionalProperties":true}
+  }
+}
