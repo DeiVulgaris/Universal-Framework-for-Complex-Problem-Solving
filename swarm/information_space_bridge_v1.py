@@ -176,8 +176,9 @@ def ingest_retrievals(
             },
         )
 
-        evidence_ref = f"retrieval:{retrieval_id}"
-        evidence_refs.append(evidence_ref)
+        if status in {"FOUND", "PARTIAL"}:
+            evidence_ref = f"retrieval:{retrieval_id}"
+            evidence_refs.append(evidence_ref)
         observations.append(
             f"{query_id}: {status} ({relevance}) from {locator}"
         )
