@@ -1164,3 +1164,125 @@ That is the current project baseline.
 Stage 61 is closed.
 
 The architecture is ready for the next problem to be investigated independently.
+
+---
+
+## 36. E2E bridge continuity validation
+
+After Stage 61 was frozen, the next verification step was performed without creating a new architectural stage.
+
+The objective was deliberately narrower than adding functionality:
+
+> Demonstrate that the existing stages form one reproducible working contour from a registered process frontier through task formation, runtime preparation, information retrieval, classification, invariant-rooted replay, impact localization, and return to a continuation-ready frontier.
+
+### 36.1 Tested contour
+
+The implemented E2E fixture executes the following logical sequence:
+
+`registered frontier
+→ task formation (55)
+→ runtime prospect (56)
+→ mock retrieval / provider boundary (58–59)
+→ result classification (60)
+→ invariant-rooted reasoning replay (60)
+→ impact localization (61)
+→ localized frontier
+→ UQL-style state update
+→ next operation`
+
+The test is intentionally a continuity test, not a capability or intelligence test.
+
+No cosmology, AGI, or new ontological entity was introduced.
+
+### 36.2 Synthetic continuity question
+
+The fixture uses one process-continuity question:
+
+`Local Failure ≠ Process Termination`
+
+The process is represented by a stable `question_id` carried through the complete cycle.
+
+The reasoning fixture contains a four-step chain with explicit `step_id` values. One unresolved difference is preserved as part of the frontier.
+
+The invariant/root is taken from a controlled source-compatible fixture and is not silently promoted into the Semantic Core ontology registries.
+
+### 36.3 E2E cases
+
+Six cases were executed:
+
+| Case | Input | Impact handling | Expected process state |
+|---|---|---|---|
+| E2E-01 | `CONTRADICTION_FOUND @ S3` | Explicit S3 | S3 requires reconciliation; downstream S4 requires replay; process remains alive |
+| E2E-02 | `EVIDENCE_FOUND @ S3` | Explicit S3 | Validation required; no automatic semantic claim |
+| E2E-03 | `METHOD_FOUND` without step reference | `TAIL_FALLBACK @ S4` | Fallback explicitly labelled non-causal |
+| E2E-04 | `INFORMATION_GAP @ S2` | Explicit S2 | Negative/gap information preserved; S3–S4 require replay |
+| E2E-05 | `RETRIEVAL_FAILURE` | Tail fallback | Delegation/change-of-path required; process remains alive |
+| E2E-06 | `SOLUTION_FOUND @ S4` | Explicit S4 | No automatic validated claim and no registry write |
+
+### 36.4 Observed validation result
+
+The reproducible runner returned:
+
+- cases: 6;
+- reasoning chain length: 4;
+- total `REQUIRES_REPLAY`: 4;
+- explicit impact references: 4;
+- tail fallbacks: 2;
+- schema validation pass rate: 100%;
+- `question_id` preserved through the cycle;
+- ontology unchanged.
+
+The integrated test therefore demonstrates that the existing stages can be traversed as one controlled contour rather than only as isolated components.
+
+### 36.5 What the E2E run actually establishes
+
+The run establishes the following architectural properties:
+
+1. A registered frontier can become an executable task prospect while retaining process identity.
+2. Runtime preparation does not destroy the originating frontier.
+3. Retrieved information is classified before it is allowed to affect reasoning state.
+4. Classification is not treated as truth.
+5. Contradiction, information gap, and retrieval failure are represented as process states rather than termination signals.
+6. Reasoning replay remains rooted in the original invariant.
+7. Impact can be localized to an explicit reasoning step.
+8. When localization data is absent, the system uses a clearly labelled procedural tail fallback rather than claiming causal attribution.
+9. Downstream reasoning is preserved and marked for replay rather than deleted.
+10. A localized frontier can define the next required operation while keeping prior history intact.
+11. A found solution is not silently promoted to a validated semantic claim and does not authorize an ontology registry write.
+
+### 36.6 Boundary of the result
+
+This E2E harness includes a test-only UQL-style frontier update so that the complete logical contour can be checked in one reproducible run.
+
+It does **not** replace the production UFCPS UQLStore or the existing Semantic-Core↔UFCPS bridge.
+
+Likewise, the retrieval segment uses a mock/provider boundary for the E2E proof. The provider runtime and UFCPS information-space components remain separately implemented and validated.
+
+Therefore the result is:
+
+> **A demonstrated end-to-end continuity contour, not a claim of autonomous research or general intelligence.**
+
+### 36.7 Architectural significance
+
+The main result is not a new module.
+
+The result is that the previously separate controls now compose into one closed operational loop:
+
+`Frontier
+→ Task
+→ Runtime
+→ Information
+→ Classification
+→ Replay
+→ Impact
+→ Updated Frontier
+→ Next Operation`
+
+The process survives local failure without erasing history or rewriting the root invariant.
+
+This gives the project a stronger baseline for the next independent problem:
+
+> the system can now demonstrate continuity across the full existing Semantic Core → UFCPS control contour.
+
+No Stage 62 was created for this validation.
+
