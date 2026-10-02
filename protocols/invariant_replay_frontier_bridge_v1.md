@@ -51,4 +51,5 @@ processes can resume from the anchor without losing the root-to-anchor prefix.
 
 ## Status
 
-v1 — experimental integration layer.
+**CLOSED** — Stage 61 is complete and frozen. Further changes belong to a new
+architectural stage.
